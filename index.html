@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" ng-app='FA_Admin'>
+	<head>
+		<meta charset="utf-8">
+		<title>Freedom Archives Database Administration</title>
+		<script type="text/javascript" src='bower_components/jquery/dist/jquery.min.js'></script>
+		<script type="text/javascript" src='bower_components/jquery-ui/ui/minified/jquery-ui.min.js'></script>
+		<script type="text/javascript" src='bower_components/angular/angular.min.js'></script>
+		<script type="text/javascript" src='bower_components/angular-route/angular-route.min.js'></script>
+		<script type="text/javascript" src='bower_components/angular-ui-bootstrap-bower/ui-bootstrap-tpls.min.js'></script>
+		<script type="text/javascript" src='bower_components/textAngular/dist/textAngular.min.js'></script>
+		<script type="text/javascript" src='bower_components/textAngular/dist/textAngular-sanitize.min.js'></script>
+		<script type="text/javascript" src='bower_components/bootstrap/dist/js/bootstrap.min.js'></script>
+		<script type="text/javascript" src='bower_components/angular-ui-sortable/sortable.min.js'></script>
+		<script type="text/javascript" src='bower_components/angularjs-file-upload/angular-file-upload.min.js'></script>
+		<script type="text/javascript" src='bower_components/angular-animate/angular-animate.min.js'></script>
+		<script type="text/javascript" src='admin.js'></script>
+		<script type="text/javascript" src='directives.js'></script>
+		<script type="text/javascript" src='filters.js'></script>
+		<link rel="stylesheet" type="text/css" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+		<link rel="stylesheet" href="bower_components/jquery-ui/themes/base/minified/jquery-ui.min.css">
+		<link rel="stylesheet" href="bower_components/animate.css/animate.min.css">
+		<link rel="stylesheet" href="bower_components/fontawesome/css/font-awesome.min.css">
+		<link rel="stylesheet" href="style.css">
+	</head>
+	<body>
+		<div ng-if='!username' id='login' login></div>
+		<div ng-if='username' id='container' class='container-fluid'>
+			<div id='nav' class='well col-sm-2'>
+				<div logout></div>	
+				<h4>Collections</h4>
+				<ul class='nav nav-pills nav-stacked'>
+					<li>
+						<ul class='nav'>
+							<li><div id='sel' collection-select></div></li>
+							<li> <a href='#/collections/new'>New Collection</a> </li>
+							<li> <a href='#/collections/top'>Manage Top-Level Collections</a> </li>
+						</ul>
+					</li>
+				</ul>
+				<h4>Documents</h4>
+				<ul class='nav nav-pills nav-stacked'>
+					<li>
+						<a href='#/documents'>Manage Documents</a>
+						<ul class='nav'>
+							<li>
+								<a href='#/documents/new'>New Document</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<h4>Site Management</h4>
+				<ul class='nav nav-pills nav-stacked'>
+					<li> <a href='#/site/featuredDocs'>Home Page Featured Docs</a> </li>
+					<li> <a href='#/site/filemakerImport'>Import from Filemaker</a> </li>
+					<li> <a href='#/site/csvImport'>Import from CSV</a> </li>
+					<li> <a href='#/site/backupDatabase'>Backup Database</a> </li>
+					<li> <a href='#/site/updateThumbnails'>Update Thumbnails</a> </li>
+					<li> <a href='#/site/updateKeywords'>Update Keywords</a> </li>
+					<li> <a href='#/site/exportCollections'>Export Collections</a> </li>
+				</ul>
+			</div>
+			<div messages id='messages'></div>
+			<div ng-view id='content' class='fade col-xs-offset-2 col-xs-10'></div>
+		</div>
+	</body>
+</html>

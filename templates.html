@@ -1,0 +1,330 @@
+<script type="text/ng-template" id="login.html">
+	<div>
+		<h1 class='text-center'>Welcome to Freedom Archives Search Database Management Tool</h1>
+		<div class='col-md-4 col-md-offset-4'>
+			<div class='panel panel-info'>
+			  <div class="panel-heading"><h3 class="panel-title"><strong>Sign in </strong></h3></div>
+				  <div class="panel-body">
+					<p ng-show='auth.badLogin' class='alert alert-danger'>Invalid Login</p>
+					<form ng-submit='do_login()'>
+						<div class="form-group">
+							<label for="exampleInputEmail1">Username</label>
+							<input type="text" ng-model='login.user' autocomplete='on' class="form-control" style="border-radius:0px" id="exampleInputEmail1" placeholder="Enter email">
+						</div>
+						<div class="form-group">
+							<label for="exampleInputPassword1">Password</label>
+							<input type="password" ng-model='login.password' class="form-control" style="border-radius:0px" id="exampleInputPassword1" placeholder="Password">
+						</div>
+						<button type="submit" class="btn btn btn-primary">Sign in</button>
+						<input type="submit" class="ng-hide"></input>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="logout.html">
+	<div>
+		[ {{auth.username}} ] <a href='' ng-click='logout()'>Log out</a>
+	</div>
+</script>
+
+<script type="text/ng-template" id="documents.html">
+	<div header title='Documents' buttons='buttons'></div>
+	<div class='content-body'>
+		<div document-search doc-limit='10' select-doc='selectDoc'></div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="documentSearch.html">
+	<div id='docSearch' class='panel panel-primary'>
+		<form class='form-inline panel-heading'>
+			<div class='form-group'>
+				<label class="control-label">Text</label>
+				<input iype='text' class='form-control' placeholder='Search by text' ng-model='filter' autofocus/>
+			</div>
+			<div ng-hide='limitCollectionId' class='form-group'>
+				<label class="control-label">Collection</label>
+				<span collection-chooser select-collection='selectCollection(collection)' model='selected'></span>
+			</div>
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" ng-model='nonDigitized' ng-true-value="1" ng-false-value="0"> Include non-digitized
+				  </label>
+			</div>
+		</form>
+		<div class='list-group'>
+			<a href='javascript:void(0);' class='list-group-item' ng-click='selectDoc(document)' ng-repeat='document in documents | toArray | orderBy:"label"'>
+				<div class='media'>
+					<span class='pull-left'>
+						<img class="media-object" style='width: 75px' src='../{{document.THUMBNAIL}}'/>
+					</span>
+					<div class='media-body'>
+						<h4 class='list-group-item-heading'>{{document.label  || 'Untitled'| truncate:100}}</h4>
+						<p><i>Collection:{{document.COLLECTION_NAME}}</i></p>
+						<p>{{document.DESCRIPTION | truncate:150}}</p>
+					</div>
+				</div>
+			</a>
+		</div>
+		<div class='panel-footer text-center'>
+			<pagination items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' page="page"></pagination>
+		</div>
+</script>
+
+<script type="text/ng-template" id="documentEdit.html">
+	<div header title='Documents > {{document.TITLE || "New Document"}}' buttons='buttons'></div>
+	<div class='content-body'>
+		<form class="form-horizontal">
+			<div form-group model='document.TITLE' label='Title'></div>
+			<div form-group model='document.AUTHOR' label='Author'></div>
+			<div form-group model='document.KEYWORDS' label='Keywords'></div>
+			<div form-group model='document.COLLECTION_ID' label='Collection' input-type='collectionChooser'></div>
+			<div form-group model='document.DATE_CREATED' label='Creation Date'></div>
+			<div form-group model='document.YEAR' label='Year'></div>
+			<div form-group model='document.FORMAT' label='Format'></div>
+			<div form-group model='document.VOL_NUMBER' label='Volume Number'></div>
+			<div form-group model='document.NO_COPIES' label='No. Copies'></div>
+			<div form-group model='document.PUBLISHER' label='Publisher'></div>
+			<div form-group model='document.PRODUCERS' label='Producers'></div>
+			<div form-group model='document.PROGRAM' label='Program'></div>
+			<div form-group model='document.LOCATION' label='Location'></div>
+			<div form-group model='document.GENERATION' label='Generation'></div>
+			<div form-group model='document.QUALITY' label='Quality'></div>
+			<div form-group model='document.URL' label='URL'></div>
+			<div form-group model='document.URL_TEXT' label='URL Text'></div>
+			<div form-group model='document.FILENAME' label='Filename'></div>
+			<div form-group model='document.FILE_EXTENSION' label='File Extension'></div>
+			<div form-group model='document.DESCRIPTION' label='Description' input-type='textarea'></div>
+		</form>
+	</div>
+</script>
+
+<script type="text/ng-template" id="header.html">
+	<nav id='header' class="navbar navbar-default " >
+		<div class="container-fluid">
+        <div class="navbar-header">
+          <h2 class='navbar-text'>{{title}}</h2>
+        </div>
+        <div class="navbar-right">
+		  <span ng-bind-html='safeExtraHeader' />
+		  <button ng-repeat="button in buttons" ng-class='button.class' class="btn btn-default btn-lg navbar-btn" ng-click='button.action()' type="button">{{button.text}}</button>
+        </div>
+      </div>
+	</nav>
+</script>
+
+<script type="text/ng-template" id="collectionEdit.html">
+	<div header title='Collections > {{collection.COLLECTION_NAME || (id == 0 ? "Top-level collection" : "New Collection")}}' extra-header="extra_header" buttons='buttons'></div>
+	<div class='content-body'>
+		<tabset>
+			<tab active="'true'" ng-if="id != 0" heading="Edit Collection">
+				<form class="form-horizontal">
+					<div form-group model='collection.COLLECTION_NAME' label='Collection Name'></div>
+					<div form-group model='collection.CALL_NO' label='Call Number'></div>
+					<div form-group model='collection.DATE_CREATED' label='Creation Date' input-type='date'></div>
+					<div form-group model='collection.ACCESS_LEVEL' label='Public Access Level'></div>
+					<div form-group model='collection.ORGANIZATION' label='Organizations'></div>
+					<div form-group model='collection.KEYWORDS' label='Keywords'></div>
+					<div form-group model='collection.DESCRIPTION' label='Description' input-type='richtext'></div>
+					<div form-group model='collection.SUMMARY' label='Summary' input-type='textarea'></div>
+					<div form-group model='collection.PARENT_ID' label='Parent Collection' input-type='collectionChooser'></div>
+					<div form-group model='collection.IS_DELETED' label='Hidden' input-type='checkbox'></div>
+					<div form-group model='collection.DATE_RANGE' label='Date Range'></div>
+					<div form-group model='collection.SUBJECTS' label='Subjects'></div>
+					<div form-group model='collection.INTERNAL_NOTES' label='Internal Notes' input-type='textarea'></div>
+					<div form-group model='collection.THUMBNAIL' label='Thumbnail' input-type='image'></div>
+					<!--<div form-group model='collection.DISPLAY_ORDER' label='Display Order'></div>-->
+				</form>
+			</tab>
+			<tab ng-if="id != 0" heading='Featured Docs'>
+				<div featured-docs documents='collection._featured_docs' limit-collection-id='{{collection.COLLECTION_ID}}'/>
+			</tab>
+			<tab heading='Subcollections'>
+				<div class='row'>
+					<div class='col-xs-6'>
+						<h3>Edit Subcollections <small>Drag to reorder</small></h3>
+						<div class="list-group" ui-sortable ng-model='collection._subcollections'>
+							<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='sc in collection._subcollections | filter:{DISPLAY_ORDER:"!1000"}'>
+								<strong ng-class='{"text-muted": sc.IS_DELETED == 1}'>{{sc.COLLECTION_NAME}}&nbsp;</strong>
+								<span class='pull-right' style='position:absolute; right:15px ' >
+									<button ng-click='editSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+									<!--<button ng-if='sc.IS_DELETED == 1' ng-click='hideSubcollection(sc.COLLECTION_ID, 1)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ok-circle"></span> Unhide</button>
+									<button ng-if='sc.IS_DELETED == 0' ng-click='hideSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ban-circle"></span> Hide</button>-->
+									<button ng-click='removeSubcollection($index)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-remove"></span> Remove</button>
+								</span>
+							</a>
+						</div>
+					</div>
+					<div class='col-xs-6'>
+						<h3>Add a New Subcollection</h3>
+						<span collection-chooser select-collection='addSubcollection(collection)' clear='1'></span>
+					</div>
+				</div>
+			</tab>
+		</tabset>
+	</div>
+</script>
+
+<script type="text/ng-template" id="featuredDocs.html">
+	<div id='featuredDocs' class='row'>
+		<div class='col-xs-6'>
+			<h3>Edit Featured Docs <small>Drag to reorder</small></h3>
+			<div class="list-group" ui-sortable ng-model='documents'>
+				<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='doc in documents'>
+					<div class='media'>
+						<button ng-click='removeFeaturedDoc($index)' class='btn btn-default' style='position:absolute; top:15px; right:15px;'><span class="glyphicon glyphicon-remove"></span> Remove</button> 
+						<span class='pull-left'>
+							<img class="media-object" style='width: 75px' src='../{{doc.THUMBNAIL}}'/>
+						</span>
+						<div class='media-body'>
+							<p><strong>{{doc.TITLE}}</strong></p>
+							<p class=''>
+								Description:
+								<span style='width:300px; display: inline-block;'>
+									<input class='form-control' type='text' ng-model='doc.DESCRIPTION'/>
+								</span>
+							</p>
+						</div>
+					</div>
+				</a>
+			</div>
+		</div>
+		<div class='col-xs-6'>
+			<h3>Add a Document</h3>
+			<div document-search doc-limit='5' select-doc='addFeaturedDoc' limit-collection-id='{{limitCollectionId}}'></div>
+		</div>
+	</div>
+</script>
+<script type="text/ng-template" id="siteUtils.html">
+	<div header title='Site > {{title}}' buttons='buttons'></div>
+	<div class='content-body' ng-switch='util'>
+		<div ng-switch-when='backupDatabase'>
+			<p>This will allow you to save a backup of the entire search.freedomarchives.org database (in SQL format).</p>
+			<button ng-click='backupDatabase()' class='btn btn-default btn-large'>Backup Database</button>
+		</div>
+		<div ng-switch-when='filemakerImport'>
+			<p>Upload a Filemaker Pro XML export file to import or update records.</p>
+			<div file-import filetype='XML' action='filemakerImport'/>
+		</div>
+		<div ng-switch-when='csvImport'>
+			<p>Upload a CSV file to import or update records.</p>
+			<ul>
+				<li>The CSV must contain a header row.
+				<li>Rows containing a docid will be updated.
+				<li>Rows without a docid will be added as new records.
+				<li>Records can be assigned to collections via a collection column (enter the most specific collection or subcollection).
+			</ul>
+			<div file-import filetype='CSV' action='csvImport'/>
+		</div>
+		<div ng-switch-when='updateKeywords'>
+			<p>This will scan all documents for keywords, split them on commas, and store them in the keywords table, refreshing the word cloud.</p>
+			<button class='btn btn-default btn-large' ng-click='updateKeywords()'>Update Keywords</button>
+		</div>
+		<div ng-switch-when='exportCollections'>
+			<p>This will allow you to save a CSV containing all document records.</p>
+			<button class='btn btn-default btn-large' ng-click='exportCollection()'>Export Collections</button>
+		</div>
+		<div ng-switch-when='updateThumbnails'>
+			<p>This will update the thumbnail images for documents. By default, it only will update documents that have urls but no thumbnail image yet. Checking the 'Force refresh' box will update all document thumbnails (this can take a long time).</p>
+			<progressbar ng-show='complete != 0 && complete != total' class='progress-striped active' max="100" value="complete*(100/total)">
+				<span style="color:white; white-space:nowrap;">{{complete}} / {{total}}</span>
+			</progressbar>
+			<p ng-show='complete == total && complete != 0' class='alert alert-success'>{{success}} thumbnails updated successfully. {{failed}} thumbnails failed.</p>
+			<form class="form-horizontal col-xs-6">
+				<div class='form-group'>
+					<label class='col-xs-6 control-label'>Choose a collection to update (leave blank for all)</label>	
+					<div class='col-xs-6'>
+						<div collection-chooser model='options.collection'></div>
+					</div>
+				</div>
+				<div class='form-group'>
+					<div class='col-xs-6 col-xs-offset-6'>
+						<div class='checkbox'>
+							<label>
+								<input type='checkbox' ng-true-value='1' ng-false-value='0' ng-model='options.force'/>
+								Force update of existing thumbnails
+							</label>
+						</div>	
+					</div>	
+				</div>
+
+				<button class='btn btn-default btn-large' ng-click='updateThumbnails()'>Update Thumbnails</button>
+			</form>
+			<div class='col-xs-6' style='max-height: 400px; overflow: auto;'>
+				<h3>Thumbnails Updated</h3>
+				<div class='list-group'>
+					<span ng-class="{'list-group-item-success': item.status == 'Success', 'list-group-item-danger': item.status != 'Success'}" class='list-group-item' ng-repeat='item in thumbnails'>
+						<b>{{item.name}}</b>: {{item.status}}
+					</span>
+				</div>
+			</div>
+		</div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="siteFeaturedDocs.html">
+	<div header title='Site > Featured Documents' buttons='buttons'></div>
+	<div class='content-body'>
+		<div featured-docs documents='featuredDocs' limit-collection-id='0'/>
+	</div>
+</script>
+
+<script type="text/ng-template" id="fileImport.html">
+	<ol ng-file-drop="onFileSelect($files)" ng-file-drag-over-class="bg-primary">
+		<li>
+			Drag and drop the {{filetype}} file here, or use the button to browse to the file.
+			<div ng-file-drop-available="dropSupported=true" ng-show="!dropSupported">HTML5 Drop File is not supported!</div>
+			<div>
+				<span class="btn btn-default btn-file">
+					Choose file <input type="file" ng-file-select="onFileSelect($files)">
+				</span>
+			</div>
+		</li>
+		<li ng-show='badFile' class='bg-danger'>
+			The file you selected is not a {{filetype}} file - please choose a different file
+		</li>
+		<li ng-show='loaded'>
+			<button class='btn btn-primary' ng-click="uploadFile()">Import {{file.name}}</button>
+		</li>
+		<li ng-show='processing || success_count'>
+			<span ng-show='processing'>
+				<span class='glyphicon glyphicon-refresh spin'></span> Processing... (This may take a bit)
+			</span>
+			<span ng-show='success_count'>
+				Successfully imported {{success_count}} documents!
+			</span>
+		</li>
+	</ol>
+</script>
+
+<script type="text/ng-template" id="adminIndex.html">
+	<h1>Admin</h1>
+</script>
+
+<script type="text/ng-template" id="collectionChooser.html">
+	<input id='colchoose' type="text" ng-change='checkBlank(this.value)' ng-model="value" typeahead-on-select='selectCollection()' $typeahead-editable="false" typeahead="collection as collection.label for collection in data.collections | filter:$viewValue | limitTo:8" class="form-control" placeholder="Search Collections"/>
+</script>
+
+<script type="text/ng-template" id="formGroup.html">
+	<div class='form-group'>
+		<label class='col-xs-2 control-label'>{{label}}</label>
+		<div class='col-xs-10' ng-switch='type'>
+			<textarea ng-switch-when='textarea' type='text' rows='6' class='form-control' ng-model='$parent.model' />
+			<div ng-switch-when='richtext' text-angular ta-toolbar="[['bold','italics', 'underline'], ['justifyLeft','justifyCenter','justifyRight'], ['insertImage', 'insertLink', 'unlink'],['redo', 'undo', 'clear', 'html']]" ng-model='$parent.model'></div>
+			<div class='checkbox' ng-switch-when='checkbox'>
+				<input type='checkbox' ng-true-value='1' ng-false-value='0' ng-model='$parent.model'/>
+			</div>	
+			<div id='col' ng-switch-when='collectionChooser'>
+				<span collection-chooser model='$parent.model'></span>
+			</div>
+			<div ng-switch-when='select'>
+				<select ng-model='$parent.model' ng-options='item.id as item.label for item in options | orderBy:"label"'/>
+			</div>
+			<div ng-switch-when='image'><img width='75px' ng-src='../{{$parent.model}}'/></div>
+			<input ng-switch-default='text' type='{{type}}' class='form-control' ng-model='$parent.model' />
+		</div>
+	</div>
+</script>
+

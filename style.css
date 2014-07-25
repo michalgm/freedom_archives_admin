@@ -1,0 +1,72 @@
+.nav, .pagination, .carousel, .panel-title a { cursor: pointer; }
+
+.ta-editor { height: auto !important; }
+
+#messages {margin-top: 15px; position: fixed; width: 400px; left: 50%; margin-left: -200px; z-index: 110; }
+
+#nav, #header { position: fixed }
+
+#nav { height: 100%; overflow:auto; }
+
+#header { 
+	right: 0px;
+	left: 16.66666667%;
+	margin: 0px 15px 0px 25px;
+	z-index: 100;
+}
+
+.content-body { padding-top: 70px; }
+
+.btn-file {
+    position: relative;
+    overflow: hidden;
+}
+.btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 999px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    background: white;
+    cursor: inherit;
+    display: block;
+}
+
+#filemakerImport li { padding: 10px 0px; }
+
+#content { 
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	padding-left: 25px; 
+}
+
+.spin{
+	-webkit-transform-origin: 50% 58%;
+	transform-origin:50% 58%;
+	-ms-transform-origin:50% 58%; /* IE 9 */
+	-webkit-animation: spin 1.5s infinite linear;
+	-moz-animation: spin 1.5s infinite linear;
+	-o-animation: spin 1.5s infinite linear;
+	animation: spin 1.5s infinite linear;
+}
+
+div[ng-view] { opacity: 1; }
+
+div[ng-view].ng-enter {
+    -webkit-animation: fadeIn 0.5s;
+    -moz-animation: fadeIn 0.5s;
+	animation: fadeIn 0.5s;
+}
+
+div[ng-view].ng-leave {
+	display: block !important;
+    -webkit-animation: fadeOut 0.5s;
+    -moz-animation: fadeOut 0.5s;
+	animation: fadeOut 0.5s;
+}

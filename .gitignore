@@ -1,0 +1,4 @@
+config.local.php
+error_log
+tmp/*
+*.swp
