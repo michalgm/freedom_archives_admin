@@ -138,12 +138,14 @@ if ($action) {
 		case 'getThumbnailDocs': 
 			$where = $request['force'] ? "" : " and (thumbnail = '' or thumbnail is null) ";
 			if ($request['collection']) { $where .= " and collection_id = ".$request['collection']; }
-			$query = "select docid from DOCUMENTS where url is not null and url != '' $where";# and docid=5675");
-			$data = fetchCol($query);
+			$query = "select docid, title from DOCUMENTS where url is not null and url != '' $where";# and docid=5675");
+			$data = array_values(dbLookupArray($query));
 			break;
+
 		case 'updateThumbnail':
 			$data = updateThumbnail($request['id']);
 			break;
+
 		case 'updateKeywords':
 			dbwrite("delete from KEYWORD_LOOKUP");
 			$docs = dbLookupArray("select DOCID, KEYWORDS from DOCUMENTS where KEYWORDS is not null and KEYWORDS != ''");
@@ -155,6 +157,21 @@ if ($action) {
 				}
 			}
 			$data = 'success';
+			break;
+		
+		case 'uploadFile':
+			$data = $request['data'];
+			$file_data = $data['data'];
+			$type = $data['type'];
+			$id = $data['id'];
+			$tmpfile = "tmp/$id.$data[ext]";
+			file_put_contents($tmpfile, base64_decode($file_data));
+			$filename = ($type == 'collection' ?  'collections/' : '' ) . $id;
+			$thumbnail = createThumbnail($tmpfile, '', $filename);
+			$thumbnail = preg_replace("/^\.\.\//", "", $thumbnail);
+			unlink($tmpfile);
+			$result = saveItem($type, $id, array('thumbnail'=>$thumbnail));
+			$data = $result['thumbnail'];
 			break;
 		
 		case 'backupDatabase':
@@ -194,7 +211,7 @@ function fetchItem($type, $id) {
 function saveItem($type, $id, $data) { 
 	$table = strtoupper($type)."S";
 	$idfield = $type == 'document' ? 'DOCID' : strtoupper($type)."_ID";
-	if ($type == 'collection') { 
+	if ($type == 'collection' && isset($data['_featured_docs']) && isset($data['_subcollections']) ) { 
 		$featuredDocs = $data['_featured_docs'];
 		$subcollections = $data['_subcollections'];
 		unset($data['_featured_docs']);
@@ -207,7 +224,7 @@ function saveItem($type, $id, $data) {
 		$query = "update $table set ".arrayToUpdateString($data)." where $idfield = ".dbEscape($id);
 		dbwrite($query);
 	}
-	if ($type == 'collection') { 
+	if ($type == 'collection' && isset($data['_featured_docs']) && isset($data['_subcollections'])) { 
 		updateFeatured($id, $featuredDocs);
 		updateSubcollections($id, $subcollections);
 	}
@@ -439,10 +456,12 @@ function checkLogin() {
 }
 		
 function updateThumbnail($doc_id) {
+	global $production;
 	$doc_id = dbEscape($doc_id);
 	$doc = fetchRow("select * from DOCUMENTS where docid = $doc_id", true);
 	$tmpfile = "tmp/$doc_id";
 	$status = 'Failed';
+	$image_file = "";
 	if ($doc['URL']) {
 		$url = $doc['URL'];
 		if (stristr($url, 'vimeo')) { 
@@ -450,11 +469,11 @@ function updateThumbnail($doc_id) {
 		} else {
 			$ext = strtolower(pathinfo($url, PATHINFO_EXTENSION));
 		}
-		$image_file = "";
 		$icon = "";
 		$filename = "";
-		$url = preg_replace("|^http:\/\/[^\.]*\.?freedomarchives.org\/|",  '/home/claude//public_html/', $url);
-		//$url = str_replace("http://freedomarchives.org/", '/home/claude//public_html/', $url);
+		if ($production) { 
+			$url = preg_replace("|^http:\/\/[^\.]*\.?freedomarchives.org\/|",  '/home/claude/public_html/', $url);
+		}
 		if($ext == 'pdf' || $ext == 'video' || $ext == 'jpg' || $ext == 'jpeg') { 
 			if ($ext == 'pdf') { 
 				$icon = "../images/fileicons/pdf.png";
@@ -478,10 +497,10 @@ function updateThumbnail($doc_id) {
 				if ($image_file == 'timeout') { 
 					$status = 'Thumbnail creation timed out. Bad Document?';	
 				}
-				if (file_exists("../$image_file")) { 
+				if (file_exists("$image_file")) { 
 					$status = 'Success';
 				}
-				//FIXME if(file_exists($tmpfile)) { unlink($tmpfile); }
+				if(file_exists($tmpfile)) { unlink($tmpfile); }
 			} else { $status = "bad url for doc #$doc_id: $url"; }
 		} else if ($ext == 'htm' || $ext == 'html') { 
 			$image_file = "images/thumbnails/HTM.jpg";
@@ -496,16 +515,18 @@ function updateThumbnail($doc_id) {
 	} else { 
 		$status = 'Missing URL';
 	}
-	return array('status'=>$status, 'name'=>$doc['TITLE']);
+	return array('status'=>$status, 'image'=>$image_file);
 }
 
-function createThumbnail($image, $icon, $doc_id) { 
+function createThumbnail($image, $icon, $output_name) { 
+	global $production;
 	$thumbnail_path="images/thumbnails/";
 
 	$large_size = 250;
 	$small_size = 75;
 	$border = "";
 	$timeout = 10;
+	$convert_path = $production ? "/usr/local/bin/convert" : "convert";
 
 	if ($image && file_exists($image)) { 
 		#$orig_image = $image;
@@ -519,16 +540,15 @@ function createThumbnail($image, $icon, $doc_id) {
 			$small_size -= 2;
 		}
 
-		$large_file = "$thumbnail_path/$doc_id"."_large.jpg";
-		$small_file = "$thumbnail_path/$doc_id.jpg";
+		$large_file = "$thumbnail_path/$output_name"."_large.jpg";
+		$small_file = "$thumbnail_path/$output_name.jpg";
 		if (file_exists("../$large_file")) { unlink("../$large_file"); }
 		if (file_exists("../$small_file")) { unlink("../$small_file"); }
 
 		$icon_image = $icon ? "-background transparent $icon -gravity SouthEast -geometry 70x+15+15 -composite " : "";
 		$small_icon_image = $icon ? "-background transparent $icon -gravity SouthEast -geometry 23x+5+5 -composite " : "";
-		$large_cmd = "/usr/local/bin/convert $image"."[0] -trim +repage -background \"#fff\" -flatten -thumbnail '$large_size"."x$large_size>' -background \"#333\" -gravity center -extent $large_size"."x$large_size $icon_image $border ../$large_file 2>&1";
-		$small_cmd = "/usr/local/bin/convert $image"."[0] -trim +repage -background \"#fff\" -flatten -thumbnail '$small_size"."x' -background \"#333\" -gravity center -extent $small_size"."x $small_icon_image $border ../$small_file 2>&1";
-
+		$large_cmd = "$convert_path $image"."[0] -trim +repage -background \"#fff\" -flatten -thumbnail '$large_size"."x$large_size>' -background \"#333\" -gravity center -extent $large_size"."x$large_size $icon_image $border ../$large_file 2>&1";
+		$small_cmd = "$convert_path $image"."[0] -trim +repage -background \"#fff\" -flatten -thumbnail '$small_size"."x' -background \"#333\" -gravity center -extent $small_size"."x $small_icon_image $border ../$small_file 2>&1";
 		/*
 		exec($large_cmd, $output1);
 		print_r($output1);
@@ -548,7 +568,7 @@ function createThumbnail($image, $icon, $doc_id) {
 			return; 
 		}
 
-		return "$small_file";
+		return "../$small_file";
 	}
 }
 

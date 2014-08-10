@@ -176,45 +176,6 @@ app.controller('siteFeaturedDocs', function($scope, $requests, $messages) {
 	$scope.loadFeaturedDocs();
 });
 
-app.controller('filemakerImport', function($scope, $upload, $messages, $requests) {
-	$scope.src = '';
-	$scope.loaded = 0;
-	$scope.file = '';
-	$scope.data = '';
-	$scope.badFile = 0;
-	$scope.success_count = 0;
-	$scope.processing = 0;
-
-	$scope.uploadFile = function() {
-		$scope.processing = 1;
-		$requests.write('filemakerImport', $scope.data).then(function(results) { 
-			$scope.processing = 0;
-			$scope.success_count= results.count;
-			//$messages.addMessage(results);
-		});
-	}
-
-	$scope.onFileSelect = function($files) {
-		$scope.badFile = 0;
-		$scope.success_count = 0;
-		$scope.processing = 0;
-		$scope.loaded = 0;
-
-		$scope.file = $files[0];
-		if ($scope.file.type != 'text/xml') { 
-			$scope.badFile = 1;
-		} else { 
-			var fileReader = new FileReader();
-			fileReader.readAsBinaryString($scope.file);
-			fileReader.onload = function(e) {
-				$scope.data = e.target.result;	
-				$scope.loaded = 1;
-				$scope.$apply();
-			}
-		}
-	}
-});
-
 app.controller('adminIndex', function($scope) {
 	console.log('adminIndex')
 });
@@ -266,12 +227,19 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 						$scope.total = results.length;
 				
 						var updateThumbnail = function() { 
-							var docid = results.shift();
-							if (docid) { 
-								var request = $requests.fetch('updateThumbnail', {id:docid}).then(function(result) { 
+							var doc = results.shift();
+							doc.status = 'Processing';
+							doc.statusCode = 0;
+							$scope.thumbnails.push(doc);
+							if (doc.docid) { 
+								var request = $requests.fetch('updateThumbnail', {id:doc.docid}).then(function(result) { 
 									$scope.complete++;	
+									angular.extend(doc, result);
+									doc.statusCode = doc.status == 'Success' ? 2 : 3;
+									//doc.status = result.status;
+									//doc.image = result.image;
 									if (result.status == 'Success') { $scope.success++; } else { $scope.failed++; }
-									$scope.thumbnails.push(result);
+									//$scope.thumbnails.push(result);
 									updateThumbnail();
 								});
 							} else { 
@@ -356,13 +324,14 @@ app.service('$requests', function($http, $messages, $upload) {
 	}
 });
 
-app.service('$data', function($requests, $rootScope) {
+app.service('$data', function($requests, $rootScope, $messages) {
 	var $data = this;
 	$data.collections = {};
 	$data.documents = {};
 	$data.users = {};
 	
 	$data.updateData = function() {
+		$messages.clearMessages();
 		return $requests.fetch('fetch_data').then(function(results) {
 			$data.collections = results.collections;
 			$data.users = results.users;

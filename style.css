@@ -46,10 +46,31 @@
 	padding-left: 25px; 
 }
 
+.image-input img { 
+	vertical-align: top;
+}
+
+.drag-target {
+	border: 3px dashed #999;
+	padding: 15px;
+	width: 130px;
+	display: inline-block;
+	margin: 0px 15px;
+	vertical-align: top;
+}
+
+.bad-file {
+	padding: 15px;
+	width: 100px;
+	display: inline-block;
+	margin: 0px 15px;
+	vertical-align: top;
+}
+
 .spin{
-	-webkit-transform-origin: 50% 58%;
-	transform-origin:50% 58%;
-	-ms-transform-origin:50% 58%; /* IE 9 */
+	-webkit-transform-origin: 50% 50%;
+	transform-origin:50% 50%;
+	-ms-transform-origin:50% 50%; /* IE 9 */
 	-webkit-animation: spin 1.5s infinite linear;
 	-moz-animation: spin 1.5s infinite linear;
 	-o-animation: spin 1.5s infinite linear;

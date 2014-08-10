@@ -26,7 +26,7 @@
 
 <script type="text/ng-template" id="logout.html">
 	<div>
-		[ {{auth.username}} ] <a href='' ng-click='logout()'>Log out</a>
+		{{auth.username}} <a href='' ng-click='logout()'>Log out</a>
 	</div>
 </script>
 
@@ -69,7 +69,7 @@
 			</a>
 		</div>
 		<div class='panel-footer text-center'>
-			<pagination items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' page="page"></pagination>
+			<pagination items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination>
 		</div>
 </script>
 
@@ -119,7 +119,7 @@
 	<div header title='Collections > {{collection.COLLECTION_NAME || (id == 0 ? "Top-level collection" : "New Collection")}}' extra-header="extra_header" buttons='buttons'></div>
 	<div class='content-body'>
 		<tabset>
-			<tab active="'true'" ng-if="id != 0" heading="Edit Collection">
+			<tab ng-if="id != 0" heading="Edit Collection">
 				<form class="form-horizontal">
 					<div form-group model='collection.COLLECTION_NAME' label='Collection Name'></div>
 					<div form-group model='collection.CALL_NO' label='Call Number'></div>
@@ -134,14 +134,13 @@
 					<div form-group model='collection.DATE_RANGE' label='Date Range'></div>
 					<div form-group model='collection.SUBJECTS' label='Subjects'></div>
 					<div form-group model='collection.INTERNAL_NOTES' label='Internal Notes' input-type='textarea'></div>
-					<div form-group model='collection.THUMBNAIL' label='Thumbnail' input-type='image'></div>
-					<!--<div form-group model='collection.DISPLAY_ORDER' label='Display Order'></div>-->
+					<div form-group model='collection.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'collection', id:id}"></div>
 				</form>
 			</tab>
 			<tab ng-if="id != 0" heading='Featured Docs'>
 				<div featured-docs documents='collection._featured_docs' limit-collection-id='{{collection.COLLECTION_ID}}'/>
 			</tab>
-			<tab heading='Subcollections'>
+			<tab ng-if="1" heading='Subcollections'>
 				<div class='row'>
 					<div class='col-xs-6'>
 						<h3>Edit Subcollections <small>Drag to reorder</small></h3>
@@ -228,7 +227,7 @@
 		</div>
 		<div ng-switch-when='updateThumbnails'>
 			<p>This will update the thumbnail images for documents. By default, it only will update documents that have urls but no thumbnail image yet. Checking the 'Force refresh' box will update all document thumbnails (this can take a long time).</p>
-			<progressbar ng-show='complete != 0 && complete != total' class='progress-striped active' max="100" value="complete*(100/total)">
+			<progressbar ng-show='total != 0 && complete != total' class='progress-striped active' max="100" value="complete*(100/total)">
 				<span style="color:white; white-space:nowrap;">{{complete}} / {{total}}</span>
 			</progressbar>
 			<p ng-show='complete == total && complete != 0' class='alert alert-success'>{{success}} thumbnails updated successfully. {{failed}} thumbnails failed.</p>
@@ -252,11 +251,12 @@
 
 				<button class='btn btn-default btn-large' ng-click='updateThumbnails()'>Update Thumbnails</button>
 			</form>
-			<div class='col-xs-6' style='max-height: 400px; overflow: auto;'>
-				<h3>Thumbnails Updated</h3>
+			<div ng-show='thumbnails.length' class='col-xs-6' style='max-height: 400px; overflow: auto;'>
 				<div class='list-group'>
-					<span ng-class="{'list-group-item-success': item.status == 'Success', 'list-group-item-danger': item.status != 'Success'}" class='list-group-item' ng-repeat='item in thumbnails'>
-						<b>{{item.name}}</b>: {{item.status}}
+					<span ng-class="{'list-group-item-success': item.status == 'Success', 'list-group-item-info':  item.status == 'Processing', 'list-group-item-danger': item.statusCode == 3}" class='list-group-item' ng-repeat='item in thumbnails'>
+						<span class='glyphicon' ng-class="{'glyphicon-ok': item.status == 'Success', 'glyphicon-refresh spin': item.status=='Processing', 'glyphicon-remove': item.statusCode == 3}"></span>
+						<b>{{item.title}}</b>: {{item.status}}
+						<img class='pull-right' style='height: 25px' ng-show='item.image' src='{{item.image}}' />
 					</span>
 				</div>
 			</div>
@@ -299,12 +299,35 @@
 	</ol>
 </script>
 
+<script type="text/ng-template" id="fileUpload.html">
+	<p ng-show="itemId == 'new'" class='alert alert-warning'>Please save {{type}} before adding a thumbnail</p>
+	<div ng-show="itemId !='new'">
+		<img ng-show="! image_URI && currentUrl" width='75px' ng-src='../{{currentUrl}}'/>
+		<div ng-show="image_URI" style='display: inline-block'>
+			<img width='75px' ng-src='{{image_URI}}'/>
+			<div class="btn-group">
+				<button class='btn btn-primary' ng-click='uploadFile()'>
+					<span ng-if='processing' class='glyphicon glyphicon-refresh spin'></span> Upload
+				</button>
+				<button class='btn btn-default' ng-click="clearFile()">Undo</button>
+			</div>
+		</div>
+		<p ng-show='bad_file' class='bad-file bg-danger'> {{bad_file}} </p>
+		<span class='drag-target' ng-file-drop="onFileSelect($files)" ng-file-drag-over-class="bg-primary">
+			Drop new thumbnail image here or<br/>
+			<span class="btn btn-default btn-file">
+				Choose file <input type="file" ng-file-select="onFileSelect($files)" />
+			</span>
+		</span>
+	</div>
+</script>
+
 <script type="text/ng-template" id="adminIndex.html">
 	<h1>Admin</h1>
 </script>
 
 <script type="text/ng-template" id="collectionChooser.html">
-	<input id='colchoose' type="text" ng-change='checkBlank(this.value)' ng-model="value" typeahead-on-select='selectCollection()' $typeahead-editable="false" typeahead="collection as collection.label for collection in data.collections | filter:$viewValue | limitTo:8" class="form-control" placeholder="Search Collections"/>
+	<input id='colchoose' type="text" ng-change='checkBlank(this.value)' ng-model="value" typeahead-on-select='selectCollection()' autocomplete="off" typeahead-editable="false" typeahead="collection as collection.label for collection in data.collections | filter:$viewValue | limitTo:8" class="form-control" placeholder="Search Collections"/>
 </script>
 
 <script type="text/ng-template" id="formGroup.html">
@@ -322,7 +345,9 @@
 			<div ng-switch-when='select'>
 				<select ng-model='$parent.model' ng-options='item.id as item.label for item in options | orderBy:"label"'/>
 			</div>
-			<div ng-switch-when='image'><img width='75px' ng-src='../{{$parent.model}}'/></div>
+			<div class='image-input' ng-switch-when='image'>
+				<div file-upload filetype='image' action='thumbnailImport' current-url='$parent.model' item-id='{{options.id}}' type='{{options.type}}'/>
+			</div>
 			<input ng-switch-default='text' type='{{type}}' class='form-control' ng-model='$parent.model' />
 		</div>
 	</div>

@@ -208,13 +208,71 @@ app.directive('messages', function($messages) {
 	return {
 		restrict: 'A',
 		scope: true,
-		template: "<alert class='message' type='message.type' close='close($index)' ng-repeat='message in messageService.messages'><div ng-bind-html='message.message'/></div>",
+		template: "<alert class='message' type='{{message.type}}' close='close($index)' ng-repeat='message in messageService.messages'><div ng-bind-html='message.message'/></div>",
 		link: function(scope, element, attribs) { 
 			scope.messageService = $messages;
 			scope.close = $messages.deleteMessage;
 		}
 	}
 })
+
+app.directive('fileUpload', function($upload, $messages, $requests) {
+	return {
+		restrict: 'A',
+		scope: {
+			filetype: '@',
+			action: '@',
+			currentUrl: '=',
+			itemId: '@',
+			type: '@',
+		},
+		templateUrl: 'fileUpload.html',
+		link: function(scope, element, attribs) {
+			scope.file = '';
+			scope.image_URI = '';
+			scope.bad_file = 0;
+			scope.processing = 0;
+
+			scope.clearFile = function() { 
+				scope.image_URI = '';
+				scope.bad_file = 0;
+				scope.file = '';
+				scope.processing = 0;
+			}
+
+			scope.onFileSelect = function($files) { 
+				scope.clearFile();
+				scope.file = $files[0];
+				console.log(scope.file);
+				if (! scope.file.type || ! scope.file.type.match(/^image\/.*/i)) { 
+					scope.bad_file = 'The file is not an image';
+				} else if (scope.file.size > 8388608) { 
+					scope.bad_file = 'The file is too big';
+				} else {
+					var fileReader = new FileReader();
+					fileReader.readAsDataURL(scope.file);
+					fileReader.onload = function(e) {
+						scope.image_URI = e.target.result;
+						scope.image_data = e.target.result.replace(/^[^;]+;base64,/, '');	
+						console.log(scope);
+						scope.$apply();
+					}
+				}
+			}
+			
+			scope.uploadFile = function() { 
+				scope.processing = 1;
+				$requests.write('uploadFile', {type:scope.type, ext: scope.file.name.split('.').pop(), id:scope.itemId, data:scope.image_data}).then(function(results) { 
+					scope.currentUrl = results;
+					$messages.addMessage("Thumbnail updated");
+					scope.clearFile();
+					//$messages.addMessage(results);
+				})
+			}
+
+		}
+	}
+});
 
 app.directive('fileImport', function($upload, $messages, $requests) {
 	return {
@@ -225,7 +283,6 @@ app.directive('fileImport', function($upload, $messages, $requests) {
 		},
 		templateUrl: 'fileImport.html',
 		link: function(scope, element, attribs) { 
-			scope.src = '';
 			scope.loaded = 0;
 			scope.file = '';
 			scope.data = '';
