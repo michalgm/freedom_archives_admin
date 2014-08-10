@@ -76,6 +76,14 @@ function fetchCol($query) {
 	return $array;
 }
 
+function fetchRows($query) { 
+	$res = dbwrite($query);
+	$array = Array();
+	while($row = $res->fetch_assoc()) {
+		$array[] = $row;
+	}
+	return $array;
+}
 
 //dbLookupArray: performs query and returns associative array
 function dbLookupArray($query, $unsetkey=0) {

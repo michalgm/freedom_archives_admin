@@ -225,6 +225,35 @@
 			<p>This will allow you to save a CSV containing all document records.</p>
 			<button class='btn btn-default btn-large' ng-click='exportCollection()'>Export Collections</button>
 		</div>
+		<div ng-switch-when='findDuplicates'>
+			<p>This tool locates all documents that share the same title, volume number, and description</p>
+			<div class="list-group">
+				<li class='list-group-item' ng-repeat='set in duplicates | slice:offset:limit'>
+					<h3 style='margin-top: 5px;' >{{set['TITLE']}}</h3>
+					<p>Volume: {{set['VOL_NUMBER']}}</p>
+					<p>{{set['DESCRIPTION']}}</p>
+					<div style='overflow: auto'>
+						<table class='table table-condensed table-bordered'>
+							<thead>
+								<th ng-repeat='field in fields'>{{field}}</th>
+							</thead>
+							<tbody>
+								<tr ng-repeat='doc in set.docs'>
+									<td ng-repeat='field in fields'>
+										<a ng-if="field == 'DOCID'" href='#/documents/{{doc.DOCID}}' target='{{doc.DOCID}}'>{{doc.DOCID}}</a>
+										<span ng-if="field != 'DOCID'">{{doc[field]}}</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>	
+					</div>
+				</li>
+			</div>	
+			<div class='panel-footer text-center'>
+				<pagination items-per-page='limit' total-items="count" boundary-links="true" max-size='5' ng-model="offset"></pagination>
+			</div>
+
+		</div>
 		<div ng-switch-when='updateThumbnails'>
 			<p>This will update the thumbnail images for documents. By default, it only will update documents that have urls but no thumbnail image yet. Checking the 'Force refresh' box will update all document thumbnails (this can take a long time).</p>
 			<progressbar ng-show='total != 0 && complete != total' class='progress-striped active' max="100" value="complete*(100/total)">
@@ -256,7 +285,7 @@
 					<span ng-class="{'list-group-item-success': item.status == 'Success', 'list-group-item-info':  item.status == 'Processing', 'list-group-item-danger': item.statusCode == 3}" class='list-group-item' ng-repeat='item in thumbnails'>
 						<span class='glyphicon' ng-class="{'glyphicon-ok': item.status == 'Success', 'glyphicon-refresh spin': item.status=='Processing', 'glyphicon-remove': item.statusCode == 3}"></span>
 						<b>{{item.title}}</b>: {{item.status}}
-						<img class='pull-right' style='height: 25px' ng-show='item.image' src='{{item.image}}' />
+						<img class='pull-right' style='height: 25px' ng-show='item.image' ng-src='{{item.image}}' />
 					</span>
 				</div>
 			</div>

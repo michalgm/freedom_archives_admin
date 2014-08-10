@@ -184,6 +184,39 @@ if ($action) {
 			$data = $sql_dump->output;
 			break;
 		
+
+		case 'findDuplicates':
+			$data = array();
+			$duplicates = fetchRows("
+				SELECT DOCID, a.*
+				FROM `DOCUMENTS` a
+				JOIN (
+					SELECT title, description, vol_number
+					FROM DOCUMENTS
+					WHERE title != ''
+					GROUP BY title, description, vol_number
+					HAVING count( * ) >1
+				)b
+				USING ( title, description, vol_number )
+				ORDER BY title, description, vol_number");
+			foreach($duplicates as $doc) { 
+				$last = end($data);
+				$title = $doc['TITLE'];
+				$desc = $doc['DESCRIPTION'];
+				$vol = $doc['VOL_NUMBER'];
+				foreach( array('TITLE', 'DESCRIPTION', 'VOL_NUMBER', 'CREATOR', 'CONTRIBUTOR', 'DATE_AVAILABLE', 'DATE_MODIFIED', 'SOURCE', 'IDENTIFIER', 'LANGUAGE', 'RELATION', 'COVERAGE', 'RIGHTS', 'AUDIENCE', 'DIGITIZATION_SPECIFICATION', 'PBCORE_CREATOR', 'PBCORE_COVERAGE', 'PBCORE_RIGHTS_SUMMARY', 'PBCORE_EXTENSION', 'URL_TEXT', 'LENGTH') as $field) { 
+					unset($doc[$field]);
+				}
+
+				if (isset($last['docs']) && $last['TITLE'] == $title && $last['DESCRIPTION'] == $desc && $last['VOL_NUMBER'] == $vol) { 
+					$last['docs'][] = $doc;
+					$last['count']++;
+					$data[key($data)] = $last;
+				} else { 
+					$data[] = array('TITLE'=>$title, 'count'=>1, 'DESCRIPTION'=>$desc, 'VOL_NUMBER' => $vol, 'docs'=>array($doc));
+				}
+			}
+			break;
 		default:
 			trigger_error('"'.$request['action'].'" is an invalid method.', E_USER_ERROR);
 			break;

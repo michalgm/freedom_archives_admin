@@ -266,6 +266,18 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 		case 'csvImport':
 			$scope.title = 'CSV Import';
 			break;
+		case 'findDuplicates':
+			$scope.title = 'Find Duplicate Documents';
+			$scope.duplicates = {};
+			$scope.limit = 5;
+			$scope.offset = 0;
+			$scope.count = 0;
+			$requests.fetch('findDuplicates').then(function(results) { 
+				$scope.duplicates = results;
+				$scope.fields = Object.keys($scope.duplicates[0].docs[0]);
+				$scope.count = $scope.duplicates.length+1;
+			});
+			break;
 	}
 });
 
