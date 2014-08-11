@@ -59,7 +59,7 @@
 			<a href='javascript:void(0);' class='list-group-item' ng-click='selectDoc(document)' ng-repeat='document in documents | toArray | orderBy:"label"'>
 				<div class='media'>
 					<span class='pull-left'>
-						<img class="media-object" style='width: 75px' src='../{{document.THUMBNAIL}}'/>
+						<img class="media-object" style='width: 75px' ng-src='../{{document.THUMBNAIL}}'/>
 					</span>
 					<div class='media-body'>
 						<h4 class='list-group-item-heading'>{{document.label  || 'Untitled'| truncate:100}}</h4>
@@ -176,7 +176,7 @@
 					<div class='media'>
 						<button ng-click='removeFeaturedDoc($index)' class='btn btn-default' style='position:absolute; top:15px; right:15px;'><span class="glyphicon glyphicon-remove"></span> Remove</button> 
 						<span class='pull-left'>
-							<img class="media-object" style='width: 75px' src='../{{doc.THUMBNAIL}}'/>
+							<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL}}'/>
 						</span>
 						<div class='media-body'>
 							<p><strong>{{doc.TITLE}}</strong></p>
