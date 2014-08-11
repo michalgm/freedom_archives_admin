@@ -367,9 +367,11 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 	$rootScope.username = ''
 	AuthenticationService.username = '';
 	AuthenticationService.badLogin = 0;
+	AuthenticationService.error = 0;
 
 	AuthenticationService.login = function(user, password) { 
 		AuthenticationService.badLogin = 0;
+		AuthenticationService.error = 0;
 		return $requests.write('login', {user:user, password:password}).then(function(result) { 
 			if(setLogin(result)) { 
 				if ($rootScope.username) { 
@@ -380,8 +382,12 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 				}
 				return $rootScope.username || false;
 			}
-		}, function() { 
-			AuthenticationService.badLogin = 1;
+		}, function(error) { 
+			if (error && error.data && error.data.statusString && error.data.statusString == 'Bad Login') { 
+				AuthenticationService.badLogin = 1;
+			} else { 
+				AuthenticationService.error = error.data.statusString;
+			}
 			$rootScope.username = AuthenticationService.username = '';
 			$data.clearData();
 		});
