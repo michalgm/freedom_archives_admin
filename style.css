@@ -6,7 +6,7 @@
 
 #nav, #header { position: fixed }
 
-#nav { height: 100%; overflow:auto; }
+#nav { height: 100%; overflow:auto; z-index: 1000;}
 
 #header { 
 	right: 0px;
