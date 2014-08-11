@@ -201,9 +201,9 @@ if ($action) {
 				ORDER BY title, description, vol_number");
 			foreach($duplicates as $doc) { 
 				$last = end($data);
-				$title = $doc['TITLE'];
-				$desc = $doc['DESCRIPTION'];
-				$vol = $doc['VOL_NUMBER'];
+				$title = trim($doc['TITLE']);
+				$desc = trim($doc['DESCRIPTION']);
+				$vol = trim($doc['VOL_NUMBER']);
 				foreach( array('TITLE', 'DESCRIPTION', 'VOL_NUMBER', 'CREATOR', 'CONTRIBUTOR', 'DATE_AVAILABLE', 'DATE_MODIFIED', 'SOURCE', 'IDENTIFIER', 'LANGUAGE', 'RELATION', 'COVERAGE', 'RIGHTS', 'AUDIENCE', 'DIGITIZATION_SPECIFICATION', 'PBCORE_CREATOR', 'PBCORE_COVERAGE', 'PBCORE_RIGHTS_SUMMARY', 'PBCORE_EXTENSION', 'URL_TEXT', 'LENGTH') as $field) { 
 					unset($doc[$field]);
 				}
