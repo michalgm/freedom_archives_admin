@@ -79,8 +79,8 @@
 	<div class='content-body'>
 		<form class="form-horizontal">
 			<div form-group model='document.TITLE' label='Title'></div>
-			<div form-group model='document.AUTHOR' label='Author'></div>
-			<div form-group model='document.KEYWORDS' label='Keywords'></div>
+			<div form-group model='document._authors' label='Authors' input-type='tagger' options="{type:'author'}"></div>
+			<div form-group model='document._keywords' label='Keywords' input-type='tagger' options="{type:'keyword'}"></div>
 			<div form-group model='document.COLLECTION_ID' label='Collection' input-type='collectionChooser'></div>
 			<div form-group model='document.DATE_CREATED' label='Creation Date'></div>
 			<div form-group model='document.YEAR' label='Year'></div>
@@ -219,6 +219,9 @@
 			<div file-import filetype='CSV' action='csvImport'/>
 		</div>
 		<div ng-switch-when='updateKeywords'>
+			<progressbar ng-show='total != 0 && complete != total' class='progress-striped active' max="100" value="complete*(100/total)">
+				<span style="color:white; white-space:nowrap;">{{complete}} / {{total}}</span>
+			</progressbar>
 			<p>This will scan all documents for keywords, split them on commas, and store them in the keywords table, refreshing the word cloud.</p>
 			<button class='btn btn-default btn-large' ng-click='updateKeywords()'>Update Keywords</button>
 		</div>
@@ -378,8 +381,22 @@
 			<div class='image-input' ng-switch-when='image'>
 				<div file-upload filetype='image' action='thumbnailImport' current-url='$parent.model' item-id='{{options.id}}' type='{{options.type}}'/>
 			</div>
+			<div ng-switch-when='tagger'>
+				<div tagger model='$parent.model' type='{{options.type}}'/>
+			</div>
 			<input ng-switch-default='text' type='{{type}}' class='form-control' ng-model='$parent.model' />
 		</div>
 	</div>
 </script>
 
+<script type="text/ng-template" id="tagger.html">
+	<form class='well well-sm form-inline tagger' ng-submit='addItem()'>
+		<span ng-repeat='item in model'>
+			<span class='label label-default'>
+			<span class='pull-left'>{{item}}</span>
+			<a ng-click='removeItem($index)'><span class='close glyphicon glyphicon-remove'></span></a>
+			</span>   
+		</span> 
+		<input class='form-control' type='text' ng-model='selected' typeahead-on-select='addItem()' autocomplete="off" typeahead-editable='true' typeahead="tag for tag in data[type+'s'] | filter:$viewValue | inArray:model:true | limitTo:5 " placeholder="Add {{type}}"/>
+	</form>
+</script>

@@ -50,6 +50,9 @@ if ($action) {
 			$data['collections'] = array_values(dbLookupArray($query));
 			$query = "select USER_ID as id, USERNAME as label, USER_TYPE from USERS";
 			$data['users'] = dbLookupArray($query);
+			$data['authors'] = fetchCol("select distinct author from AUTHOR_LOOKUP");
+			$data['subjects'] = fetchCol("select distinct subject from SUBJECT_LOOKUP");
+			$data['keywords'] = fetchCol("select distinct keyword from KEYWORD_LOOKUP");
 			break;
 
 		case 'fetchDocuments':
@@ -146,16 +149,16 @@ if ($action) {
 			$data = updateThumbnail($request['id']);
 			break;
 
-		case 'updateKeywords':
-			dbwrite("delete from KEYWORD_LOOKUP");
-			$docs = dbLookupArray("select DOCID, KEYWORDS from DOCUMENTS where KEYWORDS is not null and KEYWORDS != ''");
-			foreach ($docs as $doc) { 
-				$keywords = preg_split("/, ?/", $doc['KEYWORDS']);
-				foreach($keywords as $keyword) { 
-					if (preg_match("/^ *$/", $keyword)) { continue; }
-					dbwrite("insert into KEYWORD_LOOKUP (DOCID, KEYWORD) values($doc[DOCID], '".dbEscape(trim($keyword))."')");
-				}
-			}
+		case 'updateLookups':
+			$doc_id = $request['id'];
+			$lookups = fetchRow("select author, keywords, subject_list from DOCUMENTS where docid = $doc_id", 1);
+			$data = array(
+				'_authors'=>preg_split("/, ?/", $lookups['author']), 
+				'_keywords'=>preg_split("/, ?/", $lookups['keywords']), 
+				'_subjects'=>preg_split("/, ?/", $lookups['subject_list']), 
+			);
+			updateTags($doc_id, $data);
+
 			$data = 'success';
 			break;
 		
@@ -184,6 +187,9 @@ if ($action) {
 			$data = $sql_dump->output;
 			break;
 		
+		case 'getDocIds':
+			$data = fetchCol("select DOCID from DOCUMENTS where author != '' or keywords != '' or subject_list != ''");
+			break;
 
 		case 'findDuplicates':
 			$data = array();
@@ -238,18 +244,34 @@ function fetchItem($type, $id) {
 		$data['_featured_docs'] = array_values(dbLookupArray("select F.DOCID, F.DOC_ORDER, F.DESCRIPTION, D.TITLE, D.THUMBNAIL from FEATURED_DOCS F join DOCUMENTS D using(DOCID) where F.COLLECTION_ID = $id order by F.DOC_ORDER"));
 		$data['_subcollections'] = array_values(dbLookupArray("select COLLECTION_ID, PARENT_ID, COLLECTION_NAME, IS_DELETED from COLLECTIONS where PARENT_ID = $id order by DISPLAY_ORDER, COLLECTION_NAME"));
 	}
+	if ($type == 'document') { 
+		$data['_authors'] = fetchCol("select author from AUTHOR_LOOKUP where DOCID = $id order by `order`");
+		$data['_keywords'] = fetchCol("select keyword from KEYWORD_LOOKUP where DOCID = $id order by `order`");
+		$data['_subjects'] = fetchCol("select subject from SUBJECT_LOOKUP where DOCID = $id order by `order`");
+	}
 	return $data;
 }
 
 function saveItem($type, $id, $data) { 
 	$table = strtoupper($type)."S";
 	$idfield = $type == 'document' ? 'DOCID' : strtoupper($type)."_ID";
+	$tags = array();
 	if ($type == 'collection' && isset($data['_featured_docs']) && isset($data['_subcollections']) ) { 
 		$featuredDocs = $data['_featured_docs'];
 		$subcollections = $data['_subcollections'];
 		unset($data['_featured_docs']);
 		unset($data['_subcollections']);
+	} elseif ($type == 'document') { 
+		$tags = array(
+			'_authors'=>$data['_authors'],
+			'_keywords'=>$data['_keywords'],
+			'_subjects'=>$data['_subjects']
+		);
+		unset($data['_authors']);
+		unset($data['_keywords']);
+		unset($data['_subjects']);
 	}
+
 	if ($id === 'new') { 
 		$query = "insert into $table set ".arrayToUpdateString($data);
 		$id = dbInsert($query);
@@ -261,7 +283,31 @@ function saveItem($type, $id, $data) {
 		updateFeatured($id, $featuredDocs);
 		updateSubcollections($id, $subcollections);
 	}
+	if ($type == 'document') { 
+		updateTags($id, $tags);
+	}
 	return fetchItem($type, $id);
+}
+
+function updateTags($id, $data) { 
+	foreach(array('keyword', 'author', 'subject') as $type) { 
+		$table = strtoupper($type)."_LOOKUP";
+		$field = $type == 'author' ? 'author' : ($type == 'keyword' ? 'keywords' : 'subject_list');
+
+		if (isset($data["_$type"."s"])) { 
+			dbwrite("delete from $table where DOCID = $id");
+			$trimmed_list = array();
+			$x = 0;
+			foreach($data["_$type"."s"] as $item) { 
+				$trimmed = trim($item);
+				if (preg_match("/^ *$/", $trimmed)) { continue; }
+				dbwrite("insert into $table (DOCID, $type, `order`) values($id, '".dbEscape($trimmed)."', $x) on duplicate key update `order` = $x");
+				$trimmed_list[] = $trimmed;
+				$x++;
+			}
+			dbwrite("update DOCUMENTS set $field = '".dbEscape(implode(", ", $trimmed_list))."' where docid = $id");
+		}	
+	}
 }
 
 function updateFeatured($id, $data) { 
@@ -487,7 +533,7 @@ function checkLogin() {
 		setResponse(401, 'Not Authorized');
 	}
 }
-		
+
 function updateThumbnail($doc_id) {
 	global $production;
 	$doc_id = dbEscape($doc_id);

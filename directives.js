@@ -4,7 +4,6 @@ app.directive('login', function($requests, AuthenticationService) {
 		templateUrl:'login.html',
 		scope: true,
 		link: function(scope, element, attribs) { 
-			console.log('login');
 			scope.auth = AuthenticationService;
 			scope.login  = { 
 				user: '', password: ''
@@ -141,7 +140,6 @@ app.directive('documentSearch', function($requests) {
 			scope.collection = '';
 			scope.selected = null;
 			
-			console.log(scope.limitCollectionId);
 			scope.fetchDocuments = function() { 
 				if (scope.limitCollectionId) { 
 					scope.collection = scope.limitCollectionId;
@@ -243,7 +241,6 @@ app.directive('fileUpload', function($upload, $messages, $requests) {
 			scope.onFileSelect = function($files) { 
 				scope.clearFile();
 				scope.file = $files[0];
-				console.log(scope.file);
 				if (! scope.file.type || ! scope.file.type.match(/^image\/.*/i)) { 
 					scope.bad_file = 'The file is not an image';
 				} else if (scope.file.size > 8388608) { 
@@ -254,7 +251,6 @@ app.directive('fileUpload', function($upload, $messages, $requests) {
 					fileReader.onload = function(e) {
 						scope.image_URI = e.target.result;
 						scope.image_data = e.target.result.replace(/^[^;]+;base64,/, '');	
-						console.log(scope);
 						scope.$apply();
 					}
 				}
@@ -273,6 +269,29 @@ app.directive('fileUpload', function($upload, $messages, $requests) {
 		}
 	}
 });
+
+app.directive('tagger', function($requests, $data) {
+	return {
+		restrict: 'A',
+		scope: {
+			model: '=',
+			type: '@',
+		},
+		templateUrl: 'tagger.html',
+		link: function(scope, element, attribs) { 
+			scope.data = $data;
+			scope.selected = '';
+
+			scope.removeItem = function(i) { 
+				scope.model.splice(i, 1);
+			}
+			scope.addItem = function() {
+				scope.model.push(scope.selected);
+				scope.selected = '';
+			}
+		}
+	}
+});;
 
 app.directive('fileImport', function($upload, $messages, $requests) {
 	return {
@@ -306,7 +325,6 @@ app.directive('fileImport', function($upload, $messages, $requests) {
 				scope.loaded = 0;
 
 				scope.file = $files[0];
-				console.log(scope.file);
 				if (scope.file.type && scope.file.type != 'text/'+scope.filetype.toLowerCase()) { 
 					scope.badFile = 1;
 				} else { 
@@ -314,7 +332,6 @@ app.directive('fileImport', function($upload, $messages, $requests) {
 					fileReader.readAsDataURL(scope.file);
 					fileReader.onload = function(e) {
 						scope.data = e.target.result.replace(/^[^;]+;base64,/, '');	
-						console.log(scope.data);
 						scope.loaded = 1;
 						scope.$apply();
 					}

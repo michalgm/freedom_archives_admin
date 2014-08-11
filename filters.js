@@ -46,3 +46,16 @@ app.filter('truncate', function () {
 	};
 })
 
+.filter('inArray', function($filter){
+	return function(list, arrayFilter, negative){
+		if(arrayFilter){
+			return $filter("filter")(list, function(listItem){
+				if (negative) { 
+					return arrayFilter.indexOf(listItem) === -1;
+				} else { 	
+					return arrayFilter.indexOf(listItem) != -1;
+				}
+			});
+		}
+	};
+});

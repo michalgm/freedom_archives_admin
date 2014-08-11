@@ -167,7 +167,6 @@ app.controller('siteFeaturedDocs', function($scope, $requests, $messages) {
 	$scope.saveFeaturedDocs = function() {
 		return $requests.write('saveCollection', {COLLECTION_NAME:'', _featured_docs:$scope.featuredDocs}, 0).then(function(results) {  
 			$messages.addMessage("Featured Docs successfully saved");
-			console.log(results);
 			$scope.featuredDocs = results._featured_docs;
 		});
 	}
@@ -177,7 +176,6 @@ app.controller('siteFeaturedDocs', function($scope, $requests, $messages) {
 });
 
 app.controller('adminIndex', function($scope) {
-	console.log('adminIndex')
 });
 
 app.controller('siteUtils', function($scope, $routeParams, $requests, $messages, $q) {
@@ -223,7 +221,6 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 
 				$requests.fetch('getThumbnailDocs', {collection:$scope.options.collection, force:$scope.options.force}).then(function(results) { 
 					if(results.length) { 
-						var requests = [];
 						$scope.total = results.length;
 				
 						var updateThumbnail = function() { 
@@ -258,8 +255,26 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			$scope.title = 'Update Keywords';
 			$scope.updateKeywords  = function() { 
 				$messages.clearMessages();
-				$requests.fetch('updateKeywords').then(function(results) {
-					$messages.addMessage('Keywords updated', 'success');
+				$scope.complete = 0;
+				$scope.total = 0;
+
+				$requests.fetch('getDocIds').then(function(results) {
+					if (results.length) { 
+						$scope.total = results.length;
+
+						var updateLookups = function() {
+							var id = results.shift();
+							if (id) {
+								var request = $requests.fetch('updateLookups', {id:id}).then(function(result) { 
+									$scope.complete++;
+									updateLookups();
+								});
+							} else { 
+								$messages.addMessage('Keywords updated', 'success');
+							}
+						}
+						updateLookups();
+					}
 				});
 			};
 			break;
@@ -341,12 +356,18 @@ app.service('$data', function($requests, $rootScope, $messages) {
 	$data.collections = {};
 	$data.documents = {};
 	$data.users = {};
-	
+	$data.keywords = {};
+	$data.authors = {};
+	$data.subjects = {};
+
 	$data.updateData = function() {
 		$messages.clearMessages();
 		return $requests.fetch('fetch_data').then(function(results) {
 			$data.collections = results.collections;
 			$data.users = results.users;
+			$data.keywords = results.keywords;
+			$data.authors = results.authors;
+			$data.subjects = results.subjects;
 		});
 	}
 
@@ -354,6 +375,9 @@ app.service('$data', function($requests, $rootScope, $messages) {
 		$data.collections = {};
 		$data.documents = {};
 		$data.users = {};
+		$data.keywords = {};
+		$data.authors = {};
+		$data.subjects = {};
 	}	
 		
 	//$data.updateData();	
@@ -402,7 +426,6 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 
 	AuthenticationService.checkLogin = function() { 
 		return $requests.fetch('check_login').then(function(results) { 
-			console.log(results);
 			if (setLogin(results) ) { 
 				if ($rootScope.username) { 
 					$data.updateData();
@@ -430,7 +453,6 @@ app.service('$messages', function($rootScope) {
 	service.addMessage = function(message, type) {
 		var type = type || 'info';
 		service.messages.push({message: message, type: type});
-		console.log(service.messages);
 	};
 
 	service.error = function(message) { 
@@ -447,7 +469,6 @@ app.service('$messages', function($rootScope) {
 	}
 
 	service.clearMessages = function() { 
-		console.log('clear!');
 		service.messages = [];
 	}
 	
