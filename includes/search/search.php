@@ -35,7 +35,7 @@
 		public function GetSearchQueryString()
 		{
 			$searchQueryWordsArray = $this->GetSearchQueryArray();
-			
+			print_r($searchQueryWordsArray);
 			return implode(" ", $searchQueryWordsArray);
 		}
 		

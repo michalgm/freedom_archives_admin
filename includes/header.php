@@ -15,16 +15,18 @@ if (strstr(basename($_SERVER['PHP_SELF']), 'index')) {
 
 		<link rel="shortcut icon" type="image/gif" href="images/favicon.gif" />
 		<link rel="stylesheet" href="font/stylesheet.css" type="text/css" media="all" />
-		<script type="text/javascript" src="js/jQuery/js/jquery.js"></script>
-		<script type="text/javascript" src="js/jQuery/js/jquery-ui.js"></script>
-		<script type="text/javascript" src="js/jplayer/jquery.jplayer.min.js"></script>
-		<script type="text/javascript" src="js/jquery-modal/jquery.modal.min.js"></script>
-		<script type="text/javascript" src="js/jquery-expander/jquery.expander.min.js"></script>
+		<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script type="text/javascript" src="bower_components/jquery-ui/jquery-ui.min.js"></script>
+		<script type="text/javascript" src="bower_components/jplayer/jquery.jplayer/jquery.jplayer.js"></script>
+		<script type="text/javascript" src="bower_components/jquery-modal/jquery.modal.min.js"></script>
+		<script type="text/javascript" src="bower_components/jquery-expander/jquery.expander.min.js"></script>
+		<script type="text/javascript" src="bower_components/flexslider/jquery.flexslider-min.js"></script>
 		<script type="text/javascript" src="freedomarc.js"></script>
-		<link rel="stylesheet" href="js/jQuery/css/smoothness/jquery-ui-1.9.2.custom.min.css" type="text/css" media="all" />
-		<link type="text/css" href="js/jplayer/skin/midnight.black/jplayer.midnight.black.css" rel="stylesheet" />
-		<link rel="stylesheet" href="js/jquery-modal/jquery.modal.css" type="text/css" media="all" />
-		<link rel="stylesheet" href="includes/tag-cloud/css/tagcloud.css" type="text/css" media="all" />
+		<link type="text/css" rel="stylesheet" href="bower_components/jquery-ui/themes/smoothness/jquery-ui.min.css" media="all" />
+		<link type="text/css" rel="stylesheet" href="bower_components/jplayer/skin/midnight.black/jplayer.midnight.black.css"/>
+		<link type="text/css" rel="stylesheet" href="bower_components/jquery-modal/jquery.modal.css"/>
+		<link type="text/css" rel="stylesheet" href="bower_components/flexslider/flexslider.css"/>
+		<link type="text/css" rel="stylesheet" href="includes/tag-cloud/css/tagcloud.css"/>
 		<link media="all" rel="stylesheet" type="text/css" href="css/style.css" />
 		<script type="text/javascript">
 			var _gaq = _gaq || [];
