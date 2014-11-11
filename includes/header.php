@@ -25,7 +25,6 @@ if (strstr(basename($_SERVER['PHP_SELF']), 'index')) {
 		<link rel="stylesheet" href="js/jQuery/css/smoothness/jquery-ui-1.9.2.custom.min.css" type="text/css" media="all" />
 		<link type="text/css" href="js/jplayer/skin/midnight.black/jplayer.midnight.black.css" rel="stylesheet" />
 		<link rel="stylesheet" href="js/jquery-modal/jquery.modal.css" type="text/css" media="all" />
-		<link rel="stylesheet" href="js/FlexSlider/flexslider.css" type="text/css" media="all" />
 		<link rel="stylesheet" href="includes/tag-cloud/css/tagcloud.css" type="text/css" media="all" />
 		<link media="all" rel="stylesheet" type="text/css" href="css/style.css" />
 		<script type="text/javascript">
