@@ -15,6 +15,29 @@ if (isset($_SERVER['CONTENT_TYPE']) && strstr($_SERVER['CONTENT_TYPE'],'applicat
 }
 $action = isset($request['action']) && $request['action'] ? $request['action'] : null;
 
+$action_access = array(
+	'login'=>'all',
+	'logout'=>'all',
+	'fetch_data'=>'all',
+	'fetchDocuments'=>'all',
+	'deleteDocument'=>'administrator',
+	'fetchDocument'=>'all',
+	'saveDocument'=>'administrator',
+	'fetchCollection'=>'all',
+	'saveCollection'=>'administrator',
+	'exportCollection'=>'all',
+	'csvImport'=>'admin',
+	'filemakerImport'=>'administrator',
+	'getThumbnailDocs'=>'all', 
+	'updateThumbnail'=>'administrator',
+	'updateLookups'=>'administrator',
+	'uploadFile'=>'administrator',
+	'backupDatabase'=>'all',
+	'getDocIds'=>'all',
+	'findDuplicates'=>'all',
+);
+
+
 checkLogin();
 
 include('dbaccess.php');
@@ -22,6 +45,14 @@ include('dbaccess.php');
 if ($action) { 
 	$data = array();
 	$query = null;
+	if (isset($action_access[$action])) { 
+		if($action_access[$action] != 'all' && $action_access[$action] != $_SESSION['user_type']) { 
+			trigger_error('You do not have permissions to access method "'.$request['action'].'".', E_USER_ERROR);
+		}
+	} else { 
+		trigger_error('"'.$request['action'].'" is an invalid method.', E_USER_ERROR);
+	};
+
 	switch ($action) {
 		case 'login':
 			$data = $request['data'];
@@ -29,12 +60,13 @@ if ($action) {
 			$password = isset($data['password']) ? dbEscape($data['password']) : '';
 			$user = '';
 			if ($username && $password) { 
-				$login_query = "select USER_ID, USERNAME from USERS where USERNAME = '$username' and PASSWORD = '$password' limit 1";
+				$login_query = "select USER_ID, USERNAME, USER_TYPE from USERS where USERNAME = '$username' and PASSWORD = '$password' limit 1";
 				$user = fetchRow($login_query);
 			}
 			if ($user) { 
 				$_SESSION['user_id'] = $user[0];
 				$_SESSION['username'] = $user[1];
+				$_SESSION['user_type'] = $user[2];
 				$data = $_SESSION;
 			} else { 
 				setResponse(401, 'Bad Login');
@@ -53,6 +85,7 @@ if ($action) {
 			$data['authors'] = fetchCol("select distinct author from AUTHOR_LOOKUP");
 			$data['subjects'] = fetchCol("select distinct subject from SUBJECT_LOOKUP");
 			$data['keywords'] = fetchCol("select distinct keyword from KEYWORD_LOOKUP");
+			$data['action_access'] = $action_access;
 			break;
 
 		case 'fetchDocuments':
@@ -263,9 +296,9 @@ function saveItem($type, $id, $data) {
 		unset($data['_subcollections']);
 	} elseif ($type == 'document') { 
 		$tags = array(
-			'_authors'=>$data['_authors'],
-			'_keywords'=>$data['_keywords'],
-			'_subjects'=>$data['_subjects']
+			'_authors'=> isset($data['_authors']) ? $data['_authors'] : [],
+			'_keywords'=> isset($data['_keywords']) ? $data['_keywords'] : [],
+			'_subjects'=> isset($data['_subjects']) ? $data['_subjects'] : []
 		);
 		unset($data['_authors']);
 		unset($data['_keywords']);
@@ -524,11 +557,13 @@ function checkLogin() {
 	session_start();
 	$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 	$username = isset($_SESSION['username']) ? $_SESSION['username'] : null;
+	$user_type = isset($_SESSION['user_type']) ? $_SESSION['user_type'] : null;
 	if ($action == 'login' || $action == 'logout') { 
 		$_SESSION['user_id'] = '';
 		$_SESSION['username'] = '';
+		$_SESSION['user_type'] = '';
 	} else if ($action == 'check_login') { 
-		setResponse(1, 'Success', array('user_id'=>$user_id, 'username'=>$username ));
+		setResponse(1, 'Success', array('user_id'=>$user_id, 'username'=>$username, 'user_type'=>$user_type ));
 	} else if (! $username) { 
 		setResponse(401, 'Not Authorized');
 	}

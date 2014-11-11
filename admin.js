@@ -359,6 +359,7 @@ app.service('$data', function($requests, $rootScope, $messages) {
 	$data.keywords = {};
 	$data.authors = {};
 	$data.subjects = {};
+	$data.action_access = {};
 
 	$data.updateData = function() {
 		$messages.clearMessages();
@@ -368,6 +369,7 @@ app.service('$data', function($requests, $rootScope, $messages) {
 			$data.keywords = results.keywords;
 			$data.authors = results.authors;
 			$data.subjects = results.subjects;
+			$data.action_access = results.action_access;
 		});
 	}
 
@@ -378,6 +380,7 @@ app.service('$data', function($requests, $rootScope, $messages) {
 		$data.keywords = {};
 		$data.authors = {};
 		$data.subjects = {};
+		$data.action_access = {};
 	}	
 		
 	//$data.updateData();	
@@ -390,6 +393,7 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 
 	$rootScope.username = ''
 	AuthenticationService.username = '';
+	AuthenticationService.user_type = '';
 	AuthenticationService.badLogin = 0;
 	AuthenticationService.error = 0;
 
@@ -413,6 +417,7 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 				AuthenticationService.error = error.data.statusString;
 			}
 			$rootScope.username = AuthenticationService.username = '';
+			AuthenticationService.user_type = '';
 			$data.clearData();
 		});
 	};
@@ -421,6 +426,7 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 		return $requests.fetch('logout').then(function(result) { 
 			$data.clearData();
 			$rootScope.username = AuthenticationService.username = '';
+			AuthenticationService.user_type = '';
 		});
 	}
 
@@ -440,6 +446,7 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 	var setLogin = function(data) {
 		if (angular.isDefined(data.username)) { 
 			$rootScope.username = AuthenticationService.username = data.username;
+			AuthenticationService.user_type = data.user_type;
 			return true;
 		}
 	}

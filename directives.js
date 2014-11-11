@@ -34,6 +34,24 @@ app.directive('logout', function(AuthenticationService) {
 	}
 });
 
+app.directive('navLink', function($data, AuthenticationService) {
+	return {
+		restrict: 'A',
+		scope: {
+			action:'@',
+			restricted:'@?',
+		},
+		transclude:true,
+		replace:true,
+		template:"<li ng-class='{disabled:!allowed}'><a ng-href='{{ allowed ? \"#/\"+action : \"\"}}' ng-disabled='action_access[action]' ng-transclude></a></li>",
+		link: function(scope, element, attribs) { 
+			scope.allowed = ! scope.restricted || AuthenticationService.user_type == scope.restricted;
+		}
+	}
+});
+
+
+
 app.directive('header', function($requests, $sce) {
 	return {
 		restrict: 'A',

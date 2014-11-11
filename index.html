@@ -33,32 +33,25 @@
 					<li>
 						<ul class='nav'>
 							<li><div id='sel' collection-select></div></li>
-							<li> <a href='#/collections/new'>New Collection</a> </li>
-							<li> <a href='#/collections/top'>Manage Top-Level Collections</a> </li>
+							<li restricted='administrator' nav-link action='collections/new'>New Collection</li>
+							<li restricted='administrator' nav-link action='collections/top'>Manage Top-Level Collections</li>
 						</ul>
 					</li>
 				</ul>
 				<h4>Documents</h4>
 				<ul class='nav nav-pills nav-stacked'>
-					<li>
-						<a href='#/documents'>Manage Documents</a>
-						<ul class='nav'>
-							<li>
-								<a href='#/documents/new'>New Document</a>
-							</li>
-						</ul>
-					</li>
+					<li nav-link action='documents/'>Manage Documents</li>
+					<li restricted='administrator' nav-link action='documents/new'>New Document</li>
 				</ul>
 				<h4>Site Management</h4>
 				<ul class='nav nav-pills nav-stacked'>
-					<li> <a href='#/site/featuredDocs'>Home Page Featured Docs</a> </li>
-					<li> <a href='#/site/filemakerImport'>Import from Filemaker</a> </li>
-					<li> <a href='#/site/csvImport'>Import from CSV</a> </li>
-					<li> <a href='#/site/backupDatabase'>Backup Database</a> </li>
-					<li> <a href='#/site/updateThumbnails'>Update Thumbnails</a> </li>
-					<li> <a href='#/site/updateKeywords'>Update Keywords</a> </li>
-					<li> <a href='#/site/exportCollections'>Export Collections</a> </li>
-					<li> <a href='#/site/findDuplicates'>Find Duplicate Docs</a> </li>
+					<li restricted='administrator' nav-link action='site/featuredDocs'>Home Page Featured Docs</li>
+					<li restricted='administrator' nav-link action='site/filemakerImport'>Import from Filemaker </li>
+					<li nav-link action='site/backupDatabase'>Backup Database </li>
+					<li restricted='administrator' nav-link action='site/updateThumbnails'>Update Thumbnails </li>
+					<li restricted='administrator' nav-link action='site/updateKeywords'>Update Keywords </li>
+					<li restricted='administrator' nav-link action='site/exportCollections'>Export Collections </li>
+					<li nav-link action='site/findDuplicates'>Find Duplicate Docs </li>
 				</ul>
 			</div>
 			<div messages id='messages'></div>

@@ -397,6 +397,6 @@
 			<a ng-click='removeItem($index)'><span class='close glyphicon glyphicon-remove'></span></a>
 			</span>   
 		</span> 
-		<input class='form-control' type='text' ng-model='selected' typeahead-on-select='addItem()' autocomplete="off" typeahead-editable='true' typeahead="tag for tag in data[type+'s'] | filter:$viewValue | inArray:model:true | limitTo:5 " placeholder="Add {{type}}"/>
+		<input class='form-control' type='text' ng-model='selected' typeahead-on-select='addItem()' autocomplete="off" typeahead-editable='true' typeahead="tag for tag in data[type+'s'] | filter:$viewValue | inArray:model:true | limitTo:10 " placeholder="Add {{type}}"/>
 	</form>
 </script>
