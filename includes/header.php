@@ -20,7 +20,6 @@ if (strstr(basename($_SERVER['PHP_SELF']), 'index')) {
 		<script type="text/javascript" src="js/jplayer/jquery.jplayer.min.js"></script>
 		<script type="text/javascript" src="js/jquery-modal/jquery.modal.min.js"></script>
 		<script type="text/javascript" src="js/jquery-expander/jquery.expander.min.js"></script>
-		<script type="text/javascript" src="js/FlexSlider/jquery.flexslider-min.js"></script>
 		<script type="text/javascript" src="freedomarc.js"></script>
 		<link rel="stylesheet" href="js/jQuery/css/smoothness/jquery-ui-1.9.2.custom.min.css" type="text/css" media="all" />
 		<link type="text/css" href="js/jplayer/skin/midnight.black/jplayer.midnight.black.css" rel="stylesheet" />
