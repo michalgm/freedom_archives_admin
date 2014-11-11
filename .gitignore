@@ -2,3 +2,5 @@ admin/config.local.php
 admin/error_log
 admin/tmp/*
 *.swp
+error_log
+images/thumbnails

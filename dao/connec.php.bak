@@ -1,0 +1,10 @@
+<?php
+$myuser='banglafu_gazi';
+$mypass='Go4abedin%';
+$mydb = 'banglafu_FA';
+$mydbh = mysql_connect ("localhost", $myuser, $mypass)
+  or die ("<h1>Could not connect to database: please try again later</h1>");
+mysql_select_db ($mydb,$mydbh)
+     or die ("<h1>Could not select proper database: please try again later</h1>");
+echo "<!--h1>got connection</h1>\n-->";
+ ?>
