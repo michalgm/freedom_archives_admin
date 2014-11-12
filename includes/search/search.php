@@ -35,7 +35,7 @@
 		public function GetSearchQueryString()
 		{
 			$searchQueryWordsArray = $this->GetSearchQueryArray();
-			print_r($searchQueryWordsArray);
+
 			return implode(" ", $searchQueryWordsArray);
 		}
 		
@@ -174,7 +174,7 @@
 						$word = $wordStemmerObj->Stem($word) . self::SEARCH_WORD_BEGINNING_WITH_OPERATOR;
 								 
 					// add the word to our keywords list
-					$keywordsArray[] = $word;				
+					$keywordsArray[] = str_replace('\"', '"', dbEscape($word));			
 					$keywordCount++;
 				}
 			}

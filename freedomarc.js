@@ -1,9 +1,9 @@
 $(window).load(function() {
 	 $("#jquery_jplayer_1").jPlayer({
 		ready: function (event) {
-			$(this).jPlayer("setMedia", {
-				mp3: "http://www.freedomarchives.org/prisons/Attica_FA01.mp3"
-			});
+			//$(this).jPlayer("setMedia", {
+			//	mp3: "http://www.freedomarchives.org/prisons/Attica_FA01.mp3"
+			//});
 		},
         swfPath: "js/jplayer/",
         supplied: "mp3",
