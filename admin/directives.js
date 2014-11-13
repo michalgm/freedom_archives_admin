@@ -63,6 +63,11 @@ app.directive('header', function($requests, $sce) {
 		},
 		link: function(scope,element, atrribs) {
 			scope.safeExtraHeader = $sce.trustAsHtml(scope.extraHeader);
+			scope.doAction = function(action, index) {
+				b = $(element.find('.btn')[index]);
+				b.prepend("<span class='processing-spinner glyphicon glyphicon-refresh spin'></span> ");
+				action();
+			}
 		}
 	}
 });
@@ -367,4 +372,25 @@ app.directive('fileImport', function($upload, $messages, $requests) {
 	}	
 });
 
+app.directive('resize', ['$window', function($window) {
+  return {
+    link: function(scope) {
+      angular.element($window).on('resize', function(e) {
+        scope.$broadcast('windowResize');
+      });
+    }
+  };
+}]);
 
+app.directive('content', [function() {
+	return {
+		link: function(scope) {
+			var resize = function() {
+        $('.content-body').height($(window).height()-85);
+			}	
+
+			scope.$on('windowResize', resize);
+			resize();
+		}
+	}
+}]);

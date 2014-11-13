@@ -20,21 +20,23 @@ $action_access = array(
 	'logout'=>'all',
 	'fetch_data'=>'all',
 	'fetchDocuments'=>'all',
-	'deleteDocument'=>'administrator',
+	'deleteDocument'=>'all',
 	'fetchDocument'=>'all',
-	'saveDocument'=>'administrator',
+	'saveDocument'=>'all',
 	'fetchCollection'=>'all',
-	'saveCollection'=>'administrator',
+	'saveCollection'=>'all',
 	'exportCollection'=>'all',
-	'csvImport'=>'admin',
+	'csvImport'=>'administrator',
 	'filemakerImport'=>'administrator',
 	'getThumbnailDocs'=>'all', 
-	'updateThumbnail'=>'administrator',
-	'updateLookups'=>'administrator',
-	'uploadFile'=>'administrator',
+	'updateThumbnail'=>'all',
+	'updateLookups'=>'all',
+	'uploadFile'=>'all',
 	'backupDatabase'=>'all',
 	'getDocIds'=>'all',
 	'findDuplicates'=>'all',
+	'fetchAuditLog'=>'administrator',
+	'pushChanges'=>'administrator'
 );
 
 
@@ -107,13 +109,16 @@ if ($action) {
 
 			$query = "from DOCUMENTS D left JOIN COLLECTIONS C using(COLLECTION_ID) $wherestring order by D.TITLE";
 			$data['count'] = fetchValue("Select count(*) $query");
-
+			
+			$request['limit'] = dbEscape($request['limit']);
 			$query = "select D.DOCID as id, D.TITLE as label, D.DESCRIPTION, D.THUMBNAIL, C.COLLECTION_NAME, D.AUTHOR $query limit ".(($request['page']-1)*$request['limit']).",$request[limit]";
 			$data['docs'] = array_values(dbLookupArray($query));
 			break;
 
 		case 'deleteDocument':
+			$doc = fetchItem('document', $request['id']);
 			dbwrite("delete from DOCUMENTS where DOCID = '".$request['id']."'");
+			updateLog('document', $doc, 'delete');
 			$data = 1;
 			break;
 		
@@ -256,6 +261,24 @@ if ($action) {
 				}
 			}
 			break;
+
+		case 'fetchAuditLog':
+			$lastUpdate = fetchValue("select unix_timestamp(max(timestamp)) from audit_log where action='push'");
+			$date = $request['date'] ? dbEscape($request['date']) : $lastUpdate;
+			$log = fetchRows("select *, unix_timestamp(timestamp) as time from audit_log where unix_timestamp(timestamp) > '$date' and action != 'push'"); // limit ".(($page-1)*$limit).",$limit");
+			$data = array('lastUpdate'=>$lastUpdate,'log'=>$log, 'date'=>$date);
+			break;
+
+		case 'pushChanges':
+			foreach (array('DOCUMENTS', 'COLLECTIONS', 'KEYWORD_LOOKUP', 'FEATURED_DOCS') as $table) {
+				dbwrite("delete from $table"."_LIVE");
+				dbwrite("insert into $table"."_LIVE select * from $table");
+				# code...
+			}
+			$data = 1;
+			updateLog('', [], 'push');
+			break;
+
 		default:
 			trigger_error('"'.$request['action'].'" is an invalid method.', E_USER_ERROR);
 			break;
@@ -267,6 +290,8 @@ if ($action) {
 
 function fetchItem($type, $id) { 
 	$id = dbEscape($id);
+	if ($id == 'new') {return array(); }
+
 	if ($type == 'collection') { 
 		$query = "select C.*, count(D.DOCID) as count from COLLECTIONS C left join DOCUMENTS D using (COLLECTION_ID) where COLLECTION_ID = $id";
 	} else if ($type == 'document') { 
@@ -290,23 +315,25 @@ function saveItem($type, $id, $data) {
 	$idfield = $type == 'document' ? 'DOCID' : strtoupper($type)."_ID";
 	$oldItem = fetchItem($type, $id);
 	$tags = array();
-	if ($type == 'collection' && isset($data['_featured_docs']) && isset($data['_subcollections']) ) { 
-		$featuredDocs = $data['_featured_docs'];
-		$subcollections = $data['_subcollections'];
+	if ($type == 'collection') { 
+		$tags = array(
+			'_featured_docs'=> isset($data['_featured_docs']) ? $data['_featured_docs'] : null,
+			'_subcollections'=> isset($data['_subcollections']) ? $data['_subcollections'] : null,
+		);
 		unset($data['_featured_docs']);
 		unset($data['_subcollections']);
 	} elseif ($type == 'document') { 
 		
 		$tags = array(
-			'_authors'=> isset($data['_authors']) ? $data['_authors'] : [],
-			'_keywords'=> isset($data['_keywords']) ? $data['_keywords'] : [],
-			'_subjects'=> isset($data['_subjects']) ? $data['_subjects'] : []
+			'_authors'=> isset($data['_authors']) ? $data['_authors'] : null,
+			'_keywords'=> isset($data['_keywords']) ? $data['_keywords'] : null,
+			'_subjects'=> isset($data['_subjects']) ? $data['_subjects'] : null
 		);
 		unset($data['_authors']);
 		unset($data['_keywords']);
 		unset($data['_subjects']);
 	}
-
+	$action = $id === 'new' ? 'create' : 'update';
 	if ($id === 'new') { 
 		$query = "insert into $table set ".arrayToUpdateString($data);
 		$id = dbInsert($query);
@@ -314,9 +341,13 @@ function saveItem($type, $id, $data) {
 		$query = "update $table set ".arrayToUpdateString($data)." where $idfield = ".dbEscape($id);
 		dbwrite($query);
 	}
-	if ($type == 'collection' && isset($data['_featured_docs']) && isset($data['_subcollections'])) { 
-		updateFeatured($id, $featuredDocs);
-		updateSubcollections($id, $subcollections);
+	if ($type == 'collection') {
+		if ($tags['_featured_docs'] !== null) {
+			updateFeatured($id, $tags['_featured_docs']);
+		}
+		if ($tags['_subcollections'] !== null) {
+			updateSubcollections($id, $tags['_subcollections']);
+		}
 	}
 	if ($type == 'document') {
 		if (isset($data['URL']) && $data['URL'] && $data['URL'] != $oldItem['URL']) {
@@ -324,7 +355,11 @@ function saveItem($type, $id, $data) {
 		} 
 		updateTags($id, $tags);
 	}
-	return fetchItem($type, $id);
+	$item = fetchItem($type, $id);
+
+	updateLog($type, $item, $action);
+
+	return $item;
 }
 
 function updateTags($id, $data) { 
@@ -332,7 +367,7 @@ function updateTags($id, $data) {
 		$table = strtoupper($type)."_LOOKUP";
 		$field = $type == 'author' ? 'author' : ($type == 'keyword' ? 'keywords' : 'subject_list');
 
-		if (isset($data["_$type"."s"])) { 
+		if (isset($data["_$type"."s"]) && $data["_$type"."s"] !== null) { 
 			dbwrite("delete from $table where DOCID = $id");
 			$trimmed_list = array();
 			$x = 0;
@@ -572,6 +607,21 @@ function checkLogin() {
 	} else if (! $username) { 
 		setResponse(401, 'Not Authorized');
 	}
+}
+
+function updateLog($type, $item, $action) {
+	$description = "";
+	$id = "";
+	if ($type == 'collection') {
+		$id = $item['COLLECTION_ID'];
+		$description = $item['COLLECTION_NAME'];
+	} elseif ($type == 'document') {
+		$id = $item['DOCID'];
+		$description = $item['TITLE'];
+	} else {
+		$description = 'push to live';
+	}
+	dbwrite("insert into audit_log set id = '$id', type = '$type', action = '$action', description='".dbEscape($description)."', user='$_SESSION[username]'");
 }
 
 function updateThumbnail($doc_id) {

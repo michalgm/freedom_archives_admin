@@ -11,13 +11,13 @@ class Page {
 	public $collections_limit = 0;
 	public $filterparams = array(
 			'collection_id'=>array('field'=>'collection_id', 'display'=>'Collection'),
-			'media'=>array('field'=>'if(DOCUMENTS.url like "%vimeo%", 
+			'media'=>array('field'=>'if(DOCUMENTS_LIVE.url like "%vimeo%", 
 				"Video", 
-				if(lower(substring_index(DOCUMENTS.URL, ".", -1)) in ("pdf", "mp3"),
-					lower(substring_index(DOCUMENTS.URL, ".", -1)), 
-					if(lower(substring_index(DOCUMENTS.URL, ".", -1)) in ("jpg", "jpeg"),
+				if(lower(substring_index(DOCUMENTS_LIVE.URL, ".", -1)) in ("pdf", "mp3"),
+					lower(substring_index(DOCUMENTS_LIVE.URL, ".", -1)), 
+					if(lower(substring_index(DOCUMENTS_LIVE.URL, ".", -1)) in ("jpg", "jpeg"),
 						"Image", 
-						if(DOCUMENTS.URL != "", 
+						if(DOCUMENTS_LIVE.URL != "", 
 							"Webpage", 
 							""
 						)
@@ -46,8 +46,8 @@ class Page {
 		if (! $this->query) { 
 			$DB_SEARCH_TERMS = dbEscape($this->params['s']);
 			$query = array(
-				'select' => "select DOCUMENTS.*, date_format(DOCUMENTS.DATE_CREATED, '%c/%e/%Y') as DATE, collection_name, ".$this->filterparams['media']['field']." as media_type ",
-				'from' => "from DOCUMENTS join COLLECTIONS using (collection_id)",
+				'select' => "select DOCUMENTS_LIVE.*, date_format(DOCUMENTS_LIVE.DATE_CREATED, '%c/%e/%Y') as DATE, collection_name, ".$this->filterparams['media']['field']." as media_type ",
+				'from' => "from DOCUMENTS_LIVE join COLLECTIONS_LIVE using (collection_id)",
 				'where' => " where 1=1 ",
 				'order' => "",
 				'limit' => "",
@@ -58,8 +58,8 @@ class Page {
 				include "includes/search/search.php";
 				$search_terms_string = getSearchQueryString($DB_SEARCH_TERMS);
 				$natural_language_terms = preg_replace("/\+|-\w*|\band\b|\bnot\b( \w+)?|\bor\b/i", "", $DB_SEARCH_TERMS);
-				$query['select'] .=	", MATCH(`TITLE`, DOCUMENTS.DESCRIPTION, `SUBJECT_LIST`, `AUTHOR`, `DOC_TEXT`, DOCUMENTS.keywords, `FILE_EXTENSION`) AGAINST('$natural_language_terms' IN NATURAL LANGUAGE MODE) as relevance ";
-				$query['where'] .= "and MATCH(TITLE, DOCUMENTS.KEYWORDS, DOCUMENTS.DESCRIPTION, AUTHOR) AGAINST('$search_terms_string' IN BOOLEAN MODE) ";
+				$query['select'] .=	", MATCH(`TITLE`, DOCUMENTS_LIVE.DESCRIPTION, `SUBJECT_LIST`, `AUTHOR`, `DOC_TEXT`, DOCUMENTS_LIVE.keywords, `FILE_EXTENSION`) AGAINST('$natural_language_terms' IN NATURAL LANGUAGE MODE) as relevance ";
+				$query['where'] .= "and MATCH(TITLE, DOCUMENTS_LIVE.KEYWORDS, DOCUMENTS_LIVE.DESCRIPTION, AUTHOR) AGAINST('$search_terms_string' IN BOOLEAN MODE) ";
 				$query['order'] .= " order by relevance desc";
 			}
 
@@ -274,7 +274,7 @@ class Page {
 		$aliases = array(
 			'media'=>array('pdf'=>'PDF', 'mp3'=>"Audio", 'jpg'=>'Image', 'jpeg'=>'Image'),
 		);
-		$collections = dbLookupArray("select collection_id, collection_name from COLLECTIONS");
+		$collections = dbLookupArray("select collection_id, collection_name from COLLECTIONS_LIVE");
 		$filter_components = "";
 		foreach (array_values($collections) as $c) {
 			$aliases['collection_id'][$c['collection_id']] = $c['collection_name'];
@@ -314,7 +314,7 @@ class Page {
 		include_once "includes/tag-cloud/classes/tagcloud.php";
 		$kw_limit = 30;
 		$query = $this->getQuery();
-		$keywords = dbLookupArray("SELECT KEYWORD, count(*) as count $query[from] join KEYWORD_LOOKUP using(DOCID) ".$query['where']." group by lower(KEYWORD) order by counT(*) desc limit $kw_limit");
+		$keywords = dbLookupArray("SELECT KEYWORD, count(*) as count $query[from] join KEYWORD_LOOKUP_LIVE using(DOCID) ".$query['where']." group by lower(KEYWORD) order by counT(*) desc limit $kw_limit");
 		if (! $keywords) { return ""; }
 		$link= preg_replace("/s=[^&]*&?/", "", $this->getTargetPage());
 		$cloud = new tagcloud();
@@ -334,7 +334,7 @@ class Page {
 
 	function getFeaturedSlideshow($collection_id) {
 		$slideshow = "";
-		$featured_docs = dbLookupArray("select DOCID, a.DESCRIPTION, THUMBNAIL, URL,  TITLE, ".$this->filterparams['media']['field']."	as media_type  from FEATURED_DOCS a join DOCUMENTS using (DOCID) where a.collection_id = $collection_id order by doc_order"); 
+		$featured_docs = dbLookupArray("select DOCID, a.DESCRIPTION, THUMBNAIL, URL,  TITLE, ".$this->filterparams['media']['field']."	as media_type  from FEATURED_DOCS_LIVE a join DOCUMENTS_LIVE using (DOCID) where a.collection_id = $collection_id order by doc_order"); 
 		if (sizeof($featured_docs)) { 
 			$slideshow .= "
 				<div id='featured_media'>
@@ -366,7 +366,7 @@ class Page {
 
 function getCollections($parent_id=null) {
 	$where = $parent_id ? " and c.parent_id = $parent_id " : "";
-	$cols = dbLookupArray("SELECT c.collection_id,c.thumbnail,c.collection_name,c.description, c.summary , c.parent_id FROM COLLECTIONS c left join COLLECTIONS c2 on c.collection_id = c2.parent_id join DOCUMENTS d on c.collection_id = d.collection_id or c2.collection_id =  d.collection_id where c.is_deleted = 0 $where group by c.collection_id order by c.display_order, c.collection_name" );
+	$cols = dbLookupArray("SELECT c.collection_id,c.thumbnail,c.collection_name,c.description, c.summary , c.parent_id FROM COLLECTIONS_LIVE c left join COLLECTIONS_LIVE c2 on c.collection_id = c2.parent_id join DOCUMENTS_LIVE d on c.collection_id = d.collection_id or c2.collection_id =  d.collection_id where c.is_deleted = 0 $where group by c.collection_id order by c.display_order, c.collection_name" );
 	return $cols;
 }
 

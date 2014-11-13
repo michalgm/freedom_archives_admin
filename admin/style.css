@@ -4,18 +4,25 @@
 
 #messages {margin-top: 15px; position: fixed; width: 400px; left: 50%; margin-left: -200px; z-index: 110; }
 
-#nav, #header { position: fixed }
+#nav { position: fixed }
 
 #nav { height: 100%; overflow:auto; z-index: 1000;}
 
 #header { 
-	right: 0px;
+	/*right: 0px;
 	left: 16.66666667%;
 	margin: 0px 15px 0px 25px;
-	z-index: 100;
+	z-index: 100;*/
 }
 
-.content-body { padding-top: 70px; }
+#header .btn {
+  margin-right: 10px;
+}
+
+.content-body { 
+  overflow-y: auto;
+  overflow-x: hidden;
+}
 
 .btn-file {
     position: relative;

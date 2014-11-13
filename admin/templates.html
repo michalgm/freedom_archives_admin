@@ -33,7 +33,7 @@
 
 <script type="text/ng-template" id="documents.html">
 	<div header title='Documents' buttons='buttons'></div>
-	<div class='content-body'>
+	<div content class='content-body'>
 		<div document-search doc-limit='10' non-digitized-default='1' select-doc='selectDoc'></div>
 	</div>
 </script>
@@ -76,7 +76,7 @@
 
 <script type="text/ng-template" id="documentEdit.html">
 	<div header title='Documents > {{document.TITLE || "New Document"}}' buttons='buttons'></div>
-	<div class='content-body'>
+	<div content class='content-body'>
 		<form class="form-horizontal">
 			<div class='row' form-group model='document.TITLE' label='Title'></div>
 			<div class='row' form-group model='document._authors' label='Authors' input-type='tagger' options="{type:'author'}"></div>
@@ -106,8 +106,9 @@
 				<div form-group model='document.QUALITY' label='Quality'></div>
 			</div>
 			<div class='row' form-group model='document.URL' label='URL'></div>
+			<!--<div form-group model='document.IS_PUBLISHED' label='Published' input-type='checkbox'></div>-->
 			<div class='row'>
-				<div form-group model='document.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'document', id:document.DOCID}"></div>
+				<div form-group model='document.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'document', id:id}"></div>
 				<div form-group model='document.URL_TEXT' label='URL Text'></div>
 			</div>
 			<div class='row'>
@@ -127,7 +128,7 @@
         </div>
         <div class="navbar-right">
 		  <span ng-bind-html='safeExtraHeader' />
-		  <button ng-repeat="button in buttons" ng-class='button.class' class="btn btn-default btn-lg navbar-btn" ng-click='button.action()' type="button">{{button.text}}</button>
+		  <button ng-repeat="button in buttons" ng-class='button.class' class="btn btn-default btn-lg navbar-btn" ng-click='doAction(button.action, $index)' type="button">{{button.text}}</button>
         </div>
       </div>
 	</nav>
@@ -135,7 +136,7 @@
 
 <script type="text/ng-template" id="collectionEdit.html">
 	<div header title='Collections > {{collection.COLLECTION_NAME || (id == 0 ? "Top-level collection" : "New Collection")}}' extra-header="extra_header" buttons='buttons'></div>
-	<div class='content-body'>
+	<div content class='content-body'>
 		<tabset>
 			<tab ng-if="id != 0" heading="Edit Collection">
 				<form class="form-horizontal">
@@ -216,7 +217,7 @@
 </script>
 <script type="text/ng-template" id="siteUtils.html">
 	<div header title='Site > {{title}}' buttons='buttons'></div>
-	<div class='content-body' ng-switch='util'>
+	<div content class='content-body' ng-switch='util'>
 		<div ng-switch-when='backupDatabase'>
 			<p>This will allow you to save a backup of the entire search.freedomarchives.org database (in SQL format).</p>
 			<button ng-click='backupDatabase()' class='btn btn-default btn-large'>Backup Database</button>
@@ -246,10 +247,39 @@
 			<p>This will allow you to save a CSV containing all document records.</p>
 			<button class='btn btn-default btn-large' ng-click='exportCollection()'>Export Collections</button>
 		</div>
+		<div ng-switch-when='reviewChanges'>
+			<p>Below is a list of all changes to the database since the last time the data was pushed to the live search site. Review the changes, and when you are satisfied, click the 'Push to Live Site' button.</p>
+			<p>The live site was last updated on <b>{{lastUpdate *1000| date:"MM/dd/yyyy 'at' h:mma"}}</b></p>
+			<!--<p>Show changes since <input type='date' ng-model='date'/> at <input type='time' ng-model='date'/> <input ng-model='date'/></p>-->
+			<div style='overflow: auto'>
+				<table class='table table-condensed table-bordered'>
+					<thead>
+						<th>Item</th>
+						<th>Type</th>
+						<th>Action</th>
+						<th>User</th>
+						<th>Time</th>
+					</thead>
+					<tbody>
+						<tr ng-repeat='item in log | slice:(offset-1)*limit:limit'>
+							<td><a target='_new' href='#/{{item.type}}s/{{item.id}}'>{{item.description}}</a></td>
+							<td>{{item.type|ucf}}</td>
+							<td>{{item.action|ucf}}</td>
+							<td>{{item.user|ucf}}</td>
+							<td>{{item.time*1000| date:"MM/dd/yyyy 'at' h:mma"}}</td>
+						</tr>
+					</tbody>
+				</table>	
+			</div>
+			<div class='panel-footer text-center'>
+				<pagination items-per-page='limit' total-items="count" boundary-links="true" max-size='5' ng-model="offset"></pagination>
+			</div>
+
+		</div>
 		<div ng-switch-when='findDuplicates'>
 			<p>This tool locates all documents that share the same title, volume number, and description</p>
 			<div class="list-group">
-				<li class='list-group-item' ng-repeat='set in duplicates | slice:offset:limit'>
+				<li class='list-group-item' ng-repeat='set in duplicates | slice:(offset-1)*limit:limit'>
 					<h3 style='margin-top: 5px;' >{{set['TITLE']}}</h3>
 					<p>Volume: {{set['VOL_NUMBER']}}</p>
 					<p>{{set['DESCRIPTION']}}</p>
@@ -316,7 +346,7 @@
 
 <script type="text/ng-template" id="siteFeaturedDocs.html">
 	<div header title='Site > Featured Documents' buttons='buttons'></div>
-	<div class='content-body'>
+	<div content class='content-body'>
 		<div featured-docs documents='featuredDocs' limit-collection-id='0'/>
 	</div>
 </script>

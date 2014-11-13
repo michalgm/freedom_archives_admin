@@ -63,7 +63,7 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 		'_keywords': [],
 		'_subjects': [],
 	};
-	
+	$scope.id = $routeParams.id;
 	$scope.loadDocument = function() {
 		return $requests.fetch('fetchDocument', {id:$routeParams.id}).then(function(results) { 
 			$scope.document = results;
@@ -85,8 +85,7 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 		var data = angular.copy($scope.document);
 		return $requests.write('saveDocument', data, $routeParams.id).then(function(results) {  
 			$scope.document = results;
-			console.log('hi')
-			$routeParams.id = $scope.document.DOCID;
+			$scope.id = $routeParams.id = $scope.document.DOCID;
 			$data.updateData().then(function() {
 				$messages.addMessage("Document '"+$scope.document.TITLE+"' successfully saved");
 			});
@@ -287,6 +286,37 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			break;
 		case 'csvImport':
 			$scope.title = 'CSV Import';
+			break;
+		case 'reviewChanges':
+			$scope.title = 'Review Changes';
+			$scope.log = [];
+			$scope.limit = 10;
+			$scope.offset = 0;
+			$scope.count = 0;
+			$scope.date = '';
+			$scope.lastUpdate = '';
+			$scope.fetchLog = function() {
+				$requests.fetch('fetchAuditLog', {'date': $scope.date}).then(function(results) {
+					//var date = new Date(results.date*1000);
+					// $scope.date = date.getFullYear()+'-'+date.getMonth()+'-'+date.getDate();
+					//$scope.date = date;
+					//console.log($scope.date);
+					$scope.log = results.log;
+					$scope.lastUpdate = results.lastUpdate;
+					$scope.count = $scope.log.length+1;
+				})
+			}
+
+			$scope.pushChanges = function() {
+				$requests.fetch('pushChanges').then(function(results) {
+					$messages.addMessage('Live site updated', 'success');
+					$scope.fetchLog();
+				})
+			}
+
+			$scope.fetchLog();
+			$scope.buttons = [{text:'Push Changes to Live Site', action:$scope.pushChanges, class:'btn-primary'}];
+
 			break;
 		case 'findDuplicates':
 			$scope.title = 'Find Duplicate Documents';
@@ -498,7 +528,8 @@ app.config(function($httpProvider) {
 		var AuthenticationService;
 
 		return {
-			'response': function(response) { 
+			'response': function(response) {
+				$('.processing-spinner').remove(); 
 				if (response.config && response.config.url == 'admin.php') { 
 					//console.log(response);
 					if (response.data.statusCode == 1) {
@@ -519,6 +550,7 @@ app.config(function($httpProvider) {
 				}
 			},
 			'responseError': function(rejection) { 
+				$('.processing-spinner').remove(); 
 				console.log(rejection);
 				if (rejection.status) { 
 					$messages.error('Unable to complete request ('+rejection.status+')');
