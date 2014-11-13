@@ -3,7 +3,7 @@ set_error_handler('handleError');
 
 $debug=1;
 $db = null;
-include_once('config.local.php');
+include_once('../config.local.php');
 
 $limit = 20;
 $data = $query = "";

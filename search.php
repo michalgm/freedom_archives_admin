@@ -1,4 +1,6 @@
 <?php
+include_once('config.local.php');
+
 include "dao/db.php";
 include "Page.php";
 $db = DbConnect();

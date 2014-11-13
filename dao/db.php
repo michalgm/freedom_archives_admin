@@ -11,10 +11,10 @@ $db_password = "affy;egal";
 $db_defaultSchema = "gmahmud";
 */
 
-$db_server = 'localhost';
-$db_username='root';
-$db_password='';
-$db_defaultSchema = 'freedom_archives';
+// $db_server = 'localhost';
+// $db_username='root';
+// $db_password='';
+// $db_defaultSchema = 'freedom_archives';
 
 /*
 FUNCTION: DbConnect
@@ -25,15 +25,15 @@ RETURNS: A handle to the database
  */
 function DbConnect()
 {
-  global $db_server, $db_username, $db_password, $db_defaultSchema;
+  global $dbhost, $dblogin, $dbpass, $dbname;
 	$db = mysqli_init();
-  $db->connect($db_server, $db_username, $db_password);
+  $db->connect($dbhost, $dblogin, $dbpass);
   if ($db->connect_error)
   {
 	die('Failed to connect to the database.<br>Connect Error (' . $db->connect_errno . ') ' . $db->connect_error);
   }
  
-  if (!$db->select_db($db_defaultSchema))
+  if (!$db->select_db($dbname))
   {
     die("Failed to select default database schema<br>".$db->error);
   }

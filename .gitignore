@@ -1,4 +1,4 @@
-admin/config.local.php
+config.local.php
 admin/error_log
 admin/tmp/*
 *.swp
