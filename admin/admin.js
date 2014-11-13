@@ -499,6 +499,7 @@ app.service('$messages', function($rootScope) {
 	service.addMessage = function(message, type) {
 		var type = type || 'info';
 		service.messages.push({message: message, type: type});
+		$('.processing-spinner').remove(); 		
 	};
 
 	service.error = function(message) { 
@@ -529,7 +530,6 @@ app.config(function($httpProvider) {
 
 		return {
 			'response': function(response) {
-				$('.processing-spinner').remove(); 
 				if (response.config && response.config.url == 'admin.php') { 
 					//console.log(response);
 					if (response.data.statusCode == 1) {
@@ -550,7 +550,6 @@ app.config(function($httpProvider) {
 				}
 			},
 			'responseError': function(rejection) { 
-				$('.processing-spinner').remove(); 
 				console.log(rejection);
 				if (rejection.status) { 
 					$messages.error('Unable to complete request ('+rejection.status+')');
