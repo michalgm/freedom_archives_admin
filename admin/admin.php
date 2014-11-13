@@ -276,7 +276,7 @@ if ($action) {
 				# code...
 			}
 			$data = 1;
-			updateLog('', [], 'push');
+			updateLog('', array(), 'push');
 			break;
 
 		default:
