@@ -619,7 +619,7 @@ function updateThumbnail($doc_id) {
 				if (file_exists("$image_file")) { 
 					$status = 'Success';
 				}
-				//if(file_exists($tmpfile)) { unlink($tmpfile); }
+				if(file_exists($tmpfile)) { unlink($tmpfile); }
 			} else { $status = "bad url for doc #$doc_id: $url"; }
 		} else if ($ext == 'htm' || $ext == 'html') { 
 			$image_file = "images/thumbnails/HTM.jpg";
