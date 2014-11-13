@@ -58,7 +58,11 @@ app.controller('documents', function($scope, $data, $requests, $location) {
 
 app.controller('documentEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location) {
 	$scope.data = $data;
-	$scope.document = {};
+	$scope.document = {
+		'_authors': [],
+		'_keywords': [],
+		'_subjects': [],
+	};
 	
 	$scope.loadDocument = function() {
 		return $requests.fetch('fetchDocument', {id:$routeParams.id}).then(function(results) { 
@@ -81,9 +85,11 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 		var data = angular.copy($scope.document);
 		return $requests.write('saveDocument', data, $routeParams.id).then(function(results) {  
 			$scope.document = results;
-			$messages.addMessage("Document '"+$scope.document.TITLE+"' successfully saved");
+			console.log('hi')
 			$routeParams.id = $scope.document.DOCID;
-			$data.updateData();
+			$data.updateData().then(function() {
+				$messages.addMessage("Document '"+$scope.document.TITLE+"' successfully saved");
+			});
 		});
 	}
 
@@ -112,14 +118,15 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 		delete data.count;
 		return $requests.write('saveCollection', data, $scope.id).then(function(results) {  
 			$scope.collection = results;
-			if ( $scope.collection.COLLECTION_ID == 0) { 
-				$messages.addMessage("Top-level collection successfully saved");
-			} else { 
-				$messages.addMessage("Collection '"+$scope.collection.COLLECTION_NAME+"' successfully saved");
-			}
 			$routeParams.id = $scope.collection.COLLECTION_ID;
 			$scope.id = $routeParams.id;
-			$data.updateData();
+			$data.updateData().then(function() {
+				if ( $scope.collection.COLLECTION_ID == 0) { 
+					$messages.addMessage("Top-level collection successfully saved");
+				} else { 
+					$messages.addMessage("Collection '"+$scope.collection.COLLECTION_NAME+"' successfully saved");
+				}
+			})
 		});
 	}
 	
@@ -361,8 +368,10 @@ app.service('$data', function($requests, $rootScope, $messages) {
 	$data.subjects = {};
 	$data.action_access = {};
 
-	$data.updateData = function() {
-		$messages.clearMessages();
+	$data.updateData = function(noclear) {
+		if (! noclear) { 
+			$messages.clearMessages();
+		}
 		return $requests.fetch('fetch_data').then(function(results) {
 			$data.collections = results.collections;
 			$data.users = results.users;

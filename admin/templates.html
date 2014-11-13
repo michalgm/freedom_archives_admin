@@ -34,7 +34,7 @@
 <script type="text/ng-template" id="documents.html">
 	<div header title='Documents' buttons='buttons'></div>
 	<div class='content-body'>
-		<div document-search doc-limit='10' select-doc='selectDoc'></div>
+		<div document-search doc-limit='10' non-digitized-default='1' select-doc='selectDoc'></div>
 	</div>
 </script>
 
@@ -78,26 +78,43 @@
 	<div header title='Documents > {{document.TITLE || "New Document"}}' buttons='buttons'></div>
 	<div class='content-body'>
 		<form class="form-horizontal">
-			<div form-group model='document.TITLE' label='Title'></div>
-			<div form-group model='document._authors' label='Authors' input-type='tagger' options="{type:'author'}"></div>
-			<div form-group model='document._keywords' label='Keywords' input-type='tagger' options="{type:'keyword'}"></div>
-			<div form-group model='document.COLLECTION_ID' label='Collection' input-type='collectionChooser'></div>
-			<div form-group model='document.DATE_CREATED' label='Creation Date'></div>
-			<div form-group model='document.YEAR' label='Year'></div>
-			<div form-group model='document.FORMAT' label='Format'></div>
-			<div form-group model='document.VOL_NUMBER' label='Volume Number'></div>
-			<div form-group model='document.NO_COPIES' label='No. Copies'></div>
-			<div form-group model='document.PUBLISHER' label='Publisher'></div>
-			<div form-group model='document.PRODUCERS' label='Producers'></div>
-			<div form-group model='document.PROGRAM' label='Program'></div>
-			<div form-group model='document.LOCATION' label='Location'></div>
-			<div form-group model='document.GENERATION' label='Generation'></div>
-			<div form-group model='document.QUALITY' label='Quality'></div>
-			<div form-group model='document.URL' label='URL'></div>
-			<div form-group model='document.URL_TEXT' label='URL Text'></div>
-			<div form-group model='document.FILENAME' label='Filename'></div>
-			<div form-group model='document.FILE_EXTENSION' label='File Extension'></div>
-			<div form-group model='document.DESCRIPTION' label='Description' input-type='textarea'></div>
+			<div class='row' form-group model='document.TITLE' label='Title'></div>
+			<div class='row' form-group model='document._authors' label='Authors' input-type='tagger' options="{type:'author'}"></div>
+			<div class='row' form-group model='document._keywords' label='Keywords' input-type='tagger' options="{type:'keyword'}"></div>
+			<div class='row'>
+				<div form-group model='document.COLLECTION_ID' label='Collection' input-type='collectionChooser'></div>
+				<div form-group model='document.DATE_CREATED' label='Creation Date'></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.YEAR' label='Year'></div>
+				<div form-group model='document.FORMAT' label='Format'></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.VOL_NUMBER' label='Volume Number'></div>
+				<div form-group model='document.NO_COPIES' label='No. Copies'></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.PUBLISHER' label='Publisher'></div>
+				<div form-group model='document.PRODUCERS' label='Producers'></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.PROGRAM' label='Program'></div>
+				<div form-group model='document.LOCATION' label='Location'></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.GENERATION' label='Generation'></div>
+				<div form-group model='document.QUALITY' label='Quality'></div>
+			</div>
+			<div class='row' form-group model='document.URL' label='URL'></div>
+			<div class='row'>
+				<div form-group model='document.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'document', id:document.DOCID}"></div>
+				<div form-group model='document.URL_TEXT' label='URL Text'></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.FILENAME' label='Filename'></div>
+				<div form-group model='document.FILE_EXTENSION' label='File Extension'></div>
+			</div>
+			<div class='row' form-group model='document.DESCRIPTION' label='Description' input-type='textarea'></div>
 		</form>
 	</div>
 </script>
@@ -128,13 +145,13 @@
 					<div form-group model='collection.ACCESS_LEVEL' label='Public Access Level'></div>
 					<div form-group model='collection.ORGANIZATION' label='Organizations'></div>
 					<div form-group model='collection.KEYWORDS' label='Keywords'></div>
-					<div form-group model='collection.DESCRIPTION' label='Description' input-type='richtext'></div>
-					<div form-group model='collection.SUMMARY' label='Summary' input-type='textarea'></div>
+					<div class='row' form-group model='collection.DESCRIPTION' label='Description' input-type='richtext'></div>
+					<div class='row' form-group model='collection.SUMMARY' label='Summary' input-type='textarea'></div>
+					<div class='row' form-group model='collection.INTERNAL_NOTES' label='Internal Notes' input-type='textarea'></div>
 					<div form-group model='collection.PARENT_ID' label='Parent Collection' input-type='collectionChooser'></div>
 					<div form-group model='collection.IS_DELETED' label='Hidden' input-type='checkbox'></div>
 					<div form-group model='collection.DATE_RANGE' label='Date Range'></div>
 					<div form-group model='collection.SUBJECTS' label='Subjects'></div>
-					<div form-group model='collection.INTERNAL_NOTES' label='Internal Notes' input-type='textarea'></div>
 					<div form-group model='collection.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'collection', id:id}"></div>
 				</form>
 			</tab>
@@ -222,7 +239,7 @@
 			<progressbar ng-show='total != 0 && complete != total' class='progress-striped active' max="100" value="complete*(100/total)">
 				<span style="color:white; white-space:nowrap;">{{complete}} / {{total}}</span>
 			</progressbar>
-			<p>This will scan all documents for keywords, split them on commas, and store them in the keywords table, refreshing the word cloud.</p>
+			<p>This will scan all documents for keywords, authors, and subjects, split them on commas, and store them in the keywords table, refreshing the word cloud.</p>
 			<button class='btn btn-default btn-large' ng-click='updateKeywords()'>Update Keywords</button>
 		</div>
 		<div ng-switch-when='exportCollections'>
@@ -335,7 +352,7 @@
 <script type="text/ng-template" id="fileUpload.html">
 	<p ng-show="itemId == 'new'" class='alert alert-warning'>Please save {{type}} before adding a thumbnail</p>
 	<div ng-show="itemId !='new'">
-		<img ng-show="! image_URI && currentUrl" width='75px' ng-src='../{{currentUrl}}'/>
+		<img ng-show="! image_URI && currentUrl" width='75px' ng-src='../{{currentUrl+"?"+salt}}'/>
 		<div ng-show="image_URI" style='display: inline-block'>
 			<img width='75px' ng-src='{{image_URI}}'/>
 			<div class="btn-group">
@@ -349,7 +366,7 @@
 		<span class='drag-target' ng-file-drop="onFileSelect($files)" ng-file-drag-over-class="bg-primary">
 			Drop new thumbnail image here or<br/>
 			<span class="btn btn-default btn-file">
-				Choose file <input type="file" ng-file-select="onFileSelect($files)" />
+				Choose file <input type="file" ng-file-select="onFileSelect($files)" accept="image/jpg,image/jpeg,image/png,image/gif,image/bmp,image/tiff,application/pdf" />
 			</span>
 		</span>
 	</div>
@@ -365,8 +382,8 @@
 
 <script type="text/ng-template" id="formGroup.html">
 	<div class='form-group'>
-		<label class='col-xs-2 control-label'>{{label}}</label>
-		<div class='col-xs-10' ng-switch='type'>
+		<label class='col-xs-{{label_width}} control-label'>{{label}}</label>
+		<div class='col-xs-{{field_width}}' ng-switch='type'>
 			<textarea ng-switch-when='textarea' type='text' rows='6' class='form-control' ng-model='$parent.model' />
 			<div ng-switch-when='richtext' text-angular ta-toolbar="[['bold','italics', 'underline'], ['justifyLeft','justifyCenter','justifyRight'], ['insertImage', 'insertLink', 'unlink'],['redo', 'undo', 'clear', 'html']]" ng-model='$parent.model'></div>
 			<div class='checkbox' ng-switch-when='checkbox'>

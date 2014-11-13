@@ -206,8 +206,8 @@ if ($action) {
 			$thumbnail = createThumbnail($tmpfile, '', $filename);
 			$thumbnail = preg_replace("/^\.\.\//", "", $thumbnail);
 			unlink($tmpfile);
-			$result = saveItem($type, $id, array('thumbnail'=>$thumbnail));
-			$data = $result['thumbnail'];
+			$result = saveItem($type, $id, array('THUMBNAIL'=>$thumbnail));
+			$data = $result['THUMBNAIL'];
 			break;
 		
 		case 'backupDatabase':
@@ -288,6 +288,7 @@ function fetchItem($type, $id) {
 function saveItem($type, $id, $data) { 
 	$table = strtoupper($type)."S";
 	$idfield = $type == 'document' ? 'DOCID' : strtoupper($type)."_ID";
+	$oldItem = fetchItem($type, $id);
 	$tags = array();
 	if ($type == 'collection' && isset($data['_featured_docs']) && isset($data['_subcollections']) ) { 
 		$featuredDocs = $data['_featured_docs'];
@@ -295,6 +296,7 @@ function saveItem($type, $id, $data) {
 		unset($data['_featured_docs']);
 		unset($data['_subcollections']);
 	} elseif ($type == 'document') { 
+		
 		$tags = array(
 			'_authors'=> isset($data['_authors']) ? $data['_authors'] : [],
 			'_keywords'=> isset($data['_keywords']) ? $data['_keywords'] : [],
@@ -316,7 +318,10 @@ function saveItem($type, $id, $data) {
 		updateFeatured($id, $featuredDocs);
 		updateSubcollections($id, $subcollections);
 	}
-	if ($type == 'document') { 
+	if ($type == 'document') {
+		if (isset($data['URL']) && $data['URL'] && $data['URL'] != $oldItem['URL']) {
+			updateThumbnail($id);
+		} 
 		updateTags($id, $tags);
 	}
 	return fetchItem($type, $id);
@@ -614,7 +619,7 @@ function updateThumbnail($doc_id) {
 				if (file_exists("$image_file")) { 
 					$status = 'Success';
 				}
-				if(file_exists($tmpfile)) { unlink($tmpfile); }
+				//if(file_exists($tmpfile)) { unlink($tmpfile); }
 			} else { $status = "bad url for doc #$doc_id: $url"; }
 		} else if ($ext == 'htm' || $ext == 'html') { 
 			$image_file = "images/thumbnails/HTM.jpg";
@@ -625,6 +630,7 @@ function updateThumbnail($doc_id) {
 		} else { 
 			$status = "Unknown file format '$ext' for doc id $doc_id";
 		}
+		$image_file = preg_replace("|^../|", "", $image_file);
 		dbwrite("update DOCUMENTS set thumbnail= '$image_file' where docid = $doc_id");
 	} else { 
 		$status = 'Missing URL';

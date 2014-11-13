@@ -47,15 +47,17 @@ app.filter('truncate', function () {
 })
 
 .filter('inArray', function($filter){
-	return function(list, arrayFilter, negative){
-		if(arrayFilter){
+	return function(list, sourceArray, negative){
+		if(sourceArray){
 			return $filter("filter")(list, function(listItem){
 				if (negative) { 
-					return arrayFilter.indexOf(listItem) === -1;
+					return sourceArray.indexOf(listItem) === -1;
 				} else { 	
-					return arrayFilter.indexOf(listItem) != -1;
+					return sourceArray.indexOf(listItem) != -1;
 				}
 			});
+		} else {
+			return list;
 		}
 	};
 });

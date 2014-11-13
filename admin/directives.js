@@ -214,8 +214,15 @@ app.directive('formGroup', function() {
 			options:'='
 		},
 		templateUrl: 'formGroup.html',
-		link: function(scope) {
+		link: function(scope, element) {
 			scope.type = scope.inputType || 'text';
+			scope.label_width = 2;
+			scope.field_width = 10;
+			if (! element.hasClass('row')) {
+				scope.label_width = 4;
+				scope.field_width = 8;
+				element.addClass('col-xs-6');
+			} 
 		}
 	}
 });
@@ -248,6 +255,7 @@ app.directive('fileUpload', function($upload, $messages, $requests) {
 			scope.image_URI = '';
 			scope.bad_file = 0;
 			scope.processing = 0;
+			scope.salt=Date.now();
 
 			scope.clearFile = function() { 
 				scope.image_URI = '';
@@ -277,7 +285,8 @@ app.directive('fileUpload', function($upload, $messages, $requests) {
 			scope.uploadFile = function() { 
 				scope.processing = 1;
 				$requests.write('uploadFile', {type:scope.type, ext: scope.file.name.split('.').pop(), id:scope.itemId, data:scope.image_data}).then(function(results) { 
-					scope.currentUrl = results;
+					var salt = new Date().getTime();
+					scope.currentUrl = results+'?'+salt;
 					$messages.addMessage("Thumbnail updated");
 					scope.clearFile();
 					//$messages.addMessage(results);
@@ -299,7 +308,6 @@ app.directive('tagger', function($requests, $data) {
 		link: function(scope, element, attribs) { 
 			scope.data = $data;
 			scope.selected = '';
-
 			scope.removeItem = function(i) { 
 				scope.model.splice(i, 1);
 			}
