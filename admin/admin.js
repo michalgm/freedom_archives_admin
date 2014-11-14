@@ -571,5 +571,6 @@ var downloadFile = function(filename, mimetype, data) {
 	hiddenElement.download = filename;
 	hiddenElement.click();
 	$(hiddenElement).remove();
+	$('.processing-spinner').remove(); 		
 }
 

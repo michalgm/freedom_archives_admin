@@ -32,7 +32,7 @@
 </script>
 
 <script type="text/ng-template" id="documents.html">
-	<div header title='Documents' buttons='buttons'></div>
+	<div header title='Records' buttons='buttons'></div>
 	<div content class='content-body'>
 		<div document-search doc-limit='10' non-digitized-default='1' select-doc='selectDoc'></div>
 	</div>
@@ -75,7 +75,7 @@
 </script>
 
 <script type="text/ng-template" id="documentEdit.html">
-	<div header title='Documents > {{document.TITLE || "New Document"}}' buttons='buttons'></div>
+	<div header title='Records > {{id == "new" ? "New Record" : (document.TITLE || "Untitled Record")}}' buttons='buttons'></div>
 	<div content class='content-body'>
 		<form class="form-horizontal">
 			<div class='row' form-group model='document.TITLE' label='Title'></div>
@@ -156,7 +156,7 @@
 					<div form-group model='collection.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'collection', id:id}"></div>
 				</form>
 			</tab>
-			<tab ng-if="id != 0" heading='Featured Docs'>
+			<tab ng-if="id != 0" heading='Featured Records'>
 				<div featured-docs documents='collection._featured_docs' limit-collection-id='{{collection.COLLECTION_ID}}'/>
 			</tab>
 			<tab ng-if="1" heading='Subcollections'>
@@ -188,7 +188,7 @@
 <script type="text/ng-template" id="featuredDocs.html">
 	<div id='featuredDocs' class='row'>
 		<div class='col-xs-6'>
-			<h3>Edit Featured Docs <small>Drag to reorder</small></h3>
+			<h3>Edit Featured Records <small>Drag to reorder</small></h3>
 			<div class="list-group" ui-sortable ng-model='documents'>
 				<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='doc in documents'>
 					<div class='media'>
@@ -210,7 +210,7 @@
 			</div>
 		</div>
 		<div class='col-xs-6'>
-			<h3>Add a Document</h3>
+			<h3>Add a Record</h3>
 			<div document-search doc-limit='5' select-doc='addFeaturedDoc' limit-collection-id='{{limitCollectionId}}'></div>
 		</div>
 	</div>
@@ -345,7 +345,7 @@
 </script>
 
 <script type="text/ng-template" id="siteFeaturedDocs.html">
-	<div header title='Site > Featured Documents' buttons='buttons'></div>
+	<div header title='Site > Featured Records' buttons='buttons'></div>
 	<div content class='content-body'>
 		<div featured-docs documents='featuredDocs' limit-collection-id='0'/>
 	</div>

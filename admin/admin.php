@@ -158,10 +158,11 @@ if ($action) {
 			//fwrite($output, "Select d.docid as 'Document Id', c.collection_name as Folder, Title, Author, publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, url as 'File Name', subject_list as 'Subjects', location as 'Place of Publication' from COLLECTIONS c join DOCUMENTS d using(collection_id) where c.collection_id != 20 $where group by docid");
 			$csv .= str_putcsv($headers);
 			foreach($docs as $doc) { 
-				if(!isset($doc['Collection']) || ! $doc['Collection']) { 
-					$doc['Collection'] = $doc['Folder'];
-					$doc['Folder'] = "";
-				}
+				//Not sure why this was happening, but it was broken
+				// if(!isset($doc['Collection']) || ! $doc['Collection']) { 
+				// 	$doc['Collection'] = $doc['Folder'];
+				// 	$doc['Folder'] = "";
+				// }
 				$csv .= str_putcsv($doc);
 			}
 			//$data = array("filename"=>$filename, "file"=>"data:text/csv;base64,".base64_encode($csv));
@@ -423,19 +424,65 @@ function csvImport($data) {
 		'subjects'=>'subject_list',
 	);
 
+	//parse a CSV file into a two-dimensional array
+	//this seems as simple as splitting a string by lines and commas, but this only works if tricks are performed
+	//to ensure that you do NOT split on lines and commas that are inside of double quotes.
+	function parse_csv($str) {
+    //match all the non-quoted text and one series of quoted text (or the end of the string)
+    //each group of matches will be parsed with the callback, with $matches[1] containing all the non-quoted text,
+    //and $matches[3] containing everything inside the quotes
+    $str = preg_replace_callback('/([^"]*)("((""|[^"])*)"|$)/s', 'parse_csv_quotes', $str);
+
+    //remove the very last newline to prevent a 0-field array for the last line
+    $str = preg_replace('/\n$/', '', $str);
+
+    //split on LF and parse each line with a callback
+    return array_map('parse_csv_line', explode("\n", $str));
+	}
+
+	//replace all the csv-special characters inside double quotes with markers using an escape sequence
+	function parse_csv_quotes($matches) {
+    $str = "";
+    if (isset($matches[3])) {
+	    //anything inside the quotes that might be used to split the string into lines and fields later,
+	    //needs to be quoted. The only character we can guarantee as safe to use, because it will never appear in the unquoted text, is a CR
+	    //So we're going to use CR as a marker to make escape sequences for CR, LF, Quotes, and Commas.
+	    $str = str_replace("\r", "\rR", $matches[3]);
+	    $str = str_replace("\n", "\rN", $str);
+	    $str = str_replace('""', "\rQ", $str);
+	    $str = str_replace(',', "\rC", $str);
+  	}
+    //The unquoted text is where commas and newlines are allowed, and where the splits will happen
+    //We're going to remove all CRs from the unquoted text, by normalizing all line endings to just LF
+    //This ensures us that the only place CR is used, is as the escape sequences for quoted text
+    return preg_replace('/\r\n?/', "\n", $matches[1]) . $str;
+	}
+
+	//split on comma and parse each field with a callback
+	function parse_csv_line($line) {
+    return array_map('parse_csv_field', explode(',', $line));
+	}
+
+	//restore any csv-special characters that are part of the data
+	function parse_csv_field($field) {
+    $field = str_replace("\rC", ',', $field);
+    $field = str_replace("\rQ", '"', $field);
+    $field = str_replace("\rN", "\n", $field);
+    $field = str_replace("\rR", "\r", $field);
+    return $field;
+	}
 
 	$collections = dbLookupArray("select lower(collection_name), collection_id from COLLECTIONS order by collection_name");
 
 	$columns = array();
-	//ini_set('auto_detect_line_endings',TRUE);
 	$csv = array();
 
 	$csv_one_line = base64_decode($data);
-	if ($csv_one_line === false) { trigger_error("Invalid data encoding", E_USER_ERROR); } 
-	foreach (preg_split('/$\R?^/m', $csv_one_line) as $line) { 
-		$csv[] = str_getcsv($line);
-	}
-	//$csv_data = str_getcsv($csv, null, ','. '"');
+	if ($csv_one_line === false) { trigger_error("Invalid data encoding", E_USER_ERROR); }
+	$bom = pack('H*','EFBBBF');
+	$csv_one_line = preg_replace("/^$bom/", '', $csv_one_line); 
+	$csv = parse_csv($csv_one_line);
+
 	$headers = array_shift($csv);
 	$collection = null;
 	$col_num = 0;
