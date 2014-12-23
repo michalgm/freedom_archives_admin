@@ -1,6 +1,6 @@
 'use strict';
 
-var app = angular.module('FA_Admin', ['ngRoute', 'ui.bootstrap', 'textAngular', 'ui.sortable', 'angularFileUpload', 'ngAnimate']);
+var app = angular.module('FA_Admin', ['ngRoute', 'ui.bootstrap', 'textAngular', 'ui.sortable', 'angularFileUpload']);
 
 /*app.run(function($rootScope, $location, AuthenticationService) { 
 	var original_path = $location.path;
@@ -31,6 +31,10 @@ app.config(function($routeProvider, $compileProvider) {
 			templateUrl: 'documentEdit.html',
 			controller: 'documentEdit'
 		}).
+		when('/collections', {
+			templateUrl: 'collections.html',
+			controller: 'collections'
+		}).
 		when('/collections/:id', {
 			templateUrl: 'collectionEdit.html',
 			controller: 'collectionEdit'
@@ -51,8 +55,19 @@ app.config(function($routeProvider, $compileProvider) {
 
 app.controller('documents', function($scope, $data, $requests, $location) {
 	$scope.data = $data;
+	$scope.count = 0;
+	$scope.page = 0;
 	$scope.selectDoc = function(doc) { 
 		$location.path('documents/'+doc.id);
+	}
+});
+
+app.controller('collections', function($scope, $data, $requests, $location) {
+	$scope.data = $data;
+	$scope.count = 0;
+	$scope.page = 0;
+	$scope.selectCollection = function(collection) { 
+		$location.path('collections/'+collection.COLLECTION_ID);
 	}
 });
 
@@ -62,11 +77,14 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 		'_authors': [],
 		'_keywords': [],
 		'_subjects': [],
+		'_producers': [],
 	};
+
 	$scope.id = $routeParams.id;
 	$scope.loadDocument = function() {
 		return $requests.fetch('fetchDocument', {id:$routeParams.id}).then(function(results) { 
 			$scope.document = results;
+			$scope.document.thumbnail_url = $scope.document.THUMBNAIL ? $scope.document.THUMBNAIL + '?' + Date.now() : "";
 		})
 	}
 	
@@ -75,7 +93,7 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 			$requests.write('deleteDocument', null, $scope.document.DOCID).then(function(results) { 
 				$data.updateData().then(function() { 
 					$messages.addMessage("Document '"+$scope.document.TITLE+"' successfully deleted");
-					//$location.path('/documents');
+					$location.path('/documents');
 				})
 			});
 		}
@@ -83,10 +101,14 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 
 	$scope.saveDocument = function() {
 		var data = angular.copy($scope.document);
+		delete data.thumbnail_url;
+
 		return $requests.write('saveDocument', data, $routeParams.id).then(function(results) {  
 			$scope.document = results;
 			$scope.id = $routeParams.id = $scope.document.DOCID;
 			$data.updateData().then(function() {
+				$scope.document.thumbnail_url = $scope.document.THUMBNAIL ? $scope.document.THUMBNAIL + '?' + Date.now() : "";
+				// $location.path('/documents/'.$scope.document.DOCID);
 				$messages.addMessage("Document '"+$scope.document.TITLE+"' successfully saved");
 			});
 		});
@@ -184,7 +206,7 @@ app.controller('siteFeaturedDocs', function($scope, $requests, $messages) {
 app.controller('adminIndex', function($scope) {
 });
 
-app.controller('siteUtils', function($scope, $routeParams, $requests, $messages, $q) {
+app.controller('siteUtils', function($scope, $routeParams, $requests, $messages, $q, $data) {
 	$scope.util = $routeParams.util;
 	$scope.title = '';
 
@@ -207,7 +229,41 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 					downloadFile(results.filename+'.csv', 'text/csv', results.file);
 				});
 			}
-			break;	
+			break;
+		case 'editLists':
+			$scope.title = 'Edit Lists';
+			$scope.lists = {};
+			$scope.limit = 50;
+			
+			$scope.fetchList = function(label) {
+				var list = $scope.lists[label];
+				$requests.fetch('fetchList', {field: label, value: list.filter, limit: $scope.limit, offset: list.offset  })
+					.then(function(results){
+						$scope.lists[label].items = results.items;
+						$scope.lists[label].count = results.count;
+					})
+			}
+
+			$scope.editItem = function(label, item, action, new_item) {
+				$requests.fetch('editListItem', {field: label, item: item, new_item: new_item || "", listAction: action})
+					.then(function(results) {
+						$messages.addMessage("Item "+(action == 'delete' ? item : new_item)+" "+action+'ed successfully');
+						$scope.fetchList(label);
+						$scope.lists[label].new = '';
+					})
+			}
+
+			angular.forEach(['keyword', 'subject', 'author', 'producer', 'program', 'quality', 'generation', 'format'], function(v) {
+				$scope.lists[v] = {
+					items: [],
+					filter: '',
+					count: 0,
+					offset: 0,
+					new: ''
+				}
+				$scope.fetchList(v);
+			})
+			break;
 		case 'updateThumbnails':
 			$scope.title = 'Update Thumbnails';
 			$scope.options  = {
@@ -262,25 +318,36 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			$scope.updateKeywords  = function() { 
 				$messages.clearMessages();
 				$scope.complete = 0;
-				$scope.total = 0;
+				$scope.total = Object.keys($data.collections).length;
+				var ids = [];
+				angular.forEach($data.collections, function(c) {
+					ids.push({id: c.id, type: 'collection'});
+				})
 
 				$requests.fetch('getDocIds').then(function(results) {
 					if (results.length) { 
-						$scope.total = results.length;
-
-						var updateLookups = function() {
-							var id = results.shift();
-							if (id) {
-								var request = $requests.fetch('updateLookups', {id:id}).then(function(result) { 
-									$scope.complete++;
-									updateLookups();
-								});
-							} else { 
+						$scope.total += results.length;
+						angular.forEach(results, function(v) {
+							ids.push({id: v, type: 'document'});
+						});
+					}
+					var updateLookups = function() {
+						var items = [];
+						var x = 0;
+						while (x < 50 && ids.length) {
+							items.push(ids.shift());
+							x++;
+						}
+						var request = $requests.write('updateLookups', {items:items}).then(function(result) { 
+							$scope.complete+=result;
+							if (ids.length) {
+								updateLookups();
+							} else {
 								$messages.addMessage('Keywords updated', 'success');
 							}
-						}
-						updateLookups();
+						});
 					}
+					updateLookups();
 				});
 			};
 			break;
@@ -290,9 +357,11 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 		case 'reviewChanges':
 			$scope.title = 'Review Changes';
 			$scope.log = [];
-			$scope.limit = 10;
-			$scope.offset = 0;
-			$scope.count = 0;
+			$scope.pagination = {
+				limit: 10,
+				offset: 0,
+				count:0
+			}
 			$scope.date = '';
 			$scope.lastUpdate = '';
 			$scope.fetchLog = function() {
@@ -303,7 +372,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 					//console.log($scope.date);
 					$scope.log = results.log;
 					$scope.lastUpdate = results.lastUpdate;
-					$scope.count = $scope.log.length+1;
+					$scope.pagination.count = $scope.log.length+1;
 				})
 			}
 
@@ -321,13 +390,15 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 		case 'findDuplicates':
 			$scope.title = 'Find Duplicate Documents';
 			$scope.duplicates = {};
-			$scope.limit = 5;
-			$scope.offset = 0;
-			$scope.count = 0;
+			$scope.pagination = {
+				limit: 5,
+				offset: 0,
+				count:0
+			}
 			$requests.fetch('findDuplicates').then(function(results) { 
 				$scope.duplicates = results;
 				$scope.fields = Object.keys($scope.duplicates[0].docs[0]);
-				$scope.count = $scope.duplicates.length+1;
+				$scope.pagination.count = $scope.duplicates.length+1;
 			});
 			break;
 	}
@@ -375,12 +446,12 @@ app.service('$requests', function($http, $messages, $upload) {
 	service.fetch = function(action, params) { 
 		params = params || {};
 		params.action = action;
-		return $http.get('admin.php', {params:params, timeout:15000});
+		return $http.get('admin.php', {params:params, timeout:150000});
 	}
 	service.write = function(action, data, id) { 
 		//data = data || {};
 		//data.action = action;
-		return $http.post('admin.php', {action: action, id: id, data:data}, {timeout:15000});
+		return $http.post('admin.php', {action: action, id: id, data:data}, {timeout:150000});
 	}
 	service.handleError = function(data, status, headers, config) { 
 		console.log('Error');
@@ -391,11 +462,6 @@ app.service('$requests', function($http, $messages, $upload) {
 app.service('$data', function($requests, $rootScope, $messages) {
 	var $data = this;
 	$data.collections = {};
-	$data.documents = {};
-	$data.users = {};
-	$data.keywords = {};
-	$data.authors = {};
-	$data.subjects = {};
 	$data.action_access = {};
 
 	$data.updateData = function(noclear) {
@@ -404,21 +470,12 @@ app.service('$data', function($requests, $rootScope, $messages) {
 		}
 		return $requests.fetch('fetch_data').then(function(results) {
 			$data.collections = results.collections;
-			$data.users = results.users;
-			$data.keywords = results.keywords;
-			$data.authors = results.authors;
-			$data.subjects = results.subjects;
 			$data.action_access = results.action_access;
 		});
 	}
 
 	$data.clearData = function() { 
 		$data.collections = {};
-		$data.documents = {};
-		$data.users = {};
-		$data.keywords = {};
-		$data.authors = {};
-		$data.subjects = {};
 		$data.action_access = {};
 	}	
 		

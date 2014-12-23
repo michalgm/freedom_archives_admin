@@ -106,7 +106,7 @@ ol, ul {
 }
 #header_search { top: 0px; }
 #collections_menu { bottom: 0px; }
-#footer {
+#footer, .footer {
 	position: relative;
 	top: -66px;
 	margin: auto;
@@ -286,7 +286,10 @@ div.pagination span.current {
 #contact img { float: right; border: 1px solid black; margin-left: 10px; }
 
 .modal { z-index: 20!important; }
-.doc_description { position: relative; }
+.doc_description { 
+	position: relative; 
+	margin-left: 75px;
+}
 .read-more a, .read-less a {
 	background: none repeat scroll 0 0 #F8F2BA;
 	bottom: -10px;

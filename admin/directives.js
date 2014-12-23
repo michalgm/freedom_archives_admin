@@ -50,8 +50,6 @@ app.directive('navLink', function($data, AuthenticationService) {
 	}
 });
 
-
-
 app.directive('header', function($requests, $sce) {
 	return {
 		restrict: 'A',
@@ -152,7 +150,12 @@ app.directive('documentSearch', function($requests) {
 			docLimit:'@',
 			selectDoc:'=',
 			nonDigitizedDefault:'@',
-			limitCollectionId:'@'
+			limitCollectionId:'@',
+			embedded: '=',
+			page:'=?',
+			count: '=?',
+			docLimit: '=?'
+
 		},
 		link: function(scope,element, atrribs) {
 			scope.page = 1;
@@ -160,14 +163,25 @@ app.directive('documentSearch', function($requests) {
 			scope.documents = [];
 			scope.count = 0;
 			scope.nonDigitized = scope.nonDigitizedDefault || 0;
+			scope.NEEDS_REVIEW = 1;
+			scope.IS_HIDDEN = 0;
 			scope.collection = '';
 			scope.selected = null;
+			console.log(scope.docLimit);
 			
 			scope.fetchDocuments = function() { 
 				if (scope.limitCollectionId) { 
 					scope.collection = scope.limitCollectionId;
 				}
-				$requests.fetch('fetchDocuments', {filter:scope.filter, collection:scope.collection, page:scope.page, limit:scope.docLimit, nonDigitized:scope.nonDigitized}).then(function(results) { 
+				$requests.fetch('fetchDocuments', {
+					filter:scope.filter,
+					collection:scope.collection, 
+					page:scope.page,
+					limit:scope.docLimit,
+					nonDigitized:scope.nonDigitized,
+					IS_HIDDEN: scope.IS_HIDDEN,
+					NEEDS_REVIEW: scope.NEEDS_REVIEW
+				}).then(function(results) { 
 					scope.documents = results.docs;
 					scope.count = results.count;
 				});
@@ -181,7 +195,7 @@ app.directive('documentSearch', function($requests) {
 				}
 			}
 
-			scope.$watchCollection('[filter, limitCollectionId, collection, nonDigitized]', function() { 
+			scope.$watchCollection('[filter, limitCollectionId, collection, nonDigitized, NEEDS_REVIEW, IS_HIDDEN]', function() { 
 				scope.page = 1;
 				scope.fetchDocuments();
 			});
@@ -190,6 +204,49 @@ app.directive('documentSearch', function($requests) {
 				scope.fetchDocuments();
 			});
 
+		}
+	}
+});
+
+app.directive('collectionSearch', function($requests) {
+	return {
+		restrict: 'A',
+		templateUrl:'collectionSearch.html',
+		scope: {
+			docLimit:'@',
+			selectAction:'=',
+			nonDigitizedDefault:'@',
+			limitCollectionId:'@',
+			page:'=?',
+			count: '=?',
+			docLimit: '=?'
+		},
+		link: function(scope,element, atrribs) {
+			scope.page = 1;
+			scope.filter = '';
+			scope.collections = [];
+			scope.count = 0;
+			scope.selected = null;
+
+			scope.fetchCollections = function() { 
+				$requests.fetch('fetchCollections', {
+					filter:scope.filter,
+					page:scope.page,
+					limit:scope.docLimit,
+				}).then(function(results) { 
+					scope.collections = results.collections;
+					scope.count = results.count;
+				});
+			}
+
+			scope.$watchCollection('[filter]', function() { 
+				scope.page = 1;
+				scope.fetchCollections();
+			});
+
+			scope.$watch('page', function() {
+				scope.fetchCollections();
+			});
 		}
 	}
 });
@@ -209,7 +266,32 @@ app.directive('collectionSelect', function($location) {
 	}
 });
 
-app.directive('formGroup', function() {
+app.directive('documentSelect', function($location, $requests) {
+	return {
+		restrict: 'A',
+		template:'<input type="text" ng-model="filter" autocomplete="off" typeahead-editable="false" typeahead-on-select="selectDocument($item)" typeahead="doc.label for doc in fetchDocuments($viewValue)" class="form-control" placeholder="Find Record by Title, Call #, or ID" />',
+		scope: true,
+		link: function(scope,element, atrribs) {
+			scope.filter = '';
+
+			scope.selectDocument= function(document) { 
+				if (document) { 
+					$location.path('/documents/'+document.id);
+					scope.filter = '';
+				}
+			}
+
+			scope.fetchDocuments = function(value) { 
+				return $requests.fetch('fetchDocuments', {filter:value, limit:10, page: 1, nonDigitized:true, titleOnly: true})
+					.then(function(results) { 
+						return results.docs;
+					})
+			}
+		}
+	}
+});
+
+app.directive('formGroup', function($requests) {
 	return {
 		restrict: 'A',
 		scope: {
@@ -227,7 +309,22 @@ app.directive('formGroup', function() {
 				scope.label_width = 4;
 				scope.field_width = 8;
 				element.addClass('col-xs-6');
-			} 
+			}
+
+			scope.fetchList = function(field, value, limit) {
+				limit = limit || 8;
+				return $requests.fetch('fetchList', {field: field, value: value, limit: limit})
+					.then(function(response){
+						return response.items;
+					})
+			}
+
+			scope.checkValue= function(value) {
+				var input = element.find('input');
+				if (! scope.model && input && input.val()) {
+					input.val('');
+				}
+			}
 		}
 	}
 });
@@ -260,7 +357,6 @@ app.directive('fileUpload', function($upload, $messages, $requests) {
 			scope.image_URI = '';
 			scope.bad_file = 0;
 			scope.processing = 0;
-			scope.salt=Date.now();
 
 			scope.clearFile = function() { 
 				scope.image_URI = '';
@@ -289,9 +385,9 @@ app.directive('fileUpload', function($upload, $messages, $requests) {
 			
 			scope.uploadFile = function() { 
 				scope.processing = 1;
+				if(!scope.file.name) { return; }
 				$requests.write('uploadFile', {type:scope.type, ext: scope.file.name.split('.').pop(), id:scope.itemId, data:scope.image_data}).then(function(results) { 
-					var salt = new Date().getTime();
-					scope.currentUrl = results+'?'+salt;
+					scope.currentUrl = results+'?'+ Date.now();
 					$messages.addMessage("Thumbnail updated");
 					scope.clearFile();
 					//$messages.addMessage(results);
@@ -308,18 +404,33 @@ app.directive('tagger', function($requests, $data) {
 		scope: {
 			model: '=',
 			type: '@',
+			isEditable: '@editable'
 		},
 		templateUrl: 'tagger.html',
 		link: function(scope, element, attribs) { 
 			scope.data = $data;
+			//scope.editable = scope.isEditable != false;
 			scope.selected = '';
 			scope.removeItem = function(i) { 
 				scope.model.splice(i, 1);
 			}
 			scope.addItem = function() {
-				scope.model.push(scope.selected);
-				scope.selected = '';
+				if (scope.selected) {
+					if ($.inArray(scope.selected, scope.model) == -1) {
+						scope.model.push(scope.selected);
+					}
+					scope.selected = '';
+				}
 			}
+
+			scope.fetchList = function(field, value, limit) {
+				limit = limit || 8;
+				return $requests.fetch('fetchList', {field: field, value: value, limit: limit})
+					.then(function(response){
+						return response.items;
+					})
+			}
+
 		}
 	}
 });;
@@ -382,15 +493,55 @@ app.directive('resize', ['$window', function($window) {
   };
 }]);
 
-app.directive('content', [function() {
+app.directive('content', ['$timeout', function(timeout) {
 	return {
 		link: function(scope) {
 			var resize = function() {
-        $('.content-body').height($(window).height()-85);
+				var height = $(window).height() - $('#header').outerHeight(true) - 21;
+				if ($('#footer')) { 
+					height -= $('#footer').outerHeight(true); 
+				}
+        $('.content-body').height(height);
 			}	
 
 			scope.$on('windowResize', resize);
-			resize();
+			timeout(resize, 0);
 		}
 	}
 }]);
+
+app.directive('input', function () {
+  return {
+    restrict: 'E',
+    require: '?ngModel',
+    link: function (scope, elem, attrs, ctrl) {
+      if (! ctrl || ! attrs.type || attrs.type.toLowerCase() !== 'number') {return; }
+      ctrl.$formatters.push(function (value) {
+      	value = ctrl.$modelValue;
+        return value ? parseFloat(value, 10) : null;
+      });
+    }
+  };
+});
+
+app.directive('autoheight', function() {
+	return {
+		restrict: 'A',
+		scope: true,
+		link: function(scope, elem, attrs) {
+			var e = $(elem);
+			// var body = e.find('.scroll-body');
+			e.parentsUntil('.content-body').addClass('scroll-container');
+			e.addClass('scroll-container');
+			// css({'height': 'auto', 'display': 'flex', 'flex-direction': 'column'});
+			//body.css({'overflow': 'auto', flex: '1 1 auto', 'min-height': '10px', 'height': 'auto'});
+			// e.css({'height': 'auto', 'display': 'flex', 'flex-direction': 'column'});
+			// var resize = function() {
+				//e.height(e.parent().innerHeight() - (e.outerHeight(true) - e.innerHeight()));
+				//body.height(e.innerHeight() - e.find('.scroll-header').outerHeight(true) - e.find('.scroll-footer').outerHeight(true));
+			// }
+			// scope.$on('windowResize', resize);
+			// $timeout(resize,0)
+		}
+	}
+})

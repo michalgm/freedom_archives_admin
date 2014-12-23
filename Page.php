@@ -27,7 +27,7 @@ class Page {
 			'format'=>array('field'=>'FORMAT', 'display'=>'Source Format'),
 			'year'=>array('field'=>'YEAR', 'display'=>'Year'),
 			'title'=>array('field'=>'TITLE', 'display'=>'Title'),
-			'subject'=>array('field'=>'SUBJECT_LIST', 'display'=>'Subject'),
+			'subject'=>array('field'=>'SUBJECT', 'display'=>'Subject'),
 			'author'=>array('field'=>'author', 'display'=>'Author'),
 		);
 
@@ -48,7 +48,7 @@ class Page {
 			$query = array(
 				'select' => "select DOCUMENTS_LIVE.*, date_format(DOCUMENTS_LIVE.DATE_CREATED, '%c/%e/%Y') as DATE, collection_name, ".$this->filterparams['media']['field']." as media_type ",
 				'from' => "from DOCUMENTS_LIVE join COLLECTIONS_LIVE using (collection_id)",
-				'where' => " where 1=1 ",
+				'where' => " where DOCUMENTS_LIVE.IS_HIDDEN = 0 ",
 				'order' => "",
 				'limit' => "",
 				'querystring' => "",
@@ -58,8 +58,8 @@ class Page {
 				include "includes/search/search.php";
 				$search_terms_string = getSearchQueryString($DB_SEARCH_TERMS);
 				$natural_language_terms = preg_replace("/\+|-\w*|\band\b|\bnot\b( \w+)?|\bor\b/i", "", $DB_SEARCH_TERMS);
-				$query['select'] .=	", MATCH(`TITLE`, DOCUMENTS_LIVE.DESCRIPTION, `SUBJECT_LIST`, `AUTHOR`, `DOC_TEXT`, DOCUMENTS_LIVE.keywords, `FILE_EXTENSION`) AGAINST('$natural_language_terms' IN NATURAL LANGUAGE MODE) as relevance ";
-				$query['where'] .= "and MATCH(TITLE, DOCUMENTS_LIVE.KEYWORDS, DOCUMENTS_LIVE.DESCRIPTION, AUTHOR) AGAINST('$search_terms_string' IN BOOLEAN MODE) ";
+				$query['select'] .=	", MATCH(`TITLE`, DOCUMENTS_LIVE.DESCRIPTION, DOCUMENTS_LIVE.SUBJECTS, `AUTHORS`, `DOC_TEXT`, DOCUMENTS_LIVE.KEYWORDS, `FILE_EXTENSION`) AGAINST('$natural_language_terms' IN NATURAL LANGUAGE MODE) as relevance ";
+				$query['where'] .= "and MATCH(TITLE, DOCUMENTS_LIVE.KEYWORDS, DOCUMENTS_LIVE.DESCRIPTION, AUTHORS) AGAINST('$search_terms_string' IN BOOLEAN MODE) ";
 				$query['order'] .= " order by relevance desc";
 			}
 
@@ -121,7 +121,7 @@ class Page {
 		}
 		foreach ($docs as $doc) { 
 			$title = htmlspecialchars($doc['TITLE'], ENT_QUOTES);
-			foreach(array('keywords', 'TITLE', 'DESCRIPTION', 'AUTHOR') as $key) {
+			foreach(array('KEYWORDS', 'TITLE', 'DESCRIPTION', 'AUTHORS') as $key) {
 				if (! $doc[$key]) { continue; }
 				foreach($search_terms as $term) { 
 					$term = preg_replace("/\"|'/", "", $term);
@@ -138,7 +138,7 @@ class Page {
 				$nicekey = ucwords(str_replace("_", " ", $key));
 				$doc[$ukey] = $doc[$ukey] ? "<span class='$key'>$nicekey: ".html_encode($doc[$ukey])."</span>" : "";
 			}
-			$doc['AUTHOR'] = $doc['AUTHOR'] ? "<span class='author'>Author".(strstr($doc['AUTHOR'], ',') || stristr($doc['AUTHOR'], ' and ')  ? 's' : '').": ".$doc['AUTHOR']."</span>" : "";
+			$doc['AUTHORS'] = $doc['AUTHORS'] ? "<span class='author'>Author".(strstr($doc['AUTHORS'], ',') || stristr($doc['AUTHORS'], ' and ')  ? 's' : '').": ".$doc['AUTHORS']."</span>" : "";
 			$thumbnail = $doc['THUMBNAIL'] ? $doc['THUMBNAIL'] : "images/thumbnails/not_digitized.jpg";
 			$link_title = preg_replace("/<\/?span[^>]*?>/si", "", $title);
 			$doc['TITLE'] = trim($doc['TITLE']);
@@ -155,7 +155,7 @@ class Page {
 				<div id='doc_$doc[DOCID]' class='document'>
 					$image
 					$title
-					<div class='details'>$doc[AUTHOR]$doc[PUBLISHER]$doc[YEAR]$doc[CALL_NUMBER]$doc[DATE]$doc[PRODUCERS]$doc[PROGRAM]$collection</div>
+					<div class='details'>$doc[AUTHORS]$doc[PUBLISHER]$doc[YEAR]$doc[CALL_NUMBER]$doc[DATE]$doc[PRODUCERS]$doc[PROGRAM]$collection</div>
 					<div class='doc_description'>$description</div>
 				</div>
 			";
@@ -283,7 +283,14 @@ class Page {
 			if ($param == 'collection_id' && $this->params['view_collection']) { continue; }
 			$field = $this->filterparams[$param]['field'];
 			$display = $this->filterparams[$param]['display'];
-			$data = dbLookupArray("select $field as value, count(*) as count $query[from] $query[where] group by if($field is null, '', $field) order by count(*) desc, value");
+			$data = array();
+			if ($param == 'subject' || $param == 'author') {
+				$lookup_table = strtoupper($param).'_LOOKUP';
+				$query['from'] .= " join LIST_ITEMS_LOOKUP $lookup_table on DOCUMENTS_LIVE.DOCID = $lookup_table.ID and $lookup_table.TYPE = '$param' and $lookup_table.IS_DOC = 1 ";
+				$data = dbLookupArray("select $lookup_table.item as value, count(*) as count $query[from] $query[where] group by $lookup_table.item order by count(*) desc, value");
+			} else {
+				$data = dbLookupArray("select $field as value, count(*) as count $query[from] $query[where] group by if($field is null, '', $field) order by count(*) desc, value");
+			}
 			$filter_components .= "<h5>$display</h5>
 				<ul class='filter_cat $param'>";
 			$x = 0;
@@ -314,7 +321,7 @@ class Page {
 		include_once "includes/tag-cloud/classes/tagcloud.php";
 		$kw_limit = 30;
 		$query = $this->getQuery();
-		$keywords = dbLookupArray("SELECT KEYWORD, count(*) as count $query[from] join KEYWORD_LOOKUP_LIVE using(DOCID) ".$query['where']." group by lower(KEYWORD) order by counT(*) desc limit $kw_limit");
+		$keywords = dbLookupArray("SELECT item KEYWORD, count(*) as count $query[from] join LIST_ITEMS_LOOKUP_LIVE on DOCID = id ".$query['where']." and IS_DOC = 1 group by lower(KEYWORD) order by counT(*) desc limit $kw_limit");
 		if (! $keywords) { return ""; }
 		$link= preg_replace("/s=[^&]*&?/", "", $this->getTargetPage());
 		$cloud = new tagcloud();
@@ -366,7 +373,7 @@ class Page {
 
 function getCollections($parent_id=null) {
 	$where = $parent_id ? " and c.parent_id = $parent_id " : "";
-	$cols = dbLookupArray("SELECT c.collection_id,c.thumbnail,c.collection_name,c.description, c.summary , c.parent_id FROM COLLECTIONS_LIVE c left join COLLECTIONS_LIVE c2 on c.collection_id = c2.parent_id join DOCUMENTS_LIVE d on c.collection_id = d.collection_id or c2.collection_id =  d.collection_id where c.is_deleted = 0 $where group by c.collection_id order by c.display_order, c.collection_name" );
+	$cols = dbLookupArray("SELECT c.collection_id,c.thumbnail,c.collection_name,c.description, c.summary , c.parent_id FROM COLLECTIONS_LIVE c left join COLLECTIONS_LIVE c2 on c.collection_id = c2.parent_id join DOCUMENTS_LIVE d on c.collection_id = d.collection_id or c2.collection_id =  d.collection_id where c.is_hidden = 0 $where group by c.collection_id order by c.display_order, c.collection_name" );
 	return $cols;
 }
 

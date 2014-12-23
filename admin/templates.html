@@ -34,16 +34,50 @@
 <script type="text/ng-template" id="documents.html">
 	<div header title='Records' buttons='buttons'></div>
 	<div content class='content-body'>
-		<div document-search doc-limit='10' non-digitized-default='1' select-doc='selectDoc'></div>
+		<div document-search page='page' count='count' doc-limit='10' non-digitized-default='1' select-doc='selectDoc'></div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="collections.html">
+	<div header title='Collections' buttons='buttons'></div>
+	<div content class='content-body'>
+		<div collection-search page='page' count='count' doc-limit='10' select-action='selectCollection'></div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="collectionSearch.html">
+	<div id='collectionSearch' autoheight class='panel panel-primary'>
+		<form class='form-inline panel-heading scroll-header'>
+			<div class='form-group'>
+				<label class="control-label">Text</label>
+				<input type='text' class='form-control' placeholder='Search by title or ID' ng-model='filter' autofocus/>
+			</div>
+		</form>
+	<div class='list-group scroll-body'>
+		<a href='javascript:void(0);' class='list-group-item' ng-click='selectAction(collection)' ng-repeat='collection in collections | toArray | orderBy:"label"'>
+			<div class='media'>
+				<span class='pull-left'>
+					<img ng-if='collection.THUMBNAIL' class="media-object" style='width: 75px' ng-src='../{{collection.THUMBNAIL}}'/>
+				</span>
+				<div class='media-body'>
+					<span class='pull-right text-right'>ID: {{collection.COLLECTION_ID}}<span ng-if='document.CALL_NO'><br/>Call #: {{collection.CALL_NO}}</span></span>
+					<h4 class='list-group-item-heading'>{{collection.COLLECTION_NAME  || 'Untitled'| truncate:100}}</h4>
+					<p>{{collection.SUMMARY | truncate:150}}</p>
+				</div>
+			</div>
+		</a>
+	</div>
+	<div class='panel-footer text-center scroll-footer'>
+		<pagination items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination>
 	</div>
 </script>
 
 <script type="text/ng-template" id="documentSearch.html">
-	<div id='docSearch' class='panel panel-primary'>
-		<form class='form-inline panel-heading'>
+	<div id='docSearch' autoheight class='panel panel-primary'>
+		<form class='form-inline panel-heading scroll-header'>
 			<div class='form-group'>
 				<label class="control-label">Text</label>
-				<input iype='text' class='form-control' placeholder='Search by text' ng-model='filter' autofocus/>
+				<input type='text' class='form-control' placeholder='Search by text' ng-model='filter' autofocus/>
 			</div>
 			<div ng-hide='limitCollectionId' class='form-group'>
 				<label class="control-label">Collection</label>
@@ -52,16 +86,27 @@
 			<div class="checkbox">
 				<label>
 					<input type="checkbox" ng-model='nonDigitized' ng-true-value="1" ng-false-value="0"> Include non-digitized
-				  </label>
+				</label>
+			</div>
+			<div class="checkbox" ng-if='embedded'>
+				<label>
+					<input type="checkbox" ng-model='NEEDS_REVIEW' ng-true-value="0" ng-false-value="1"> Needs Review
+				</label>
+			</div>
+			<div class="checkbox" ng-if='embedded'>
+				<label>
+					<input type="checkbox" ng-model='IS_HIDDEN' ng-true-value="1" ng-false-value="0"> Hidden
+				</label>
 			</div>
 		</form>
-		<div class='list-group'>
+		<div class='list-group scroll-body'>
 			<a href='javascript:void(0);' class='list-group-item' ng-click='selectDoc(document)' ng-repeat='document in documents | toArray | orderBy:"label"'>
 				<div class='media'>
 					<span class='pull-left'>
-						<img class="media-object" style='width: 75px' ng-src='../{{document.THUMBNAIL}}'/>
+						<img class="media-object" style='width: 75px' ng-src='../{{document.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
 					</span>
 					<div class='media-body'>
+						<span class='pull-right text-right'>ID: {{document.id}}<span ng-if='document.CALL_NUMBER'><br/>Call #: {{document.CALL_NUMBER}}</span></span>
 						<h4 class='list-group-item-heading'>{{document.label  || 'Untitled'| truncate:100}}</h4>
 						<p><i>Collection:{{document.COLLECTION_NAME}}</i></p>
 						<p>{{document.DESCRIPTION | truncate:150}}</p>
@@ -69,7 +114,7 @@
 				</div>
 			</a>
 		</div>
-		<div class='panel-footer text-center'>
+		<div class='panel-footer text-center scroll-footer'>
 			<pagination items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination>
 		</div>
 </script>
@@ -79,58 +124,67 @@
 	<div content class='content-body'>
 		<form class="form-horizontal">
 			<div class='row' form-group model='document.TITLE' label='Title'></div>
-			<div class='row' form-group model='document._authors' label='Authors' input-type='tagger' options="{type:'author'}"></div>
-			<div class='row' form-group model='document._keywords' label='Keywords' input-type='tagger' options="{type:'keyword'}"></div>
+			<div class='row'>
+				<div form-group model='document.IS_HIDDEN' input-type='checkbox' label='Hidden'></div>
+				<div form-group model='document.NEEDS_REVIEW' input-type='checkbox' label='Reviewed'></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.CALL_NUMBER' label='Call Number'></div>
+			</div>
+
+			<div class='row'>
+				<div form-group model='document.URL' label='URL'></div>
+				<div form-group model='document.thumbnail_url' label='Thumbnail' input-type='image' options="{type:'document', id:id}"></div>
+			</div>
+			<div class='row' form-group model='document._authors' label='Authors' input-type='tagger' options="{type:'author', editable: true}"></div>
+			<div class='row' form-group model='document._producers' label='Producers' input-type='tagger' options="{type:'producer', editable: true}"></div>
+			<div class='row' form-group model='document._keywords' label='Keywords' input-type='tagger' options="{type:'keyword', editable: true}"></div>
+			<div class='row' form-group model='document._subjects' label='Subjects' input-type='tagger' options="{type:'subject', editable: false}"></div>
 			<div class='row'>
 				<div form-group model='document.COLLECTION_ID' label='Collection' input-type='collectionChooser'></div>
-				<div form-group model='document.DATE_CREATED' label='Creation Date'></div>
+				<div form-group model='document.FORMAT' label='Format' input-type='chooser' options="{field: 'format', editable: true}"></div>
 			</div>
 			<div class='row'>
+				<div form-group model='document.VOL_NUMBER' label='Volume Number/Date'></div>
 				<div form-group model='document.YEAR' label='Year'></div>
-				<div form-group model='document.FORMAT' label='Format'></div>
 			</div>
 			<div class='row'>
-				<div form-group model='document.VOL_NUMBER' label='Volume Number'></div>
-				<div form-group model='document.NO_COPIES' label='No. Copies'></div>
-			</div>
-			<div class='row'>
-				<div form-group model='document.PUBLISHER' label='Publisher'></div>
-				<div form-group model='document.PRODUCERS' label='Producers'></div>
-			</div>
-			<div class='row'>
-				<div form-group model='document.PROGRAM' label='Program'></div>
 				<div form-group model='document.LOCATION' label='Location'></div>
+				<div form-group model='document.NO_COPIES' label='Number of Copies' input-type='number'></div>
 			</div>
 			<div class='row'>
-				<div form-group model='document.GENERATION' label='Generation'></div>
-				<div form-group model='document.QUALITY' label='Quality'></div>
-			</div>
-			<div class='row' form-group model='document.URL' label='URL'></div>
-			<!--<div form-group model='document.IS_PUBLISHED' label='Published' input-type='checkbox'></div>-->
-			<div class='row'>
-				<div form-group model='document.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'document', id:id}"></div>
-				<div form-group model='document.URL_TEXT' label='URL Text'></div>
+				<div form-group model='document.PUBLISHER' label='Organization/Publisher'></div>
+				<div form-group model='document.PROGRAM' label='Program'  input-type='chooser' options="{field: 'program', editable: false}"></div>
 			</div>
 			<div class='row'>
-				<div form-group model='document.FILENAME' label='Filename'></div>
-				<div form-group model='document.FILE_EXTENSION' label='File Extension'></div>
+				<div form-group model='document.GENERATION' input-type='chooser' label='Generation' options="{field: 'generation'}"></div>
+				<div form-group model='document.QUALITY' label='Quality' input-type='chooser' options="{field: 'quality', editable: true}"></div>
 			</div>
 			<div class='row' form-group model='document.DESCRIPTION' label='Description' input-type='textarea'></div>
+			<div class='row' form-group model='document.NOTES' label='Notes' input-type='textarea'></div>
 		</form>
+	</div>
+	<div id='footer' class='well'>
+		<div class='row'>
+			<span class='col-xs-4'>Document ID: {{id}}</span>
+			<span class='col-xs-4 text-center'>Created: {{document.DATE_CREATED}} by {{document.CREATOR}}</span>
+			<span class='col-xs-4 text-right'>Modified: {{document.DATE_MODIFIED}} by {{document.CONTRIBUTOR}}</span>
+		</div>
 	</div>
 </script>
 
 <script type="text/ng-template" id="header.html">
 	<nav id='header' class="navbar navbar-default " >
 		<div class="container-fluid">
-        <div class="navbar-header">
-          <h2 class='navbar-text'>{{title}}</h2>
-        </div>
-        <div class="navbar-right">
-		  <span ng-bind-html='safeExtraHeader' />
-		  <button ng-repeat="button in buttons" ng-class='button.class' class="btn btn-default btn-lg navbar-btn" ng-click='doAction(button.action, $index)' type="button">{{button.text}}</button>
-        </div>
+      <div class="navbar-header">
+        <h2 class='navbar-text'>{{title}}</h2>
+
       </div>
+      <div class="navbar-right">
+			  <span ng-bind-html='safeExtraHeader' />
+			  <button ng-repeat="button in buttons" ng-class='button.class' class="btn btn-default btn-lg navbar-btn" ng-click='doAction(button.action, $index)' type="button">{{button.text}}</button>
+      </div>
+    </div>
 	</nav>
 </script>
 
@@ -141,19 +195,18 @@
 			<tab ng-if="id != 0" heading="Edit Collection">
 				<form class="form-horizontal">
 					<div form-group model='collection.COLLECTION_NAME' label='Collection Name'></div>
+					<div form-group model='collection.PARENT_ID' label='Parent Collection' input-type='collectionChooser'></div>
+					<div form-group model='collection.IS_HIDDEN' label='Hidden' input-type='checkbox'></div>
+					<div form-group model='collection.NEEDS_REVIEW' label='Reviewed' input-type='checkbox'></div>
 					<div form-group model='collection.CALL_NO' label='Call Number'></div>
-					<div form-group model='collection.DATE_CREATED' label='Creation Date' input-type='date'></div>
-					<div form-group model='collection.ACCESS_LEVEL' label='Public Access Level'></div>
-					<div form-group model='collection.ORGANIZATION' label='Organizations'></div>
-					<div form-group model='collection.KEYWORDS' label='Keywords'></div>
+					<div form-group model='collection.ORGANIZATION' label='Organization/Publisher'></div>
+					<div form-group model='collection.DATE_RANGE' label='Date Range'></div>
+					<div form-group model='collection.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'collection', id:id}"></div>
+					<div class='row' form-group model='collection._keywords' label='Keywords' input-type='tagger' options="{type:'keyword', editable: true}"></div>
+					<div class='row' form-group model='collection._subjects' label='Subjects' input-type='tagger' options="{type:'subject', editable: false}"></div>
 					<div class='row' form-group model='collection.DESCRIPTION' label='Description' input-type='richtext'></div>
 					<div class='row' form-group model='collection.SUMMARY' label='Summary' input-type='textarea'></div>
 					<div class='row' form-group model='collection.INTERNAL_NOTES' label='Internal Notes' input-type='textarea'></div>
-					<div form-group model='collection.PARENT_ID' label='Parent Collection' input-type='collectionChooser'></div>
-					<div form-group model='collection.IS_DELETED' label='Hidden' input-type='checkbox'></div>
-					<div form-group model='collection.DATE_RANGE' label='Date Range'></div>
-					<div form-group model='collection.SUBJECTS' label='Subjects'></div>
-					<div form-group model='collection.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'collection', id:id}"></div>
 				</form>
 			</tab>
 			<tab ng-if="id != 0" heading='Featured Records'>
@@ -161,15 +214,15 @@
 			</tab>
 			<tab ng-if="1" heading='Subcollections'>
 				<div class='row'>
-					<div class='col-xs-6'>
-						<h3>Edit Subcollections <small>Drag to reorder</small></h3>
-						<div class="list-group" ui-sortable ng-model='collection._subcollections'>
+					<div class='col-xs-6' autoheight>
+						<h3 class='scroll-header'>Edit Subcollections <small>Drag to reorder</small></h3>
+						<div class="list-group scroll-body" ui-sortable ng-model='collection._subcollections'>
 							<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='sc in collection._subcollections | filter:{DISPLAY_ORDER:"!1000"}'>
-								<strong ng-class='{"text-muted": sc.IS_DELETED == 1}'>{{sc.COLLECTION_NAME}}&nbsp;</strong>
+								<strong ng-class='{"text-muted": sc.IS_HIDDEN == 1}'>{{sc.COLLECTION_NAME}}&nbsp;</strong>
 								<span class='pull-right' style='position:absolute; right:15px ' >
 									<button ng-click='editSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-pencil"></span> Edit</button>
-									<!--<button ng-if='sc.IS_DELETED == 1' ng-click='hideSubcollection(sc.COLLECTION_ID, 1)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ok-circle"></span> Unhide</button>
-									<button ng-if='sc.IS_DELETED == 0' ng-click='hideSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ban-circle"></span> Hide</button>-->
+									<!--<button ng-if='sc.IS_HIDDEN == 1' ng-click='hideSubcollection(sc.COLLECTION_ID, 1)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ok-circle"></span> Unhide</button>
+									<button ng-if='sc.IS_HIDDEN == 0' ng-click='hideSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ban-circle"></span> Hide</button>-->
 									<button ng-click='removeSubcollection($index)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-remove"></span> Remove</button>
 								</span>
 							</a>
@@ -183,18 +236,25 @@
 			</tab>
 		</tabset>
 	</div>
+	<div id='footer' class='well'>
+		<div class='row'>
+			<span class='col-xs-4'>Collection ID: {{id}}</span>
+			<span class='col-xs-4 text-center'>Created: {{collection.DATE_CREATED}} by {{collection.CREATOR}}</span>
+			<span class='col-xs-4 text-right'>Modified: {{collection.DATE_MODIFIED}} by {{collection.CONTRIBUTOR}}</span>
+		</div>
+	</div>
 </script>
 
 <script type="text/ng-template" id="featuredDocs.html">
 	<div id='featuredDocs' class='row'>
-		<div class='col-xs-6'>
-			<h3>Edit Featured Records <small>Drag to reorder</small></h3>
-			<div class="list-group" ui-sortable ng-model='documents'>
+		<div class='col-xs-6' autoheight>
+			<h3 class='scroll-header'>Edit Featured Records <small>Drag to reorder</small></h3>
+			<div class="list-group scroll-body" ui-sortable ng-model='documents'>
 				<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='doc in documents'>
 					<div class='media'>
 						<button ng-click='removeFeaturedDoc($index)' class='btn btn-default' style='position:absolute; top:15px; right:15px;'><span class="glyphicon glyphicon-remove"></span> Remove</button> 
 						<span class='pull-left'>
-							<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL}}'/>
+							<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
 						</span>
 						<div class='media-body'>
 							<p><strong>{{doc.TITLE}}</strong></p>
@@ -211,7 +271,7 @@
 		</div>
 		<div class='col-xs-6'>
 			<h3>Add a Record</h3>
-			<div document-search doc-limit='5' select-doc='addFeaturedDoc' limit-collection-id='{{limitCollectionId}}'></div>
+			<div document-search doc-limit='5' embedded=1 select-doc='addFeaturedDoc' limit-collection-id='{{limitCollectionId}}'></div>
 		</div>
 	</div>
 </script>
@@ -235,6 +295,59 @@
 				<li>Records can be assigned to collections via a collection column (enter the most specific collection or subcollection).
 			</ul>
 			<div file-import filetype='CSV' action='csvImport'/>
+		</div>
+		<div ng-switch-when='editLists'>
+			<tabset>
+				<tab ng-repeat='(label,list) in lists' heading='{{label | ucf}}'>
+					<div autoheight class="panel panel-default">
+						<div class="panel-heading scroll-header">
+							<form class='form-inline row'>
+								<div class='form-group col-xs-4'>
+									<label class='control-label'>Filter</label>
+									<input type='text' ng-change='fetchList(label)' class='form-control' placeholder='Filter list' ng-model='list.filter' autofocus/>
+								</div>
+								<div class='form-group col-xs-4'>
+									<label class='control-label'>Add new item</label>
+										<div class='input-group'>
+											<input type="text" class="form-control" ng-model='list.new'>
+											<span class="input-group-btn">
+												<button class="btn btn-primary" ng-click='editItem(label, "", "add", list.new)'>Add</button>
+											</span>
+									</div>
+								</div>
+							</form>
+						</div>
+						<ul class='list-group scroll-body'>
+							<li class='list-group-item' ng-init='edit=0; new_item = item;' ng-repeat='item in list.items'>
+								<div class='row'>
+									<div class='col-xs-6'>	
+										<span ng-hide='edit'>{{item}}</span>
+										<form class='form-inline col-xs-6' ng-show='edit'>
+										<div class='form-group'>
+											<div class='input-group'>
+												<input class='form-control' ng-model='new_item'>
+												<span class="input-group-btn">
+													<button class="btn btn-primary" ng-click='editItem(label, item, "edit", new_item)'>Save</button>
+												</span>
+											</div>
+										</div>
+										</form>
+									</div>
+									<div class='col-xs-6'>
+										<div class='pull-right btn-group'>	
+											<button class='btn btn-default btn-sm' ng-click='edit = !edit'>{{edit ? 'Cancel' : 'Edit'}}</button>
+											<button class='btn btn-danger btn-sm' ng-click='editItem(label, item, "delete")'>Delete</button>
+										</div>
+									</div>
+								</div>
+							</li>
+						</ul>
+						<div class='panel-footer text-center scroll-footer'>
+							<pagination ng-click='fetchList(label)' items-per-page='limit' total-items="list.count" boundary-links="true" max-size='5' ng-model="list.offset"></pagination>
+						</div>
+					</div>
+				</tab>
+			</tabset>
 		</div>
 		<div ng-switch-when='updateKeywords'>
 			<progressbar ng-show='total != 0 && complete != total' class='progress-striped active' max="100" value="complete*(100/total)">
@@ -261,7 +374,7 @@
 						<th>Time</th>
 					</thead>
 					<tbody>
-						<tr ng-repeat='item in log | slice:(offset-1)*limit:limit'>
+						<tr ng-repeat='item in log | slice:(pagination.offset-1)*pagination.limit:pagination.limit'>
 							<td><a target='_new' href='#/{{item.type}}s/{{item.id}}'>{{item.description}}</a></td>
 							<td>{{item.type|ucf}}</td>
 							<td>{{item.action|ucf}}</td>
@@ -271,15 +384,12 @@
 					</tbody>
 				</table>	
 			</div>
-			<div class='panel-footer text-center'>
-				<pagination items-per-page='limit' total-items="count" boundary-links="true" max-size='5' ng-model="offset"></pagination>
-			</div>
-
 		</div>
+
 		<div ng-switch-when='findDuplicates'>
 			<p>This tool locates all documents that share the same title, volume number, and description</p>
 			<div class="list-group">
-				<li class='list-group-item' ng-repeat='set in duplicates | slice:(offset-1)*limit:limit'>
+				<li class='list-group-item' ng-repeat='set in duplicates | slice:(pagination.offset-1)*pagination.limit:pagination.limit'>
 					<h3 style='margin-top: 5px;' >{{set['TITLE']}}</h3>
 					<p>Volume: {{set['VOL_NUMBER']}}</p>
 					<p>{{set['DESCRIPTION']}}</p>
@@ -299,12 +409,9 @@
 						</table>	
 					</div>
 				</li>
-			</div>	
-			<div class='panel-footer text-center'>
-				<pagination items-per-page='limit' total-items="count" boundary-links="true" max-size='5' ng-model="offset"></pagination>
 			</div>
-
 		</div>
+
 		<div ng-switch-when='updateThumbnails'>
 			<p>This will update the thumbnail images for documents. By default, it only will update documents that have urls but no thumbnail image yet. Checking the 'Force refresh' box will update all document thumbnails (this can take a long time).</p>
 			<progressbar ng-show='total != 0 && complete != total' class='progress-striped active' max="100" value="complete*(100/total)">
@@ -341,6 +448,10 @@
 				</div>
 			</div>
 		</div>
+
+	</div>
+	<div ng-if="util == 'findDuplicates' || util == 'reviewChanges'" id='footer' class='well well-sm text-center'>
+		<pagination items-per-page='pagination.limit' total-items="pagination.count" boundary-links="true" max-size='5' ng-model="pagination.offset"></pagination>
 	</div>
 </script>
 
@@ -357,7 +468,7 @@
 			Drag and drop the {{filetype}} file here, or use the button to browse to the file.
 			<div ng-file-drop-available="dropSupported=true" ng-show="!dropSupported">HTML5 Drop File is not supported!</div>
 			<div>
-				<span class="btn btn-default btn-file">
+				<span class="btn btn-default btn-sm btn-file">
 					Choose file <input type="file" ng-file-select="onFileSelect($files)">
 				</span>
 			</div>
@@ -382,7 +493,7 @@
 <script type="text/ng-template" id="fileUpload.html">
 	<p ng-show="itemId == 'new'" class='alert alert-warning'>Please save {{type}} before adding a thumbnail</p>
 	<div ng-show="itemId !='new'">
-		<img ng-show="! image_URI && currentUrl" width='75px' ng-src='../{{currentUrl+"?"+salt}}'/>
+		<img ng-show="! image_URI" width='75px' ng-src='../{{currentUrl || "images/thumbnails/not_digitized.jpg"}}'/>
 		<div ng-show="image_URI" style='display: inline-block'>
 			<img width='75px' ng-src='{{image_URI}}'/>
 			<div class="btn-group">
@@ -394,8 +505,8 @@
 		</div>
 		<p ng-show='bad_file' class='bad-file bg-danger'> {{bad_file}} </p>
 		<span class='drag-target' ng-file-drop="onFileSelect($files)" ng-file-drag-over-class="bg-primary">
-			Drop new thumbnail image here or<br/>
-			<span class="btn btn-default btn-file">
+			Drop new image here or<br/>
+			<span class="btn btn-default  btn-sm btn-file">
 				Choose file <input type="file" ng-file-select="onFileSelect($files)" accept="image/jpg,image/jpeg,image/png,image/gif,image/bmp,image/tiff,application/pdf" />
 			</span>
 		</span>
@@ -407,7 +518,7 @@
 </script>
 
 <script type="text/ng-template" id="collectionChooser.html">
-	<input id='colchoose' type="text" ng-change='checkBlank(this.value)' ng-model="value" typeahead-on-select='selectCollection()' autocomplete="off" typeahead-editable="false" typeahead="collection as collection.label for collection in data.collections | filter:$viewValue | limitTo:8" class="form-control" placeholder="Search Collections"/>
+	<input id='colchoose' type="text" ng-change='checkBlank(this.value)' ng-model="value" typeahead-on-select='selectCollection()' autocomplete="off" typeahead-editable="false" typeahead="collection as collection.label for collection in data.collections | filter:$viewValue | limitTo:8" class="form-control" placeholder="Find Collection by Name or ID"/>
 </script>
 
 <script type="text/ng-template" id="formGroup.html">
@@ -422,6 +533,9 @@
 			<div id='col' ng-switch-when='collectionChooser'>
 				<span collection-chooser model='$parent.model'></span>
 			</div>
+			<div ng-switch-when='chooser'>
+				<input type="text" ng-blur='checkValue(this)' ng-model="$parent.model" autocomplete="off" typeahead-editable="{{options.editable}}" typeahead="item for item in fetchList(options.field, $viewValue, options.limit)" class="form-control" placeholder='Choose a {{label}}{{options.editable ? "": " from list"}}' />
+			</div>
 			<div ng-switch-when='select'>
 				<select ng-model='$parent.model' ng-options='item.id as item.label for item in options | orderBy:"label"'/>
 			</div>
@@ -429,7 +543,7 @@
 				<div file-upload filetype='image' action='thumbnailImport' current-url='$parent.model' item-id='{{options.id}}' type='{{options.type}}'/>
 			</div>
 			<div ng-switch-when='tagger'>
-				<div tagger model='$parent.model' type='{{options.type}}'/>
+				<div tagger model='$parent.model' type='{{options.type}}' editable='{{options.editable}}'/>
 			</div>
 			<input ng-switch-default='text' type='{{type}}' class='form-control' ng-model='$parent.model' />
 		</div>
@@ -443,7 +557,7 @@
 			<span class='pull-left'>{{item}}</span>
 			<a ng-click='removeItem($index)'><span class='close glyphicon glyphicon-remove'></span></a>
 			</span>   
-		</span> 
-		<input class='form-control' type='text' ng-model='selected' typeahead-on-select='addItem()' autocomplete="off" typeahead-editable='true' typeahead="tag for tag in data[type+'s'] | filter:$viewValue | inArray:model:true | limitTo:10 " placeholder="Add {{type}}"/>
+		</span>
+		<input class='form-control' type='text' ng-model='selected' typeahead-on-select='addItem()' autocomplete="off" typeahead-editable='{{isEditable}}' typeahead="item for item in fetchList(type, $viewValue, 10)" placeholder="Add {{type + (isEditable == 'true' ? '' : ' from list')}}"/>
 	</form>
 </script>

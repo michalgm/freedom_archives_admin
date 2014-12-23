@@ -33,13 +33,15 @@
 					<li>
 						<ul class='nav'>
 							<li><div id='sel' collection-select></div></li>
-							<li nav-link action='collections/new'>New Collection</li>
+							<li nav-link action='collections/'>Manage Collections</li>
 							<li nav-link action='collections/top'>Manage Top-Level Collections</li>
+							<li nav-link action='collections/new'>New Collection</li>
 						</ul>
 					</li>
 				</ul>
 				<h4>Records</h4>
 				<ul class='nav nav-pills nav-stacked'>
+					<li><div document-select></div></li>
 					<li nav-link action='documents/'>Manage Records</li>
 					<li nav-link action='documents/new'>New Record</li>
 				</ul>
@@ -48,6 +50,7 @@
 					<li nav-link action='site/featuredDocs'>Home Page Featured Record</li>
 					<li restricted='administrator' nav-link action='site/csvImport'>Import from CSV </li>
 					<li restricted='administrator' nav-link action='site/filemakerImport'>Import from Filemaker </li>
+					<li restricted='administrator' nav-link action='site/editLists'>Edit Lists </li>
 					<li nav-link action='site/backupDatabase'>Backup Database </li>
 					<li nav-link action='site/updateThumbnails'>Update Thumbnails </li>
 					<li nav-link action='site/updateKeywords'>Update Keywords </li>
@@ -57,7 +60,7 @@
 				</ul>
 			</div>
 			<div messages id='messages'></div>
-			<div ng-view id='content' class='fade col-xs-offset-2 col-xs-10'></div>
+			<div ng-view id='content' class='col-xs-offset-2 col-xs-10'></div>
 		</div>
 	</body>
 </html>

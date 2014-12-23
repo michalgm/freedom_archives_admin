@@ -20,12 +20,15 @@ $action_access = array(
 	'logout'=>'all',
 	'fetch_data'=>'all',
 	'fetchDocuments'=>'all',
+	'fetchCollections'=>'all',
 	'deleteDocument'=>'all',
 	'fetchDocument'=>'all',
 	'saveDocument'=>'all',
 	'fetchCollection'=>'all',
 	'saveCollection'=>'all',
 	'exportCollection'=>'all',
+	'fetchLists'=>'administrator',
+	'editListItem'=>'administrator',
 	'csvImport'=>'administrator',
 	'filemakerImport'=>'administrator',
 	'getThumbnailDocs'=>'all', 
@@ -36,7 +39,8 @@ $action_access = array(
 	'getDocIds'=>'all',
 	'findDuplicates'=>'all',
 	'fetchAuditLog'=>'administrator',
-	'pushChanges'=>'administrator'
+	'pushChanges'=>'administrator',
+	'fetchList'=>'all',
 );
 
 
@@ -80,13 +84,8 @@ if ($action) {
 			break;
 
 		case 'fetch_data':
-			$query = "select C.COLLECTION_ID as id, C.COLLECTION_NAME as label, C.IS_DELETED as hidden, count(D.DOCID) as count from COLLECTIONS C left join DOCUMENTS D using (COLLECTION_ID) group by COLLECTION_ID order by COLLECTION_NAME";
+			$query = "select C.COLLECTION_ID as id, C.COLLECTION_NAME as label, C.IS_HIDDEN as hidden, count(D.DOCID) as count from COLLECTIONS C left join DOCUMENTS D using (COLLECTION_ID) group by COLLECTION_ID order by COLLECTION_NAME";
 			$data['collections'] = array_values(dbLookupArray($query));
-			$query = "select USER_ID as id, USERNAME as label, USER_TYPE from USERS";
-			$data['users'] = dbLookupArray($query);
-			$data['authors'] = fetchCol("select distinct author from AUTHOR_LOOKUP");
-			$data['subjects'] = fetchCol("select distinct subject from SUBJECT_LOOKUP");
-			$data['keywords'] = fetchCol("select distinct keyword from KEYWORD_LOOKUP");
 			$data['action_access'] = $action_access;
 			break;
 
@@ -99,10 +98,21 @@ if ($action) {
 			if(! $request['nonDigitized']) { 
 				$where[] = " URL is not null and URL != '' ";
 			}
+			if(isset($request['IS_HIDDEN']) && $request['IS_HIDDEN']) { 
+				$where[] = " D.IS_HIDDEN = 1 ";
+			}
+			if(isset($request['NEEDS_REVIEW']) && ! $request['NEEDS_REVIEW']) { 
+				$where[] = " D.NEEDS_REVIEW = 1 ";
+			}
 			if (isset($request['filter']) && $request['filter']) { 
 				$filter = dbEscape($request['filter']);
+				$filter = str_replace(" ", '%', $filter);
 				$like = "like '%$filter%'";
-				$where[] = "(D.TITLE $like or D.KEYWORDS $like or D.CALL_NUMBER $like or D.DESCRIPTION $like or D.DOCID = '$filter')";
+				if (isset($request['titleOnly']) && $request['titleOnly'])  {
+					$where[] = "(D.TITLE $like or D.CALL_NUMBER $like or D.DOCID = '$filter')";
+				} else {
+					$where[] = "(D.TITLE $like or D.KEYWORDS $like or D.CALL_NUMBER $like or D.DESCRIPTION $like or D.DOCID = '$filter')";
+				}
 			}	
 
 			$wherestring = count($where) ? " WHERE ".implode(' AND ', $where)." " : "";
@@ -111,8 +121,29 @@ if ($action) {
 			$data['count'] = fetchValue("Select count(*) $query");
 			
 			$request['limit'] = dbEscape($request['limit']);
-			$query = "select D.DOCID as id, D.TITLE as label, D.DESCRIPTION, D.THUMBNAIL, C.COLLECTION_NAME, D.AUTHOR $query limit ".(($request['page']-1)*$request['limit']).",$request[limit]";
+			$query = "select D.DOCID as id, D.TITLE as label, D.DESCRIPTION, D.THUMBNAIL, C.COLLECTION_NAME, D.AUTHORS, D.CALL_NUMBER $query limit ".(($request['page']-1)*$request['limit']).",$request[limit]";
 			$data['docs'] = array_values(dbLookupArray($query));
+			break;
+
+		case 'fetchCollections':
+			$where = array();
+
+			if (isset($request['filter']) && $request['filter']) { 
+				$filter = dbEscape($request['filter']);
+				$filter = str_replace(" ", '%', $filter);
+				$like = "like '%$filter%'";
+				$where[] = "(COLLECTION_NAME $like or CALL_NO $like or COLLECTION_ID = '$filter')";
+			}
+
+			$wherestring = count($where) ? " WHERE ".implode(' AND ', $where)." " : "";
+
+			$query = " from COLLECTIONS $wherestring order by COLLECTION_NAME";
+			$data['count'] = fetchValue("Select count(*) $query");
+			
+			$request['limit'] = dbEscape($request['limit']);
+
+			$query = "select * $query limit ".(($request['page']-1)*$request['limit']).",$request[limit]";
+			$data['collections'] = array_values(dbLookupArray($query));
 			break;
 
 		case 'deleteDocument':
@@ -137,11 +168,11 @@ if ($action) {
 		case 'saveCollection':
 			$data = saveItem('collection', $request['id'], $request['data']);
 			break;
-		
+	
 		case 'exportCollection':
 			$filename = 'All Collections';
 			$where = isset($request['collection_id']) ? " and c.collection_id = ".dbEscape($request['collection_id']). " " : "";
-			$docs = dbLookupArray("Select d.docid as 'Document Id', c.collection_name as Folder, Title, Author, publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, url as 'File Name', subject_list as 'Subjects', location as 'Place of Publication' from COLLECTIONS c left join DOCUMENTS d using(collection_id) where c.collection_id != 20 $where group by docid");
+			$docs = dbLookupArray("Select d.docid as 'Document Id', Call_Number, c.collection_name as Folder, Title, Authors, publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication' from COLLECTIONS c left join DOCUMENTS d using(collection_id) where c.collection_id != 20 $where group by docid");
 
 			$first = reset($docs); 
 			if (isset($request['collection_id'])) { 
@@ -168,7 +199,77 @@ if ($action) {
 			//$data = array("filename"=>$filename, "file"=>"data:text/csv;base64,".base64_encode($csv));
 			$data = array("filename"=>$filename, "file"=>$csv);
 			break;
-		
+
+		case 'fetchList':
+			$field = dbEscape($request['field']);
+			$value = dbEscape($request['value']);
+			$limit = dbEscape($request['limit']);
+			$offset = 0;
+			if (isset($request['offset'])) { 
+				$offset = dbEscape($request['offset']);
+			}
+			$query = "select item from LIST_ITEMS where type = '$field' and item like('%$value%')";
+
+			$data = array(
+				'items'=> fetchCol("select item from LIST_ITEMS where type = '$field' and item like('%$value%') order by item limit $offset, $limit"),
+				'count' => fetchValue("select count(*) from LIST_ITEMS where type = '$field' and item like('%$value%')")
+			);
+			break;
+
+		case 'editListItem':
+			$ids = array();
+			$listAction = $request['listAction'];
+			$field = dbEscape($request['field']);
+			$item = dbEscape($request['item']);
+			$new_item = dbEscape($request['new_item']);
+			$query = "";
+
+			if (in_array($field, array('author', 'subject', 'producer', 'keyword'))) {
+				if ($listAction != 'add') {
+					$ids = dbLookupArray("select id, is_doc from LIST_ITEMS_LOOKUP where item = '$item' and type='$field'");
+				}
+			} else {
+				if ($listAction != 'add') {
+					$ids = dbLookupArray("select docid as id from DOCUMENTS where $field = '$item'");
+				}
+			}
+
+			if ($listAction == 'add') {
+				$query = "insert ignore into LIST_ITEMS set item = '$new_item', type='$field'";
+			} elseif ($listAction == 'edit') {
+				dbwrite("delete from LIST_ITEMS where item='$item' and type='$field'");
+				dbwrite("delete from LIST_ITEMS where item='$new_item' and type='$field'");
+				$query = "insert ignore into LIST_ITEMS set item = '$new_item', type='$field'";
+			} elseif ($listAction == 'delete') {
+				$query = "delete from LIST_ITEMS where item='$item' and type='$field'";
+			}
+
+			dbwrite($query);
+
+			if (! in_array($field, array('author', 'subject', 'producer', 'keyword'))) {
+				foreach($ids as $doc) {
+					dbwrite("update DOCUMENTS set $field = '$new_item' where docid=$doc[id]");
+				}
+			} else {
+				foreach($ids as $doc) {
+					$dbfield = $field."s";
+					if ($listAction == 'edit') {
+						dbwrite("update LIST_ITEMS_LOOKUP set item='$new_item' where type='$field' and id=$doc[id] and item='$item'");
+					} else {
+						dbwrite("delete from LIST_ITEMS_LOOKUP where type='$field' and id=$doc[id] and item='$item'");
+					}
+					$list = fetchCol("select item from LIST_ITEMS_LOOKUP where type='$field' and id=$doc[id] and is_doc=$doc[is_doc] order by `order`");
+					if ($doc['is_doc']) {
+						dbwrite("update DOCUMENTS set $dbfield = '".dbEscape(implode(", ", $list))."' where docid = $doc[id]");
+					} else {
+						dbwrite("update COLLECTIONS set $dbfield = '".dbEscape(implode(", ", $list))."' where collection_id = $doc[id]");
+					}
+				}
+			}
+
+			$data = 'success';
+			break;
+
 		case 'csvImport':
 			$data = csvImport($request['data']);
 			break;
@@ -189,16 +290,13 @@ if ($action) {
 			break;
 
 		case 'updateLookups':
-			$doc_id = $request['id'];
-			$lookups = fetchRow("select author, keywords, subject_list from DOCUMENTS where docid = $doc_id", 1);
-			$data = array(
-				'_authors'=>preg_split("/, ?/", $lookups['author']), 
-				'_keywords'=>preg_split("/, ?/", $lookups['keywords']), 
-				'_subjects'=>preg_split("/, ?/", $lookups['subject_list']), 
-			);
-			updateTags($doc_id, $data);
-
-			$data = 'success';
+			foreach($request['data']['items'] as $item) {
+				$itemData = fetchItem($item['type'], $item['id']);
+				$itemData = parseLookups($item['type'], $itemData);
+				saveItem($item['type'], $item['id'], $itemData, true);
+				// updateLookups(dbEscape($item['id']), $item['type']);
+			}
+			$data = count($request['data']['items']);
 			break;
 		
 		case 'uploadFile':
@@ -227,7 +325,7 @@ if ($action) {
 			break;
 		
 		case 'getDocIds':
-			$data = fetchCol("select DOCID from DOCUMENTS where author != '' or keywords != '' or subject_list != ''");
+			$data = fetchCol("select DOCID from DOCUMENTS where authors != '' or keywords != '' or subjects != '' or producers != ''");
 			break;
 
 		case 'findDuplicates':
@@ -271,8 +369,9 @@ if ($action) {
 			break;
 
 		case 'pushChanges':
-			foreach (array('DOCUMENTS', 'COLLECTIONS', 'KEYWORD_LOOKUP', 'FEATURED_DOCS') as $table) {
-				dbwrite("delete from $table"."_LIVE");
+			foreach (array('DOCUMENTS', 'COLLECTIONS', 'LIST_ITEMS_LOOKUP', 'FEATURED_DOCS') as $table) {
+				dbwrite("drop table IF EXISTS $table"."_LIVE");
+				dbwrite("create table $table"."_LIVE like $table");
 				dbwrite("insert into $table"."_LIVE select * from $table");
 				# code...
 			}
@@ -291,57 +390,75 @@ if ($action) {
 
 function fetchItem($type, $id) { 
 	$id = dbEscape($id);
+	$type = dbEscape($type);
 	if ($id == 'new') {return array(); }
-
-	if ($type == 'collection') { 
+	$is_doc = $type == 'document' ? 1 : 0;
+	$query = "";
+	if (! $is_doc) { 
 		$query = "select C.*, count(D.DOCID) as count from COLLECTIONS C left join DOCUMENTS D using (COLLECTION_ID) where COLLECTION_ID = $id";
-	} else if ($type == 'document') { 
+	} else { 
 		$query = "select D.* from DOCUMENTS D where DOCID = $id";
 	}
 	$data = fetchRow($query, 1);
+	$data['_keywords'] = fetchCol("select item from LIST_ITEMS_LOOKUP where id = $id and type = 'keyword' and is_doc=$is_doc order by `order`");
+	$data['_subjects'] = fetchCol("select item from LIST_ITEMS_LOOKUP where id = $id and type = 'subject' and is_doc=$is_doc order by `order`");
+
 	if ($type == 'collection') { 
 		$data['_featured_docs'] = array_values(dbLookupArray("select F.DOCID, F.DOC_ORDER, F.DESCRIPTION, D.TITLE, D.THUMBNAIL from FEATURED_DOCS F join DOCUMENTS D using(DOCID) where F.COLLECTION_ID = $id order by F.DOC_ORDER"));
-		$data['_subcollections'] = array_values(dbLookupArray("select COLLECTION_ID, PARENT_ID, COLLECTION_NAME, IS_DELETED from COLLECTIONS where PARENT_ID = $id order by DISPLAY_ORDER, COLLECTION_NAME"));
+		$data['_subcollections'] = array_values(dbLookupArray("select COLLECTION_ID, PARENT_ID, COLLECTION_NAME, IS_HIDDEN from COLLECTIONS where PARENT_ID = $id order by DISPLAY_ORDER, COLLECTION_NAME"));
 	}
 	if ($type == 'document') { 
-		$data['_authors'] = fetchCol("select author from AUTHOR_LOOKUP where DOCID = $id order by `order`");
-		$data['_keywords'] = fetchCol("select keyword from KEYWORD_LOOKUP where DOCID = $id order by `order`");
-		$data['_subjects'] = fetchCol("select subject from SUBJECT_LOOKUP where DOCID = $id order by `order`");
+		$data['_authors'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='author' order by `order`");
+		$data['_producers'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='producer' order by `order`");
 	}
 	return $data;
 }
 
-function saveItem($type, $id, $data) { 
+function saveItem($type, $id, $data, $noLog=false) { 
 	$table = strtoupper($type)."S";
 	$idfield = $type == 'document' ? 'DOCID' : strtoupper($type)."_ID";
 	$oldItem = fetchItem($type, $id);
-	$tags = array();
+	$tags = array(
+		'_keywords'=> isset($data['_keywords']) ? $data['_keywords'] : null,
+		'_subjects'=> isset($data['_subjects']) ? $data['_subjects'] : null,
+	);
+	unset($data['_keywords']);
+	unset($data['_subjects']);
+
 	if ($type == 'collection') { 
-		$tags = array(
-			'_featured_docs'=> isset($data['_featured_docs']) ? $data['_featured_docs'] : null,
-			'_subcollections'=> isset($data['_subcollections']) ? $data['_subcollections'] : null,
-		);
+		$tags['_featured_docs'] = isset($data['_featured_docs']) ? $data['_featured_docs'] : null;
+		$tags['_subcollections'] = isset($data['_subcollections']) ? $data['_subcollections'] : null;
 		unset($data['_featured_docs']);
 		unset($data['_subcollections']);
+		unset($data['count']);
 	} elseif ($type == 'document') { 
-		
-		$tags = array(
-			'_authors'=> isset($data['_authors']) ? $data['_authors'] : null,
-			'_keywords'=> isset($data['_keywords']) ? $data['_keywords'] : null,
-			'_subjects'=> isset($data['_subjects']) ? $data['_subjects'] : null
-		);
+		$tags['_authors'] = isset($data['_authors']) ? $data['_authors'] : null;
+		$tags['_producers']= isset($data['_producers']) ? $data['_producers'] : null;
 		unset($data['_authors']);
-		unset($data['_keywords']);
-		unset($data['_subjects']);
+		unset($data['_producers']);
 	}
 	$action = $id === 'new' ? 'create' : 'update';
-	if ($id === 'new') { 
-		$query = "insert into $table set ".arrayToUpdateString($data);
-		$id = dbInsert($query);
-	} else { 
-		$query = "update $table set ".arrayToUpdateString($data)." where $idfield = ".dbEscape($id);
-		dbwrite($query);
+	$date = date('Y-m-d H:i:s');
+
+	if (! $noLog) {
+		$data['DATE_MODIFIED'] = $date;
+		$data['CONTRIBUTOR'] = $_SESSION['username'];
+		if ($id === 'new') {
+			$data['DATE_CREATED'] = $date;
+			$data['CREATOR'] = $_SESSION['username'];
+		}
 	}
+	if ($_SESSION['user_type'] != 'administrator') {
+		$data['NEEDS_REVIEW'] =1;
+ 	}
+	$query = "insert into $table set ".arrayToUpdateString($data) ." on duplicate key update ".arrayToUpdateString($data);
+	$id = dbInsert($query);
+	// } else { 
+	// 	$query = "update $table set ".arrayToUpdateString($data)." where $idfield = ".dbEscape($id);
+	// 	// print $query;
+	// 	dbwrite($query);
+	// }
+
 	if ($type == 'collection') {
 		if ($tags['_featured_docs'] !== null) {
 			updateFeatured($id, $tags['_featured_docs']);
@@ -351,35 +468,75 @@ function saveItem($type, $id, $data) {
 		}
 	}
 	if ($type == 'document') {
-		if (isset($data['URL']) && $data['URL'] && $data['URL'] != $oldItem['URL']) {
+		if (isset($data['URL']) && $data['URL'] && isset($oldItem['URL']) && $data['URL'] != $oldItem['URL']) {
 			updateThumbnail($id);
 		} 
-		updateTags($id, $tags);
+		foreach (array('format', 'generation', 'program', 'quality') as $field) {
+			if (isset($data[strtoupper($field)]) && $data[strtoupper($field)] != "") {
+				dbwrite("insert ignore into LIST_ITEMS set item='".dbEscape($data[strtoupper($field)])."', type='$field'");
+			}
+		}
 	}
+
+	updateTags($id, $type, $tags);
 	$item = fetchItem($type, $id);
-
-	updateLog($type, $item, $action);
-
+	if (! $noLog) {
+		updateLog($type, $item, $action);
+	}
 	return $item;
 }
 
-function updateTags($id, $data) { 
-	foreach(array('keyword', 'author', 'subject') as $type) { 
-		$table = strtoupper($type)."_LOOKUP";
-		$field = $type == 'author' ? 'author' : ($type == 'keyword' ? 'keywords' : 'subject_list');
+function parseLookups($type, $data) {
+	if ($type == 'document') {
+		if (isset($data['PRODUCERS'])) {
+			$data['_producers'] = preg_split("/ ?(,| and |\&|\/) ?/i", $data['PRODUCERS']);
+		}
+		if (isset($data['AUTHORS'])) {
+			$data['_authors'] = preg_split("/, ?/", $data['AUTHORS']);
+		}
+	}
+	if (isset($data['KEYWORDS'])) {
+		$data['_keywords'] = preg_split("/, ?/", $data['KEYWORDS']);
+	}
+	if (isset($data['SUBJECTS'])) {
+		$data['_subjects'] = preg_split("/, ?/", $data['SUBJECTS']);
+	}
+	return $data;
+}
 
-		if (isset($data["_$type"."s"]) && $data["_$type"."s"] !== null) { 
-			dbwrite("delete from $table where DOCID = $id");
+function updateTags($id, $type, $data) {
+	$fields = array(
+		'author'=>'authors',
+		'keyword'=>'keywords',
+		'subject'=>'subjects',
+		'producer'=>'producers',
+	);
+	$is_doc = $type == 'document' ? 1 : 0;
+
+	foreach(array_keys($fields) as $field) { 
+		if ($is_doc == 0 && ($field == 'author' || $field == 'producer')) { 
+			continue;
+		}
+		$table = "LIST_ITEMS_LOOKUP";
+		$db_field = $fields[$field];
+		if (isset($data["_$field"."s"]) && $data["_$field"."s"] !== null) { 
+			$query = "delete from LIST_ITEMS_LOOKUP where id = $id and is_doc = $is_doc and type='$field'";
+			dbwrite($query);
 			$trimmed_list = array();
 			$x = 0;
-			foreach($data["_$type"."s"] as $item) { 
+			foreach($data["_$field"."s"] as $item) { 
 				$trimmed = trim($item);
 				if (preg_match("/^ *$/", $trimmed)) { continue; }
-				dbwrite("insert into $table (DOCID, $type, `order`) values($id, '".dbEscape($trimmed)."', $x) on duplicate key update `order` = $x");
+				dbwrite("insert into LIST_ITEMS_LOOKUP (id, item, type, `order`, is_doc) values($id, '".dbEscape($trimmed)."', '$field', $x, $is_doc) on duplicate key update `order` = $x");
+				dbwrite("insert ignore into LIST_ITEMS set item='".dbEscape($trimmed)."', type='$field'");
 				$trimmed_list[] = $trimmed;
 				$x++;
 			}
-			dbwrite("update DOCUMENTS set $field = '".dbEscape(implode(", ", $trimmed_list))."' where docid = $id");
+			if ($is_doc) {
+				dbwrite("update DOCUMENTS set $db_field = '".dbEscape(implode(", ", $trimmed_list))."' where docid = $id");
+			} else {
+				dbwrite("update COLLECTIONS set $db_field = '".dbEscape(implode(", ", $trimmed_list))."' where collection_id = $id");
+			}
 		}	
 	}
 }
@@ -407,7 +564,7 @@ function updateSubcollections($id, $data) {
 }
 
 function csvImport($data) { 
-	$fields = array('docid', 'title', 'creator', 'subject_list', 'description', 'publisher', 'contributor', 'identifier', 'source', 'language', 'relation', 'coverage', 'rights', 'audience', 'format', 'keywords', 'author', 'vol_number', 'no_copies', 'file_name', 'doc_text', 'file_extension', 'collection_id', 'url', 'url_text', 'producers', 'program', 'generation', 'quality', 'year', 'location', 'is_reviewed', 'is_published', 'call_number', 'notes', 'thumbnail', 'length', 'collection');
+	$fields = array('docid', 'title', 'creator', 'subjects', 'description', 'publisher', 'contributor', 'identifier', 'source', 'language', 'relation', 'coverage', 'rights', 'audience', 'format', 'keywords', 'authors', 'vol_number', 'no_copies', 'file_name', 'doc_text', 'file_extension', 'collection_id', 'url', 'url_text', 'producers', 'program', 'generation', 'quality', 'year', 'location', 'needs_review', 'is_hidden', 'call_number', 'notes', 'thumbnail', 'length', 'collection');
 
 	$aliases = array(
 		'no. copies'=>'no_copies',
@@ -421,7 +578,7 @@ function csvImport($data) {
 		'folder'=>'collection',
 		'subcollection'=>'collection',
 		'document id'=>'docid',
-		'subjects'=>'subject_list',
+		'author'=>'authors',
 	);
 
 	//parse a CSV file into a two-dimensional array
@@ -519,18 +676,26 @@ function csvImport($data) {
 			}
 		}
 
-		$values = "";
+		$data = array();
 		foreach ($columns as $column) {
 			$value = dbEscape(trim(array_shift($row)));
 			if ($column == 'url' && $value && ! preg_match("/^http:\/\//i", $value)) {
 				trigger_error("Bad URL in row $row_num ('$value'). URL field must contain full URL path (i.e. 'http://freedomarchives.org/doc.html')");
 			}
-			$values .= " `$column`='$value', ";
+			$data[strtoupper($column)] = $value; //.= " `$column`='$value', ";
 		}	
-		$values = substr($values, 0, -2);
-		if (isset($col_id)) { $values .= ", `collection_id` = $col_id"; }
-		$query = "insert into DOCUMENTS set $values on duplicate key update $values";
-		dbwrite($query);
+		//$values = substr($values, 0, -2);
+		if (isset($col_id)) { 
+			$data['COLLECTION_ID'] = $col_id;
+		}
+		$id = isset($data['DOCID']) ? $data['DOCID'] : 'new';
+			// $values .= ", `collection_id` = $col_id"; }
+		$data = parseLookups('document', $data);
+		$data = saveItem('document', $id, $data);
+		// $query = "insert into DOCUMENTS set $values on duplicate key update $values";
+		// $id = dbInsert($query);
+		// updateTags($id);
+		// updateThumbnail($id, 1);
 		$row_num++;
 	}
 	return array("status"=>"success", "count"=>$row_num-1);
@@ -550,9 +715,10 @@ function filemakerImport($data_encoded) {
 		$file['TITLE'] = dbEscape($row['Title'][0]);
 		$file['DESCRIPTION'] = dbEscape($row['Description'][0]);
 		$file['PROGRAM'] = dbEscape($row['Program'][0]);
+		//$file['AUTHORS'] = dbEscape($row['Author'][0]);
 		$file['KEYWORDS'] = dbEscape($row['Key_Words'][0]);
 		$file['PRODUCERS'] = dbEscape($row['Producers'][0]);
-		$file['SUBJECT_LIST'] = dbEscape($row['Subject_List'][0]);
+		$file['SUBJECTS'] = dbEscape($row['Subject_List'][0]);
 		$file['DATE_CREATED'] = dbEscape($row['Date_Made_To_MySQL'][0]);
 		$file['FORMAT'] = dbEscape($row['Format'][0]);
 		$file['GENERATION'] = dbEscape($row['Generation'][0]);
@@ -562,7 +728,7 @@ function filemakerImport($data_encoded) {
 		
 		$cn_parts =explode(" ", $file['CALL_NUMBER']);; 
 		$cn_prefix = strtoupper(array_shift($cn_parts));
-		if($row['Sub_coll_number'][0]) { 
+		if(isset($row['Sub_coll_number']) && $row['Sub_coll_number'][0]) { 
 			$file['COLLECTION_ID']  = dbEscape($row['Sub_coll_number'][0]);
 		} else if (isset($collections_lookup[$cn_prefix])) { 
 			$file['COLLECTION_ID'] = $collections_lookup[$cn_prefix]['collection_id'];
@@ -573,8 +739,13 @@ function filemakerImport($data_encoded) {
 		} else {
 			$file['FILE_EXTENSION'] = "NONE";
 		}
-		$query = "insert into DOCUMENTS set ".arrayToUpdateString($file) ." on duplicate key update ".arrayToUpdateString($file);
-		dbwrite($query);
+		$file = parseLookups('document', $file);
+		$id = isset($data['DOCID']) ? $data['DOCID'] : 'new';
+		$file = saveItem('document', $id, $file, true);
+		// $query = "insert into DOCUMENTS set ".arrayToUpdateString($file) ." on duplicate key update ".arrayToUpdateString($file);
+		// $id = dbInsert($query);
+		// updateTags($id);
+		// updateThumbnail($id, 1);
 		$count++;
 	}
 	return array("status"=>"success", "count"=>$count);
@@ -656,25 +827,32 @@ function checkLogin() {
 	}
 }
 
-function updateLog($type, $item, $action) {
+function updateLog($type, $item, $action, $description="") {
 	$description = "";
 	$id = "";
+	$data = array(
+		'action' => $action,
+		'type' => $type,
+	);
 	if ($type == 'collection') {
-		$id = $item['COLLECTION_ID'];
-		$description = $item['COLLECTION_NAME'];
+		$data['id'] = $item['COLLECTION_ID'];
+		$data['description'] = $item['COLLECTION_NAME'];
 	} elseif ($type == 'document') {
-		$id = $item['DOCID'];
-		$description = $item['TITLE'];
+		$data['id'] = $item['DOCID'];
+		$data['description'] = $item['TITLE'];
 	} else {
-		$description = 'push to live';
+		$data['description'] = 'push to live';
 	}
-	dbwrite("insert into audit_log set id = '$id', type = '$type', action = '$action', description='".dbEscape($description)."', user='$_SESSION[username]'");
+	dbwrite("insert into audit_log set ".arrayToUpdateString($data));
 }
 
-function updateThumbnail($doc_id) {
+function updateThumbnail($doc_id, $check=0) {
 	global $production;
 	$doc_id = dbEscape($doc_id);
 	$doc = fetchRow("select * from DOCUMENTS where docid = $doc_id", true);
+	if ($doc['THUMBNAIL']!='' && $check) {
+		return;
+	}
 	$tmpfile = "tmp/$doc_id";
 	$status = 'Failed';
 	$image_file = "";

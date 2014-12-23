@@ -4,7 +4,6 @@ app.filter('slice', function() {
 		if (!(data instanceof Array)) {
 			return data;
 		}
-
 		return data.slice(offset).slice(0, limit);
 	}
 
@@ -28,6 +27,12 @@ app.filter('ucf', function() {
   }
 });
 
+
+app.filter('toNum', function() {
+  return function(input) {
+    return parseInt(input, 10);
+  }
+});
 
 app.filter('truncate', function () {
 	return function (input, chars, breakOnWord) {

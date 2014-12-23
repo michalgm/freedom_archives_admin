@@ -1,3 +1,7 @@
+#container {
+  padding: 10px;
+}
+
 .nav, .pagination, .carousel, .panel-title a { cursor: pointer; }
 
 .ta-editor { height: auto !important; }
@@ -19,9 +23,40 @@
   margin-right: 10px;
 }
 
+.subtitle { 
+  float: none;
+  margin-top: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
+#footer {
+  margin-top: 20px; 
+  margin-bottom: 0px;
+}
+
+#content { 
+  top: 0px;
+  right: 0px;
+  padding-right: 0px;
+}
+
 .content-body { 
   overflow-y: auto;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  /*padding-right: 10px;*/
+}
+
+.content-body .form-group {
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
+.content-body form .col-xs-6 { 
+  padding-left: 0px;
+  padding-right: 0px;
 }
 
 .btn-file {
@@ -46,20 +81,13 @@
 
 #filemakerImport li { padding: 10px 0px; }
 
-#content { 
-	position: absolute;
-	top: 0px;
-	right: 0px;
-	padding-left: 25px; 
-}
-
 .image-input img { 
 	vertical-align: top;
 }
 
 .drag-target {
 	border: 3px dashed #999;
-	padding: 15px;
+	padding: 10px;
 	width: 130px;
 	display: inline-block;
 	margin: 0px 15px;
@@ -102,17 +130,19 @@ div[ng-view].ng-leave {
 .tagger .label { 
 	display: inline-block;
 	margin-right: 3px;
-	margin-bottom: 3px;
-	font-size: 1.2em;
 	font-weight: normal;
 	padding: .5em .6em;
+}
+.tagger input, .tagger .label {
+  font-size: .9em;
+  height: 28px;
 }
 
 .tagger .form-control {
 	vertical-align: top;
 }
 .tagger .close {
-	font-size: 16px;
+	font-size: 12px;
 	padding-left: 5px;
 	padding-top: 1px;
 }
@@ -120,3 +150,29 @@ div[ng-view].ng-leave {
 .tagger.well {
 	margin-bottom: 0px;
 }
+
+.tab-content>.scroll-container { 
+  display: none; 
+}
+
+.scroll-container, .tab-content>.active {
+  display: flex;
+  flex-direction: column;
+  flex: 1 10 auto;
+}
+
+.scroll-container.row {
+  flex-direction: row;
+}
+
+.scroll-header, .scroll-footer { flex: 1 1 auto;}
+.scroll-body { 
+  flex: 1 10 auto;
+  overflow: auto;
+}
+
+.panel { margin-bottom: 0px; }
+
+form.form-inline .input-group { display: inline-block; vertical-align: middle; }
+
+form.form-inline .form-group .input-group input, .input-group-addon, .input-group-btn { width: initial; }
