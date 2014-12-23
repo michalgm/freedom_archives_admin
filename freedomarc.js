@@ -82,7 +82,7 @@ function showDoc(title, media_type, url) {
 		}
 		modal.modal();
 	} else {
-		window.open(url, '_new');
+		window.open(url, '_blank');
 	}
 }
 
