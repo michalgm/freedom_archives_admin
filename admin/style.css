@@ -159,6 +159,7 @@ div[ng-view].ng-leave {
   display: flex;
   flex-direction: column;
   flex: 1 10 auto;
+  min-height: 0px;
 }
 
 .scroll-container.row {
@@ -169,6 +170,7 @@ div[ng-view].ng-leave {
 .scroll-body { 
   flex: 1 10 auto;
   overflow: auto;
+  min-height: 0px;
 }
 
 .panel { margin-bottom: 0px; }

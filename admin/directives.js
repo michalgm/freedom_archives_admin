@@ -167,7 +167,6 @@ app.directive('documentSearch', function($requests) {
 			scope.IS_HIDDEN = 0;
 			scope.collection = '';
 			scope.selected = null;
-			console.log(scope.docLimit);
 			
 			scope.fetchDocuments = function() { 
 				if (scope.limitCollectionId) { 
@@ -527,21 +526,10 @@ app.directive('input', function () {
 app.directive('autoheight', function() {
 	return {
 		restrict: 'A',
-		scope: true,
 		link: function(scope, elem, attrs) {
 			var e = $(elem);
-			// var body = e.find('.scroll-body');
 			e.parentsUntil('.content-body').addClass('scroll-container');
 			e.addClass('scroll-container');
-			// css({'height': 'auto', 'display': 'flex', 'flex-direction': 'column'});
-			//body.css({'overflow': 'auto', flex: '1 1 auto', 'min-height': '10px', 'height': 'auto'});
-			// e.css({'height': 'auto', 'display': 'flex', 'flex-direction': 'column'});
-			// var resize = function() {
-				//e.height(e.parent().innerHeight() - (e.outerHeight(true) - e.innerHeight()));
-				//body.height(e.innerHeight() - e.find('.scroll-header').outerHeight(true) - e.find('.scroll-footer').outerHeight(true));
-			// }
-			// scope.$on('windowResize', resize);
-			// $timeout(resize,0)
 		}
 	}
 })
