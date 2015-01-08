@@ -59,7 +59,7 @@ app.directive('header', function($requests, $sce) {
 			buttons:'=',
 			extraHeader:'='
 		},
-		link: function(scope,element, atrribs) {
+		link: function(scope,element, attribs) {
 			scope.safeExtraHeader = $sce.trustAsHtml(scope.extraHeader);
 			scope.doAction = function(action, index) {
 				b = $(element.find('.btn')[index]);
@@ -79,7 +79,7 @@ app.directive('collectionChooser', function($requests, $data, $timeout) {
 			callback:'&?selectCollection',
 			clear:'@'
 		},
-		link: function(scope,element, atrribs) {	
+		link: function(scope,element, attribs) {	
 			scope.data = $data;
 			scope.value = '';
 		
@@ -122,7 +122,7 @@ app.directive('featuredDocs', function($requests) {
 			documents:'=',
 			limitCollectionId:'@',
 		},
-		link: function(scope,element, atrribs) {
+		link: function(scope,element, attribs) {
 			scope.addFeaturedDoc = function(doc) { 
 				var skip = 0;
 				angular.forEach(scope.documents, function(v) { 
@@ -157,7 +157,7 @@ app.directive('documentSearch', function($requests) {
 			docLimit: '=?'
 
 		},
-		link: function(scope,element, atrribs) {
+		link: function(scope,element, attribs) {
 			scope.page = 1;
 			scope.filter = '';
 			scope.documents = [];
@@ -220,7 +220,7 @@ app.directive('collectionSearch', function($requests) {
 			count: '=?',
 			docLimit: '=?'
 		},
-		link: function(scope,element, atrribs) {
+		link: function(scope,element, attribs) {
 			scope.page = 1;
 			scope.filter = '';
 			scope.collections = [];
@@ -255,7 +255,7 @@ app.directive('collectionSelect', function($location) {
 		restrict: 'A',
 		template:'<span collection-chooser select-collection="selectCollection(collection)" clear="1"/>',
 		scope: {},
-		link: function(scope,element, atrribs) {
+		link: function(scope,element, attribs) {
 			scope.selectCollection = function(collection) { 
 				if (collection) { 
 					$location.path('/collections/'+collection.id);
@@ -270,7 +270,7 @@ app.directive('documentSelect', function($location, $requests) {
 		restrict: 'A',
 		template:'<input type="text" ng-model="filter" autocomplete="off" typeahead-editable="false" typeahead-on-select="selectDocument($item)" typeahead="doc.label for doc in fetchDocuments($viewValue)" class="form-control" placeholder="Find Record by Title, Call #, or ID" />',
 		scope: true,
-		link: function(scope,element, atrribs) {
+		link: function(scope,element, attribs) {
 			scope.filter = '';
 
 			scope.selectDocument= function(document) { 

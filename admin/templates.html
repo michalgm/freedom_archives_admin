@@ -122,7 +122,7 @@
 <script type="text/ng-template" id="documentEdit.html">
 	<div header title='Records > {{id == "new" ? "New Record" : (document.TITLE || "Untitled Record")}}' buttons='buttons'></div>
 	<div content class='content-body'>
-		<form class="form-horizontal">
+		<form class="form-horizontal" id='documentEdit'>
 			<div class='row' form-group model='document.TITLE' label='Title'></div>
 			<div class='row'>
 				<div form-group model='document.IS_HIDDEN' input-type='checkbox' label='Hidden'></div>
@@ -145,7 +145,7 @@
 				<div form-group model='document.FORMAT' label='Format' input-type='chooser' options="{field: 'format', editable: true}"></div>
 			</div>
 			<div class='row'>
-				<div form-group model='document.VOL_NUMBER' label='Volume Number/Date'></div>
+				<div form-group model='document.VOL_NUMBER' label='Volume Number/ Date'></div>
 				<div form-group model='document.YEAR' label='Year'></div>
 			</div>
 			<div class='row'>
@@ -153,7 +153,7 @@
 				<div form-group model='document.NO_COPIES' label='Number of Copies' input-type='number'></div>
 			</div>
 			<div class='row'>
-				<div form-group model='document.PUBLISHER' label='Organization/Publisher'></div>
+				<div form-group model='document.PUBLISHER' label='Organization/ Publisher'></div>
 				<div form-group model='document.PROGRAM' label='Program'  input-type='chooser' options="{field: 'program', editable: false}"></div>
 			</div>
 			<div class='row'>
@@ -162,6 +162,38 @@
 			</div>
 			<div class='row' form-group model='document.DESCRIPTION' label='Description' input-type='textarea'></div>
 			<div class='row' form-group model='document.NOTES' label='Notes' input-type='textarea'></div>
+			<div class='row'>
+				<label class='col-xs-2 control-label'>Related Records</label>
+				<div class='col-xs-10'>
+					<div class='list-group' id='related_header'>
+						<div class='row list-group-item  vertical-align'>
+							<span class='col-xs-1'><b>Number</b></span>
+							<span class='col-xs-3'><b>Title</b></span>
+							<span class='col-xs-3'><b>Description</b></span>
+							<span class='col-xs-5'>
+								<input class='form-control' type="text" ng-model="related_filter" autocomplete="off" typeahead-editable="false" typeahead-on-select="selectRelated($item)" typeahead="doc.label for doc in fetchRelated($viewValue)" class="form-control" placeholder="Add Related Record by Title, Call #, or ID" />
+							</span>
+						</div>
+					</div>
+					<div class='list-group' id='related'>
+						<div class='row list-group-item  vertical-align' ng-repeat='related in document._related'>
+							<span class='col-xs-1'>
+								<button class='btn btn-danger btn-xs' title='Remove Relationship' ng-click='deleteRelated($index)'><span class="glyphicon glyphicon-remove"></span></button>
+								{{related.TRACK_NUMBER}}
+							</span>
+							<span class='col-xs-3'>
+								<textarea class='form-control' ng-model='related.TITLE'/>
+							</span>
+							<span class='col-xs-7'>
+								<textarea class='form-control' ng-model='related.DESCRIPTION'/>
+							</span>
+							<span class='col-xs-1'>
+								<button class='btn btn-primary pull-right' ng-click='viewRelated(related.TO_ID)'>View</button>
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
 		</form>
 	</div>
 	<div id='footer' class='well'>
@@ -193,13 +225,13 @@
 	<div content class='content-body'>
 		<tabset>
 			<tab ng-if="id != 0" heading="Edit Collection">
-				<form class="form-horizontal">
+				<form class="form-horizontal" id='collectionEdit'>
 					<div form-group model='collection.COLLECTION_NAME' label='Collection Name'></div>
 					<div form-group model='collection.PARENT_ID' label='Parent Collection' input-type='collectionChooser'></div>
 					<div form-group model='collection.IS_HIDDEN' label='Hidden' input-type='checkbox'></div>
 					<div form-group model='collection.NEEDS_REVIEW' label='Reviewed' input-type='checkbox'></div>
 					<div form-group model='collection.CALL_NO' label='Call Number'></div>
-					<div form-group model='collection.ORGANIZATION' label='Organization/Publisher'></div>
+					<div form-group model='collection.ORGANIZATION' label='Organization/ Publisher'></div>
 					<div form-group model='collection.DATE_RANGE' label='Date Range'></div>
 					<div form-group model='collection.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'collection', id:id}"></div>
 					<div class='row' form-group model='collection._keywords' label='Keywords' input-type='tagger' options="{type:'keyword', editable: true}"></div>

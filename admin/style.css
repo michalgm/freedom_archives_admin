@@ -59,6 +59,10 @@
   padding-right: 0px;
 }
 
+#documentEdit, #collectionEdit {
+  padding-right: 10px;
+}
+
 .btn-file {
     position: relative;
     overflow: hidden;
@@ -178,3 +182,19 @@ div[ng-view].ng-leave {
 form.form-inline .input-group { display: inline-block; vertical-align: middle; }
 
 form.form-inline .form-group .input-group input, .input-group-addon, .input-group-btn { width: initial; }
+
+#related_header, #related { 
+  padding: 0px 15px;
+  margin: 0px;
+}
+
+#related {
+  max-height: 250px;
+  overflow: auto;
+  margin-bottom: 20px;
+}
+
+.vertical-align {
+    display: flex;
+    align-items: center;
+}

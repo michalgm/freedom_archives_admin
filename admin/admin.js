@@ -79,12 +79,15 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 		'_subjects': [],
 		'_producers': [],
 	};
+  var orig_doc = angular.copy($scope.document);
+  $scope.related_filter= '';
 
 	$scope.id = $routeParams.id;
 	$scope.loadDocument = function() {
 		return $requests.fetch('fetchDocument', {id:$routeParams.id}).then(function(results) { 
 			$scope.document = results;
 			$scope.document.thumbnail_url = $scope.document.THUMBNAIL ? $scope.document.THUMBNAIL + '?' + Date.now() : "";
+      orig_doc = angular.copy($scope.document);
 		})
 	}
 	
@@ -111,10 +114,60 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 				// $location.path('/documents/'.$scope.document.DOCID);
 				$messages.addMessage("Document '"+$scope.document.TITLE+"' successfully saved");
 			});
+      orig_doc = angular.copy($scope.document);
 		});
 	}
 
-	if ($routeParams.id != 'new') { 
+  $scope.fetchRelated = function(value) { 
+    return $requests.fetch('fetchDocuments', {filter:value, limit:10, page: 1, nonDigitized:true, titleOnly: true})
+      .then(function(results) { 
+        return results.docs;
+      })
+  }
+
+  $scope.selectRelated = function(doc) {
+    $scope.document['_related'].push({
+      TO_ID: doc.id,
+      TITLE: doc.label,
+      DESCRIPTION: doc.DESCRIPTION,
+      FROM_ID: $scope.document.DOCID,
+      TRACK_NUMBER: $scope.document['_related'].length+1
+    })
+    $scope.related_filter= '';
+  }
+
+  $scope.viewRelated= function(id) { 
+    if (id) { 
+      $location.path('/documents/'+id);
+    }
+  }
+
+  $scope.deleteRelated = function(index) {
+    $scope.document['_related'].splice(index, 1);
+  }
+
+	var checkChanged = function() {
+    var doc = angular.copy($scope.document);
+    return ! angular.equals(doc, orig_doc);
+  }
+
+  $scope.$on('$locationChangeStart', function(event) {
+    if(checkChanged()) {
+      var answer = confirm("You have unsaved changes. Are you sure you want to leave this page?")
+      if (!answer) {event.preventDefault(); };
+    }
+  });
+  
+  window.onbeforeunload = function(event) {
+    if (typeof event == 'undefined') {event = window.event; }
+    var msg = "You have unsaved changes."
+    if (checkChanged()) {
+      if (event) {event.returnValue= msg; }
+      return msg;
+    }
+  }
+  
+  if ($routeParams.id != 'new') { 
 		$scope.loadDocument();
 	}
 	$scope.buttons = [{text:'Delete', action:$scope.deleteDocument, class:'btn-danger'}, {text:'Save', action:$scope.saveDocument, class:'btn-primary'}];
@@ -127,10 +180,12 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 	};
 	$scope.data = $data;
 	$scope.id = $routeParams.id == 'top' ? 0 : $routeParams.id;
+  var orig_col = angular.copy($scope.collection);
 
 	$scope.loadCollection = function() {
 		return $requests.fetch('fetchCollection', {id: $scope.id}).then(function(results) { 
 			$scope.collection = results;
+      orig_col = angular.copy($scope.collection);
 		});
 	}
 	
@@ -141,6 +196,7 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 			$scope.collection = results;
 			$routeParams.id = $scope.collection.COLLECTION_ID;
 			$scope.id = $routeParams.id;
+      orig_col = angular.copy($scope.collection);
 			$data.updateData().then(function() {
 				if ( $scope.collection.COLLECTION_ID == 0) { 
 					$messages.addMessage("Top-level collection successfully saved");
@@ -174,6 +230,27 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 	$scope.editSubcollection = function(id) { 
 		$location.path('/collections/'+id);
 	}
+
+  var checkChanged = function() {
+    var col = angular.copy($scope.collection);
+    return ! angular.equals(col, orig_col);
+  }
+
+  $scope.$on('$locationChangeStart', function(event) {
+    if(checkChanged()) {
+      var answer = confirm("You have unsaved changes. Are you sure you want to leave this page?")
+      if (!answer) {event.preventDefault(); };
+    }
+  });
+  
+  window.onbeforeunload = function(event) {
+    if (typeof event == 'undefined') {event = window.event; }
+    var msg = "You have unsaved changes."
+    if (checkChanged()) {
+      if (event) {event.returnValue= msg; }
+      return msg;
+    }
+  }
 
 	$scope.buttons = [{text:'Export Collection', action:$scope.exportCollection, class:'btn-default'}, {text:'Save', action:$scope.saveCollection, class:'btn-primary'}];
 

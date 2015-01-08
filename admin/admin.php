@@ -409,6 +409,7 @@ function fetchItem($type, $id) {
 	if ($type == 'document') { 
 		$data['_authors'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='author' order by `order`");
 		$data['_producers'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='producer' order by `order`");
+		$data['_related'] = array_values(dbLookupArray("select TO_ID, TRACK_NUMBER, TITLE, DESCRIPTION from RELATED_RECORDS where FROM_ID = $id order by TRACK_NUMBER"));
 	}
 	return $data;
 }
@@ -476,12 +477,14 @@ function saveItem($type, $id, $data, $noLog=false) {
 				dbwrite("insert ignore into LIST_ITEMS set item='".dbEscape($data[strtoupper($field)])."', type='$field'");
 			}
 		}
+
+		dbwrite("delete from RELATED_RECORDS where to_id = $id or from_id = $id");
 		foreach($related as $relatedDoc) {
-			$related['FROM_ID'] = $id;
-			saveRelated($related);
+			$relatedDoc['FROM_ID'] = $id;
+			saveRelated($relatedDoc);
 
 			$other_related = array(
-				'FROM_ID'=>$related['TO_ID'],
+				'FROM_ID'=>$relatedDoc['TO_ID'],
 				'TO_ID'=>$id,
 				'TITLE'=>$data['TITLE'],
 				'DESCRIPTION'=>$data['DESCRIPTION']
@@ -778,15 +781,15 @@ function filemakerImport($data_encoded) {
 		      'TITLE'=>$row['Insert Tracks::Track Description'][$index],
 		      'DESCRIPTION'=>$row['Insert Tracks::Track Title'][$index],
 		    );
-		    $file['_related'] = $related_doc;
+		    $file['_related'][] = $related_doc;
 		    $index++;
 		  }
 		}
 		$file = saveItem('document', $id, $file, true);
 		$count++;
 	}
-	// dbwrite("update freedom_archives.RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.title = b.title where a.title = ''");
-	// dbwrite("update freedom_archives.RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.description = b.description where a.description = ''");
+	dbwrite("update freedom_archives.RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.title = b.title where a.title = ''");
+	dbwrite("update freedom_archives.RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.description = b.description where a.description = ''");
 	return array("status"=>"success", "count"=>$count);
 }
 
