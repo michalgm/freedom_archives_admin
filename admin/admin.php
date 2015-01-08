@@ -43,7 +43,6 @@ $action_access = array(
 	'fetchList'=>'all',
 );
 
-
 checkLogin();
 
 include('dbaccess.php');
@@ -422,6 +421,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 		'_keywords'=> isset($data['_keywords']) ? $data['_keywords'] : null,
 		'_subjects'=> isset($data['_subjects']) ? $data['_subjects'] : null,
 	);
+	$related = array();
 	unset($data['_keywords']);
 	unset($data['_subjects']);
 
@@ -434,8 +434,10 @@ function saveItem($type, $id, $data, $noLog=false) {
 	} elseif ($type == 'document') { 
 		$tags['_authors'] = isset($data['_authors']) ? $data['_authors'] : null;
 		$tags['_producers']= isset($data['_producers']) ? $data['_producers'] : null;
+		$related = isset($data['_related']) ? $data['_related'] : array();
 		unset($data['_authors']);
 		unset($data['_producers']);
+		unset($data['_related']);
 	}
 	$action = $id === 'new' ? 'create' : 'update';
 	$date = date('Y-m-d H:i:s');
@@ -452,13 +454,11 @@ function saveItem($type, $id, $data, $noLog=false) {
 		$data['NEEDS_REVIEW'] =1;
  	}
 	$query = "insert into $table set ".arrayToUpdateString($data) ." on duplicate key update ".arrayToUpdateString($data);
-	$id = dbInsert($query);
-	// } else { 
-	// 	$query = "update $table set ".arrayToUpdateString($data)." where $idfield = ".dbEscape($id);
-	// 	// print $query;
-	// 	dbwrite($query);
-	// }
-
+	$newid = dbInsert($query);
+	if ($id == 'new') {
+		$id = $newid;
+	}
+	
 	if ($type == 'collection') {
 		if ($tags['_featured_docs'] !== null) {
 			updateFeatured($id, $tags['_featured_docs']);
@@ -476,6 +476,18 @@ function saveItem($type, $id, $data, $noLog=false) {
 				dbwrite("insert ignore into LIST_ITEMS set item='".dbEscape($data[strtoupper($field)])."', type='$field'");
 			}
 		}
+		foreach($related as $relatedDoc) {
+			$related['FROM_ID'] = $id;
+			saveRelated($related);
+
+			$other_related = array(
+				'FROM_ID'=>$related['TO_ID'],
+				'TO_ID'=>$id,
+				'TITLE'=>$data['TITLE'],
+				'DESCRIPTION'=>$data['DESCRIPTION']
+			);
+			saveRelated($other_related);
+		}
 	}
 
 	updateTags($id, $type, $tags);
@@ -484,6 +496,16 @@ function saveItem($type, $id, $data, $noLog=false) {
 		updateLog($type, $item, $action);
 	}
 	return $item;
+}
+
+function saveRelated($related) {
+	$related['TRACK_NUMBER'] = fetchValue("select track_number from RELATED_RECORDS where FROM_ID = ".dbEscape($related['FROM_ID'])." and TO_ID = ".dbEscape($related['TO_ID']));
+	if ($related['TRACK_NUMBER'] == null) {
+		$related['TRACK_NUMBER'] = fetchValue("select max(track_number)+1 from RELATED_RECORDS where FROM_ID = ".dbEscape($related['FROM_ID']));
+	}
+	$related['TRACK_NUMBER'] = $related['TRACK_NUMBER'] ? $related['TRACK_NUMBER'] : 1;
+	$query = "insert into RELATED_RECORDS set ".arrayToUpdateString($related) ." on duplicate key update ".arrayToUpdateString($related);
+	dbInsert($query);	
 }
 
 function parseLookups($type, $data) {
@@ -702,30 +724,37 @@ function csvImport($data) {
 }
 
 function filemakerImport($data_encoded) { 
-	require_once("FMXMLReader.php");
+	require_once("FMXMLReader.php");	
 	$collections_lookup = dbLookupArray('select call_number, collection_id from FILEMAKER_COLLECTIONS');
 	$data = base64_decode($data_encoded);
 	if ($data === false) { trigger_error("Invalid data encoding", E_USER_ERROR); } 
 	$reader = FMXMLReader::read($data);
+
 	$file = array();
 	$count = 0;
 	while($row=$reader->nextRow()) {
-		$file['DOCID'] = dbEscape($row['id'][0]); 
-		$file['CALL_NUMBER'] = dbEscape($row['Call_Number'][0]);
-		$file['TITLE'] = dbEscape($row['Title'][0]);
-		$file['DESCRIPTION'] = dbEscape($row['Description'][0]);
-		$file['PROGRAM'] = dbEscape($row['Program'][0]);
-		//$file['AUTHORS'] = dbEscape($row['Author'][0]);
-		$file['KEYWORDS'] = dbEscape($row['Key_Words'][0]);
-		$file['PRODUCERS'] = dbEscape($row['Producers'][0]);
-		$file['SUBJECTS'] = dbEscape($row['Subject_List'][0]);
-		$file['DATE_CREATED'] = dbEscape($row['Date_Made_To_MySQL'][0]);
-		$file['FORMAT'] = dbEscape($row['Format'][0]);
-		$file['GENERATION'] = dbEscape($row['Generation'][0]);
-		$file['QUALITY'] = dbEscape($row['Quality'][0]);
-		$file['URL'] = dbEscape($row['url_to_document'][0]);
-		$file['URL_TEXT'] = dbEscape($row['url_to_document_display_text' ][0]);
-		
+		// if ($count >= 1) { continue; }
+		$file['DOCID'] = $row['id'][0];
+		$file['CALL_NUMBER'] = $row['Call_Number'][0];
+		$file['TITLE'] = $row['Title'][0];
+		$file['DESCRIPTION'] = $row['Description'][0];
+		$file['PROGRAM'] = $row['Program'][0];
+		$file['KEYWORDS'] = $row['Key_Words'][0];
+		$file['PRODUCERS'] = $row['Producers'][0];
+		$file['SUBJECTS'] = $row['Subject_List'][0];
+		$file['FORMAT'] = $row['Format'][0];
+		$file['GENERATION'] = $row['Generation'][0];
+		$file['QUALITY'] = $row['Quality'][0];
+		$file['URL'] = $row['url_to_document'][0];
+		$file['CREATOR'] = $row['created_name'][0];
+		$file['DATE_CREATED'] = dateToSQL($row['Date Entered'][0], $row['created_time'][0]);
+		$file['CONTRIBUTOR'] = $row['modified_by'][0];
+		$file['DATE_MODIFIED'] = dateToSQL($row['Last Modified'][0], $row['modified_time'][0]);
+		$file['LOCATION'] = $row['Location'][0];
+		$file['YEAR'] = substr($row['Date_Made'][0], -4);
+		$file['VOL_NUMBER'] = $row['Date_Made'][0];
+		$file['_related'] = array();
+
 		$cn_parts =explode(" ", $file['CALL_NUMBER']);; 
 		$cn_prefix = strtoupper(array_shift($cn_parts));
 		if(isset($row['Sub_coll_number']) && $row['Sub_coll_number'][0]) { 
@@ -740,15 +769,46 @@ function filemakerImport($data_encoded) {
 			$file['FILE_EXTENSION'] = "NONE";
 		}
 		$file = parseLookups('document', $file);
-		$id = isset($data['DOCID']) ? $data['DOCID'] : 'new';
+		$id = isset($file['DOCID']) ? $file['DOCID'] : 'new';
+		$index = 0;
+		if (isset($row['Insert Tracks::id'])) {
+		  foreach($row['Insert Tracks::id'] as $to_id) {
+		    $related_doc = array(
+		      'TO_ID'=>$to_id,
+		      'TITLE'=>$row['Insert Tracks::Track Description'][$index],
+		      'DESCRIPTION'=>$row['Insert Tracks::Track Title'][$index],
+		    );
+		    $file['_related'] = $related_doc;
+		    $index++;
+		  }
+		}
 		$file = saveItem('document', $id, $file, true);
-		// $query = "insert into DOCUMENTS set ".arrayToUpdateString($file) ." on duplicate key update ".arrayToUpdateString($file);
-		// $id = dbInsert($query);
-		// updateTags($id);
-		// updateThumbnail($id, 1);
 		$count++;
 	}
+	// dbwrite("update freedom_archives.RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.title = b.title where a.title = ''");
+	// dbwrite("update freedom_archives.RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.description = b.description where a.description = ''");
 	return array("status"=>"success", "count"=>$count);
+}
+
+function dateToSQL($date, $time) {
+	if (!$date) { return ""; }
+  $times = array(0,0,0,0);
+  preg_match('/^(\d+)\/(\d+)\/(\d+)$/i', trim($date), $dates);  
+  if ($time) {
+    preg_match('/^(\d+):(\d+):?(\d*)( [AP]M)$/i', trim($time), $times);
+    if (isset($times[5]) && $times[5] == ' PM') { 
+      $times[1] += 12;
+    }
+  }
+  $dates[1] = sprintf("%02d", $dates[1]);
+  $dates[2] = sprintf("%02d", $dates[2]);
+  
+  foreach($times as &$padtime) {
+    $padtime = sprintf("%02d", $padtime);
+  }
+  
+  $datetime = "$dates[3]-$dates[1]-$dates[2] $times[1]:$times[2]:$times[3]";
+  return $datetime;
 }
 
 function output($data, $query, $status='ok') {

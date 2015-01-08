@@ -446,12 +446,12 @@ app.service('$requests', function($http, $messages, $upload) {
 	service.fetch = function(action, params) { 
 		params = params || {};
 		params.action = action;
-		return $http.get('admin.php', {params:params, timeout:150000});
+		return $http.get('admin.php', {params:params, timeout:600000});
 	}
 	service.write = function(action, data, id) { 
 		//data = data || {};
 		//data.action = action;
-		return $http.post('admin.php', {action: action, id: id, data:data}, {timeout:150000});
+		return $http.post('admin.php', {action: action, id: id, data:data}, {timeout:600000});
 	}
 	service.handleError = function(data, status, headers, config) { 
 		console.log('Error');

@@ -148,8 +148,12 @@ class FMXMLReader {
 
         $row_hash = array();
         foreach ($this->fields as $index => $fieldInfo) {
-          $data = $this->array_field_value($fieldInfo,$columns[$index]);
-          $row_hash[$fieldInfo['NAME']] = $data;
+          if (isset($columns[$index])) {
+            $data = $this->array_field_value($fieldInfo,$columns[$index]);
+            $row_hash[$fieldInfo['NAME']] = $data;
+          } else {
+            // print "Missing index: $index ($fieldInfo[NAME]) ".$columns[2][0]."\n";
+          }
         }
         return $row_hash;
       }
