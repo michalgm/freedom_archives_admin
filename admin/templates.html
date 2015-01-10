@@ -480,7 +480,66 @@
 				</div>
 			</div>
 		</div>
-
+		<div ng-switch-when='manageUsers'>
+			<ul class="list-group">
+				<li class="list-group-item list-group-item-info bold">
+					<div class='row vertical-align'>
+						<div class='col-xs-2'> Login </div>
+						<div class='col-xs-3'> Name </div>
+						<div class='col-xs-2'> Email </div>
+						<div class='col-xs-2'> Role </div>
+						<div class='col-xs-3'>
+							<button ng-click='addUser()' class='btn btn-success'>
+								<span class="glyphicon glyphicon-plus"></span>
+								Add User
+							</button>
+						</div>
+					</div>
+				</li>
+				<li class="list-group-item" ng-class='{"list-group-item-warning ": edit.user_id == user.user_id}' ng-repeat='user in users'>
+					<div class='row vertical-align' ng-hide='edit.user_id == user.user_id'>
+						<div class='col-xs-2'> {{user.username}}</div>
+						<div class='col-xs-3'> {{user.firstname}} {{user.lastname}}</div>
+						<div class='col-xs-2'> {{user.email}}</div>
+						<div class='col-xs-2'> {{user.user_type}}</div>
+						<div class='col-xs-3'>
+							<button class='btn btn-primary' ng-click='editUser(user)'>Edit</button>
+							<button class='btn btn-danger' ng-click='deleteUser(user)'>Delete</button>
+						</div>
+					</div>
+					<div class='row vertical-align' ng-show='edit.user_id == user.user_id'>
+						<div class='col-xs-2'><input placeholder='Login' class='form-control' ng-model='edit.username'/></div>
+						<div class='col-xs-3'>
+							<input placeholder='First Name' style='width: 45%; display: inline-block;' class='form-control' ng-model='edit.firstname'/>
+							<input placeholder='Last Name' style='width: 45%; display: inline-block;' class='form-control' ng-model='edit.lastname'/>
+						</div>
+						<div class='col-xs-2'><input placeholder='Email' class='form-control' ng-model='edit.email'/></div>
+						<div class='col-xs-2'>
+							<select class='form-control' ng-model='edit.user_type' ng-options="option as option for option in ['Administrator', 'Intern']"></select>
+						</div>
+						<div class='col-xs-3'>
+							<button class='btn btn-default' ng-click='editUser({})'>Cancel</button>
+							<button class='btn btn-primary' ng-click='saveUser()'>Save</button>
+							<button class='btn btn-info' ng-show='user.user_id!="new"' ng-click='pw.id = user.user_id'>Change Password</button>
+						</div>
+					</div>
+					<div style='padding: 10px; padding-bottom: 0px;' class='row vertical-align' ng-show='pw.id==user.user_id'>
+						<div class="col-xs-2 text-right">
+							<span ng-show='user.user_id!="new"'>Change </span>Password:
+						</div>
+						<div class="form-group col-xs-2" ng-class='{"has-error": pw.pw1 && pw.pw2 && pw.pw1 != pw.pw2 }'>
+							<input ng-model='pw.pw1' type='password' class="form-control" placeholder='New Password'>
+						</div>
+						<div class="form-group col-xs-2" ng-class='{"has-error": pw.pw1 && pw.pw2 && pw.pw1 != pw.pw2 }'>
+							<input ng-model='pw.pw2' type="password" class="form-control" placeholder='Verify Password'>
+						</div>
+						<div class='col-xs-3 text-error' ng-show='pw.pw1 && pw.pw2 && pw.pw1 != pw.pw2'>
+							Passwords do not match!
+						</div>
+					</div>
+				</li>
+			</ul>
+		</div>
 	</div>
 	<div ng-if="util == 'findDuplicates' || util == 'reviewChanges'" id='footer' class='well well-sm text-center'>
 		<pagination items-per-page='pagination.limit' total-items="pagination.count" boundary-links="true" max-size='5' ng-model="pagination.offset"></pagination>

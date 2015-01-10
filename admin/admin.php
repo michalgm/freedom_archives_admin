@@ -27,10 +27,10 @@ $action_access = array(
 	'fetchCollection'=>'all',
 	'saveCollection'=>'all',
 	'exportCollection'=>'all',
-	'fetchLists'=>'administrator',
-	'editListItem'=>'administrator',
-	'csvImport'=>'administrator',
-	'filemakerImport'=>'administrator',
+	'fetchLists'=>'Administrator',
+	'editListItem'=>'Administrator',
+	'csvImport'=>'Administrator',
+	'filemakerImport'=>'Administrator',
 	'getThumbnailDocs'=>'all', 
 	'updateThumbnail'=>'all',
 	'updateLookups'=>'all',
@@ -38,9 +38,12 @@ $action_access = array(
 	'backupDatabase'=>'all',
 	'getDocIds'=>'all',
 	'findDuplicates'=>'all',
-	'fetchAuditLog'=>'administrator',
-	'pushChanges'=>'administrator',
+	'fetchAuditLog'=>'Administrator',
+	'pushChanges'=>'Administrator',
 	'fetchList'=>'all',
+	'fetchUsers'=>'Administrator',
+	'saveUser'=>'Administrator',
+	'deleteUser'=>'Administrator',
 );
 
 checkLogin();
@@ -63,10 +66,14 @@ if ($action) {
 			$data = $request['data'];
 			$username = isset($data['user']) ? dbEscape($data['user']) : '';
 			$password = isset($data['password']) ? dbEscape($data['password']) : '';
-			$user = '';
+			$user = false;
 			if ($username && $password) { 
-				$login_query = "select USER_ID, USERNAME, USER_TYPE from USERS where USERNAME = '$username' and PASSWORD = '$password' limit 1";
-				$user = fetchRow($login_query);
+				$login_query = "select USER_ID, USERNAME, USER_TYPE, PASSWORD from USERS where USERNAME = '$username' limit 1";
+				$userinfo = fetchRow($login_query);
+				if ($userinfo[3] == crypt($password, $userinfo[3])) {
+					$user = $userinfo;
+					unset($user[3]);
+				}
 			}
 			if ($user) { 
 				$_SESSION['user_id'] = $user[0];
@@ -378,6 +385,63 @@ if ($action) {
 			updateLog('', array(), 'push');
 			break;
 
+		case 'fetchUsers':
+			$query = "select user_id, username, firstname, lastname, user_type, email from USERS order by username";
+			$data = dbLookupArray($query);
+			break;
+
+		case 'saveUser':
+			$user = $request['data'];
+			if (! isset($user['username']) || ! $user['username']) {
+				trigger_error("Username cannot be blank");
+			}
+			$id = dbEscape($user['user_id']);
+			if ($id == 'new') {unset($user['user_id']); }
+
+			if (isset($user['password'])) {
+				if (!$user['password']) {
+					trigger_error("Password can not be blank");
+				} elseif (strlen($user['password']) < 8) {
+					trigger_error("Password must be at least 8 characters long");
+				}
+				// $salt = 'foo';s
+				$salt = substr(base64_encode(openssl_random_pseudo_bytes(17)),0,22);
+				$salt = str_replace("+",".",$salt);
+				$salt = '$'.implode('$',
+					array(
+	          "2y", //select the most secure version of blowfish (>=PHP 5.3.7)
+	          str_pad(10,2,"0",STR_PAD_LEFT), //add the cost in two digits
+	          $salt //add the salt
+	        )
+	      );
+				$user['password'] = crypt($user['password'], $salt);
+			} else {
+				if ($id == 'new') {
+					trigger_error("Password can not be blank");
+				}
+				unset($user['password']);
+			}
+			if (fetchValue("select username from USERS where username = '".dbEscape($user['username'])."' and (user_id != '$id' or '$id' = 'new')")) {
+				trigger_error("User '$user[username]' already exists");
+			}
+			if ($id == 'new') {
+				$query = "insert into USERS set ".arrayToUpdateString($user);
+				$id = dbInsert($query);	
+			} else {
+				$query = "update USERS set ".arrayToUpdateString($user). " where user_id = $id";
+				dbwrite($query);
+			}
+
+			$data = fetchRow("select user_id, username, firstname, lastname, user_type, email from USERS where user_id = $id", true);
+			break;
+
+		case 'deleteUser':
+			$id = dbEscape($request['data']['id']);
+			$query = "delete from USERS where user_id = $id";
+			dbwrite($query);
+			$data = "1";
+			break;
+
 		default:
 			trigger_error('"'.$request['action'].'" is an invalid method.', E_USER_ERROR);
 			break;
@@ -451,7 +515,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 			$data['CREATOR'] = $_SESSION['username'];
 		}
 	}
-	if ($_SESSION['user_type'] != 'administrator') {
+	if ($_SESSION['user_type'] != 'Administrator') {
 		$data['NEEDS_REVIEW'] =1;
  	}
 	$query = "insert into $table set ".arrayToUpdateString($data) ." on duplicate key update ".arrayToUpdateString($data);

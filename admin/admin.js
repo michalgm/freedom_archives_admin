@@ -478,7 +478,54 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 				$scope.pagination.count = $scope.duplicates.length+1;
 			});
 			break;
-	}
+
+    case 'manageUsers':
+      $scope.title = 'Manage Users';
+      $scope.users = {};
+      $scope.edit = {};
+      $scope.pw = {};
+
+      $scope.editUser = function(user) {
+        $scope.edit = angular.copy(user);
+        $scope.pw = {};
+      }
+
+      $scope.addUser = function() {
+        $scope.edit = { user_id: 'new', user_type: 'Intern'};
+        $scope.users.new = angular.copy($scope.edit);
+        $scope.pw = {id: 'new'};
+      }
+
+      $scope.saveUser = function() {
+        var user = angular.copy($scope.edit);
+        if ($scope.pw.pw1 && $scope.pw.pw1 != $scope.pw.pw2) { return; }
+        if (user.user_id == 'new' && ! $scope.pw.pw1) {
+          $messages.error("Password cannot be blank");
+          return;
+        }
+        user.password = $scope.pw.pw1;
+        $requests.write('saveUser', user).then(function(response) {
+          $scope.users[response.user_id] = response;
+          $scope.edit = {};
+          $scope.pw = {};
+          delete $scope.users.new;
+        })
+      }
+
+      $scope.deleteUser = function(user) {
+        if(window.confirm("Are you sure you want to delete '"+user.username+"'?")) { 
+          $requests.write('deleteUser', {id: user.user_id}).then(function(response) {
+            delete $scope.users[user.user_id];
+          })
+        }
+      }
+
+    	$requests.fetch('fetchUsers').then(function(results){
+        $scope.users = results;
+      }) 
+
+      break;
+  }
 });
 
 // HACK: we ask for $injector instead of $compile, to avoid circular dep
