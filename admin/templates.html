@@ -504,7 +504,7 @@
 						<div class='col-xs-2'> {{user.user_type}}</div>
 						<div class='col-xs-3'>
 							<button class='btn btn-primary' ng-click='editUser(user)'>Edit</button>
-							<button class='btn btn-danger' ng-click='deleteUser(user)'>Delete</button>
+							<button class='btn btn-danger' action-button loading='saving' ng-click='deleteUser(user)'>Delete</button>
 						</div>
 					</div>
 					<div class='row vertical-align' ng-show='edit.user_id == user.user_id'>
@@ -519,7 +519,7 @@
 						</div>
 						<div class='col-xs-3'>
 							<button class='btn btn-default' ng-click='editUser({})'>Cancel</button>
-							<button class='btn btn-primary' ng-click='saveUser()'>Save</button>
+							<button class='btn btn-primary' action-button loading='saving' ng-click='saveUser()'>Save</button>
 							<button class='btn btn-info' ng-show='user.user_id!="new"' ng-click='pw.id = user.user_id'>Change Password</button>
 						</div>
 					</div>

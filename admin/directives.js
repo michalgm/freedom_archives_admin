@@ -70,6 +70,29 @@ app.directive('header', function($requests, $sce) {
 	}
 });
 
+app.directive('actionButton', function() {
+	return {
+		restrict: 'A',
+		scope: {
+			loading:'='
+		},
+		link: function(scope,element) {
+			angular.element(element).on('click', function(e) {
+				scope.$apply(function() {
+					scope.loading.status = true;
+					element.prepend("<span class='processing-spinner glyphicon glyphicon-refresh spin'></span> ");
+				});
+			});
+
+			scope.$watch('loading', function(n, o) {
+				if (! scope.loading.status) {
+					element.find('.processing-spinner').remove();
+				}
+			}, true)
+		}
+	}
+});
+
 app.directive('collectionChooser', function($requests, $data, $timeout) {
 	return {
 		restrict: 'A',

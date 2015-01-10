@@ -68,7 +68,7 @@ if ($action) {
 			$password = isset($data['password']) ? dbEscape($data['password']) : '';
 			$user = false;
 			if ($username && $password) { 
-				$login_query = "select USER_ID, USERNAME, USER_TYPE, PASSWORD from USERS where USERNAME = '$username' limit 1";
+				$login_query = "select USER_ID, USERNAME, USER_TYPE, PASSWORD, concat(firstname, ' ', lastname) as NAME from USERS where USERNAME = '$username' limit 1";
 				$userinfo = fetchRow($login_query);
 				if ($userinfo[3] == crypt($password, $userinfo[3])) {
 					$user = $userinfo;
@@ -79,6 +79,7 @@ if ($action) {
 				$_SESSION['user_id'] = $user[0];
 				$_SESSION['username'] = $user[1];
 				$_SESSION['user_type'] = $user[2];
+				$_SESSION['name'] = $user[4];
 				$data = $_SESSION;
 			} else { 
 				setResponse(401, 'Bad Login');
@@ -960,6 +961,7 @@ function updateLog($type, $item, $action, $description="") {
 	$data = array(
 		'action' => $action,
 		'type' => $type,
+		'user'=> $_SESSION['username']
 	);
 	if ($type == 'collection') {
 		$data['id'] = $item['COLLECTION_ID'];

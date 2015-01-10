@@ -494,6 +494,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
       $scope.users = {};
       $scope.edit = {};
       $scope.pw = {};
+      $scope.saving = { status: false};
 
       $scope.editUser = function(user) {
         $scope.edit = angular.copy(user);
@@ -508,17 +509,23 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 
       $scope.saveUser = function() {
         var user = angular.copy($scope.edit);
-        if ($scope.pw.pw1 && $scope.pw.pw1 != $scope.pw.pw2) { return; }
+        if ($scope.pw.pw1 && $scope.pw.pw1 != $scope.pw.pw2) { 
+          $scope.saving.status = false;
+          return;
+        }
         if (user.user_id == 'new' && ! $scope.pw.pw1) {
+          $scope.saving.status = false;
           $messages.error("Password cannot be blank");
           return;
         }
         user.password = $scope.pw.pw1;
         $requests.write('saveUser', user).then(function(response) {
+          $scope.saving.status = false;
           $scope.users[response.user_id] = response;
           $scope.edit = {};
           $scope.pw = {};
           delete $scope.users.new;
+          $messages.addMessage("User '"+user.username+"' saved", 'success');
         })
       }
 
@@ -526,6 +533,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
         if(window.confirm("Are you sure you want to delete '"+user.username+"'?")) { 
           $requests.write('deleteUser', {id: user.user_id}).then(function(response) {
             delete $scope.users[user.user_id];
+            $scope.saving.status = false;
           })
         }
       }
