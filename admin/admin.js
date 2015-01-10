@@ -112,9 +112,9 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 			$data.updateData().then(function() {
 				$scope.document.thumbnail_url = $scope.document.THUMBNAIL ? $scope.document.THUMBNAIL + '?' + Date.now() : "";
 				// $location.path('/documents/'.$scope.document.DOCID);
+        orig_doc = angular.copy($scope.document);
 				$messages.addMessage("Document '"+$scope.document.TITLE+"' successfully saved");
 			});
-      orig_doc = angular.copy($scope.document);
 		});
 	}
 
@@ -148,6 +148,12 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 
 	var checkChanged = function() {
     var doc = angular.copy($scope.document);
+    $.each(['DATE_MODIFIED', 'DATE_CREATED'], function(i, v){
+      delete orig_doc[v];
+      delete doc[v];
+    })
+    // console.log(JSON.stringify(doc));
+    // console.log(JSON.stringify(orig_doc));
     return ! angular.equals(doc, orig_doc);
   }
 
@@ -233,6 +239,10 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 
   var checkChanged = function() {
     var col = angular.copy($scope.collection);
+    $.each(['DATE_MODIFIED', 'DATE_CREATED'], function(i, v){
+      delete orig_col[v];
+      delete col[v];
+    })
     return ! angular.equals(col, orig_col);
   }
 
