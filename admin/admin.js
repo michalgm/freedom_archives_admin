@@ -166,7 +166,7 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
   
   window.onbeforeunload = function(event) {
     if (typeof event == 'undefined') {event = window.event; }
-    var msg = "You have unsaved changes."
+    var msg = "You have unsaved changes.";
     if (checkChanged()) {
       if (event) {event.returnValue= msg; }
       return msg;

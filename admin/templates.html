@@ -625,7 +625,7 @@
 				<span collection-chooser model='$parent.model'></span>
 			</div>
 			<div ng-switch-when='chooser'>
-				<input type="text" ng-blur='checkValue(this)' ng-model="$parent.model" autocomplete="off" typeahead-editable="{{options.editable}}" typeahead="item for item in fetchList(options.field, $viewValue, options.limit)" class="form-control" placeholder='Choose a {{label}}{{options.editable ? "": " from list"}}' />
+				<input type="text" ng-blur='checkValue(this)' ng-model="$parent.model" typeahead-on-select='addItem()' autocomplete="off" typeahead-editable="{{options.editable}}" typeahead="item for item in fetchList(options.field, $viewValue, options.limit)" class="form-control" placeholder='Choose a {{label}}{{options.editable ? "": " from list"}}' />
 			</div>
 			<div ng-switch-when='select'>
 				<select ng-model='$parent.model' ng-options='item.id as item.label for item in options | orderBy:"label"'/>
@@ -634,7 +634,7 @@
 				<div file-upload filetype='image' action='thumbnailImport' current-url='$parent.model' item-id='{{options.id}}' type='{{options.type}}'/>
 			</div>
 			<div ng-switch-when='tagger'>
-				<div tagger model='$parent.model' type='{{options.type}}' editable='{{options.editable}}'/>
+				<div tagger model='$parent.model' type='{{options.type}}' editable='options.editable'/>
 			</div>
 			<input ng-switch-default='text' type='{{type}}' class='form-control' ng-model='$parent.model' />
 		</div>

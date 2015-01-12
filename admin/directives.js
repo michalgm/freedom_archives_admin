@@ -333,11 +333,22 @@ app.directive('formGroup', function($requests) {
 				element.addClass('col-xs-6');
 			}
 
+			scope.addItem = function() {
+				if (scope.model) {
+					console.log(scope.inputType)
+					scope.model = scope.model.replace("New "+scope.options.field+': ', '');
+				}
+			}
+
 			scope.fetchList = function(field, value, limit) {
 				limit = limit || 8;
 				return $requests.fetch('fetchList', {field: field, value: value, limit: limit})
 					.then(function(response){
-						return response.items;
+						var results = response.items;
+						if (scope.options.editable && results[0] != value) {
+							results.unshift('New '+field+': '+value);
+						}
+						return results;
 					})
 			}
 
@@ -426,18 +437,18 @@ app.directive('tagger', function($requests, $data) {
 		scope: {
 			model: '=',
 			type: '@',
-			isEditable: '@editable'
+			isEditable: '=editable'
 		},
 		templateUrl: 'tagger.html',
 		link: function(scope, element, attribs) { 
 			scope.data = $data;
-			//scope.editable = scope.isEditable != false;
 			scope.selected = '';
 			scope.removeItem = function(i) { 
 				scope.model.splice(i, 1);
 			}
 			scope.addItem = function() {
 				if (scope.selected) {
+					scope.selected = scope.selected.replace("New "+scope.type+': ', '');
 					if ($.inArray(scope.selected, scope.model) == -1) {
 						scope.model.push(scope.selected);
 					}
@@ -449,7 +460,11 @@ app.directive('tagger', function($requests, $data) {
 				limit = limit || 8;
 				return $requests.fetch('fetchList', {field: field, value: value, limit: limit})
 					.then(function(response){
-						return response.items;
+						var results = response.items;
+						if (scope.isEditable && results[0] != value) {
+							results.unshift('New '+field+': '+value);
+						}
+						return results;
 					})
 			}
 
