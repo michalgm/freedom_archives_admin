@@ -49,6 +49,7 @@ $action_access = array(
 checkLogin();
 
 include('dbaccess.php');
+header('Content-type: application/json');
 
 if ($action) { 
 	$data = array();
@@ -830,8 +831,6 @@ function filemakerImport($data_encoded) {
 	$count = 0;
 	print "#STATUS#";
 	while($row=$reader->nextRow()) {
-		if ($count >= 100) { continue; }
-
 		// if ($count >= 1) { continue; }
 		$file['DOCID'] = $row['id'][0];
 		$file['CALL_NUMBER'] = $row['Call_Number'][0];
@@ -884,6 +883,7 @@ function filemakerImport($data_encoded) {
 		$file = saveItem('document', $id, $file, true);
 		$count++;
 		print $count;
+		flush();
 		//file_put_contents('progress.html', )
 	}
 	dbwrite("update RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.title = b.title where a.title = ''");
@@ -946,7 +946,6 @@ function handleError($errno, $errstr, $errfile, $errline, $errcontext) {
 }
 
 function setResponse($statusCode, $statusString, $data="", $query="") {
-	header('Content-type: application/json');
 	$response = array('statusCode'=>$statusCode, 'statusString'=>$statusString, 'data'=>$data, 'query'=>$query);
 	//if php version < 5.3.0 we need to emulate the object string
 	if (PHP_MAJOR_VERSION <= 5 & PHP_MINOR_VERSION < 3){
