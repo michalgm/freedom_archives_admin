@@ -174,7 +174,11 @@ div[ng-view].ng-leave {
   flex-direction: row;
 }
 
-.scroll-header, .scroll-footer { flex: 1 1 auto;}
+.scroll-header, .scroll-footer { 
+  flex: 0 0 auto;
+  max-height: 100px;
+}
+
 .scroll-body { 
   flex: 1 10 auto;
   overflow: auto;

@@ -126,8 +126,9 @@ if ($action) {
 			$wherestring = count($where) ? " WHERE ".implode(' AND ', $where)." " : "";
 
 			$query = "from DOCUMENTS D left JOIN COLLECTIONS C using(COLLECTION_ID) $wherestring order by D.TITLE";
-			$data['count'] = fetchValue("Select count(*) $query");
 			
+			$data = fetchRow("Select count(*) as count, sum(if(URL is not null and URL != '', 1, 0)) as digitized $query", true);
+
 			$request['limit'] = dbEscape($request['limit']);
 			$query = "select D.DOCID as id, D.TITLE as label, D.DESCRIPTION, D.THUMBNAIL, C.COLLECTION_NAME, D.AUTHORS, D.CALL_NUMBER $query limit ".(($request['page']-1)*$request['limit']).",$request[limit]";
 			$data['docs'] = array_values(dbLookupArray($query));
@@ -495,7 +496,7 @@ function fetchItem($type, $id) {
 	if ($type == 'document') { 
 		$data['_authors'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='author' order by `order`");
 		$data['_producers'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='producer' order by `order`");
-		$data['_related'] = array_values(dbLookupArray("select TO_ID, TRACK_NUMBER, TITLE, DESCRIPTION from RELATED_RECORDS where FROM_ID = $id order by TRACK_NUMBER"));
+		$data['_related'] = array_values(dbLookupArray("select TO_ID, TRACK_NUMBER, R.TITLE, R.DESCRIPTION, CALL_NUMBER, FORMAT from RELATED_RECORDS R join DOCUMENTS D on DOCID=TO_ID where FROM_ID = $id order by TRACK_NUMBER"));
 	}
 	return $data;
 }
@@ -589,6 +590,8 @@ function saveItem($type, $id, $data, $noLog=false) {
 }
 
 function saveRelated($related) {
+	unset($related['CALL_NUMBER']);
+	unset($related['FORMAT']);
 	$related['TRACK_NUMBER'] = fetchValue("select track_number from RELATED_RECORDS where FROM_ID = ".dbEscape($related['FROM_ID'])." and TO_ID = ".dbEscape($related['TO_ID']));
 	if ($related['TRACK_NUMBER'] == null) {
 		$related['TRACK_NUMBER'] = fetchValue("select max(track_number)+1 from RELATED_RECORDS where FROM_ID = ".dbEscape($related['FROM_ID']));

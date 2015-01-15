@@ -77,8 +77,11 @@
 			</div>
 		</a>
 	</div>
-	<div class='panel-footer text-center scroll-footer'>
-		<pagination items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination>
+	<div class='panel-footer scroll-footer'>
+		<div class='row vertical-align'>
+			<div class='col-xs-3 text-left'>{{count}} total collections found</div>
+			<div class='col-xs-6 text-center'><pagination items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination></div>
+		</div>
 	</div>
 </script>
 
@@ -124,8 +127,11 @@
 				</div>
 			</a>
 		</div>
-		<div class='panel-footer text-center scroll-footer'>
-			<pagination items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination>
+		<div class='panel-footer scroll-footer'>
+			<div class='row vertical-align'>
+				<div class='col-xs-3 text-left'>{{count}} total records / {{digitized}} digitized found</div>
+				<div class='col-xs-6 text-center'><pagination items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination></div>
+			</div>
 		</div>
 </script>
 
@@ -179,10 +185,11 @@
 						<div class='row list-group-item  vertical-align'>
 							<span class='col-xs-1'><b>Number</b></span>
 							<span class='col-xs-3'><b>Title</b></span>
-							<span class='col-xs-3'><b>Description</b></span>
-							<span class='col-xs-5'>
+							<span class='col-xs-2'><b>Description</b></span>
+							<span class='col-xs-3'>
 								<input class='form-control' type="text" ng-model="related_filter" autocomplete="off" typeahead-editable="false" typeahead-on-select="selectRelated($item)" typeahead="doc.label for doc in fetchRelated($viewValue)" class="form-control" placeholder="Add Related Record by Title, Call #, or ID" />
 							</span>
+							<span class='col-xs-2 bold'>Call Number/Format</span>
 						</div>
 					</div>
 					<div class='list-group' id='related'>
@@ -194,8 +201,12 @@
 							<span class='col-xs-3'>
 								<textarea class='form-control' ng-model='related.TITLE'/>
 							</span>
-							<span class='col-xs-7'>
+							<span class='col-xs-5'>
 								<textarea class='form-control' ng-model='related.DESCRIPTION'/>
+							</span>
+							<span class='col-xs-2'>
+								{{related.CALL_NUMBER}}<br/>
+								{{related.FORMAT}}
 							</span>
 							<span class='col-xs-1'>
 								<button class='btn btn-primary pull-right' ng-click='viewRelated(related.TO_ID)'>View</button>

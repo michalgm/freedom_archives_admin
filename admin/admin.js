@@ -778,7 +778,6 @@ app.config(function($httpProvider) {
 		return {
 			'response': function(response) {
 				if (response.config && response.config.url == 'admin.php') { 
-          console.log(response.data);
 					if (typeof(response.data) == 'string' && response.data.match(/^#STATUS#/)) {
             response.data = JSON.parse(response.data.replace(/^#STATUS#.*#ENDSTATUS#/, ''));
           }

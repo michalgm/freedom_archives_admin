@@ -179,8 +179,7 @@ app.directive('documentSearch', function($requests, $search) {
 			embedded: '=',
 			page:'=?',
 			count: '=?',
-			docLimit: '=?'
-
+			docLimit: '=?',
 		},
 		link: function(scope,element, attribs) {
 			scope.options = $search.recordOpts;
@@ -191,6 +190,7 @@ app.directive('documentSearch', function($requests, $search) {
 			scope.documents = [];
 			scope.count = 0;
 			scope.selected = null;
+			scope.digitized = 0;
 			
 			scope.fetchDocuments = function() { 
 				if (scope.limitCollectionId) { 
@@ -207,6 +207,7 @@ app.directive('documentSearch', function($requests, $search) {
 				}).then(function(results) { 
 					scope.documents = results.docs;
 					scope.count = results.count;
+					scope.digitized = results.digitized || 0;
 				});
 			}
 
