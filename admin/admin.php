@@ -822,10 +822,16 @@ function filemakerImport($data_encoded) {
 	$data = base64_decode($data_encoded);
 	if ($data === false) { trigger_error("Invalid data encoding", E_USER_ERROR); } 
 	$reader = FMXMLReader::read($data);
+	// print_r($reader->metadata); 
+	// exit();
 
 	$file = array();
+	// session_write_close();
 	$count = 0;
+	print "#STATUS#";
 	while($row=$reader->nextRow()) {
+		if ($count >= 100) { continue; }
+
 		// if ($count >= 1) { continue; }
 		$file['DOCID'] = $row['id'][0];
 		$file['CALL_NUMBER'] = $row['Call_Number'][0];
@@ -868,8 +874,8 @@ function filemakerImport($data_encoded) {
 		  foreach($row['Insert Tracks::id'] as $to_id) {
 		    $related_doc = array(
 		      'TO_ID'=>$to_id,
-		      'TITLE'=>$row['Insert Tracks::Track Description'][$index],
-		      'DESCRIPTION'=>$row['Insert Tracks::Track Title'][$index],
+		      'TITLE'=>$row['Insert Tracks::Track Title'][$index],
+		      'DESCRIPTION'=>$row['Insert Tracks::Track Description'][$index],
 		    );
 		    $file['_related'][] = $related_doc;
 		    $index++;
@@ -877,9 +883,14 @@ function filemakerImport($data_encoded) {
 		}
 		$file = saveItem('document', $id, $file, true);
 		$count++;
+		print $count;
+		//file_put_contents('progress.html', )
 	}
 	dbwrite("update RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.title = b.title where a.title = ''");
 	dbwrite("update RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.description = b.description where a.description = ''");
+	print "#ENDSTATUS#";
+
+	// session_start();
 	return array("status"=>"success", "count"=>$count);
 }
 

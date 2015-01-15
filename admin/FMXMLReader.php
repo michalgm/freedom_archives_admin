@@ -7,6 +7,7 @@ class FMXMLReader {
   protected $fields;
   protected $fieldInfoByName = array();
   protected $options;
+  public $metadata = array();
 
   static public function read($data,$options=array()) {
     $reader = new XMLReader();
@@ -87,7 +88,14 @@ class FMXMLReader {
     
       if ($reader->nodeType==XMLReader::END_ELEMENT) {
         if ($reader->name=='METADATA') {
-           break;
+          break;
+          $flag = $reader->moveToFirstAttribute();
+          while ($flag) {
+            // print $flag;
+             // print $reader->name; exit();
+             $this->metadata[$reader->name] = $reader->value;
+             $flag = $reader->moveToNextAttribute();
+          }
         } 
       }
     
