@@ -50,7 +50,17 @@
 		<form class='form-inline panel-heading scroll-header'>
 			<div class='form-group'>
 				<label class="control-label">Text</label>
-				<input type='text' class='form-control' placeholder='Search by title or ID' ng-model='filter' autofocus/>
+				<input type='text' class='form-control' placeholder='Search by title or ID' ng-model='options.filter' autofocus/>
+			</div>
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" ng-model='options.NEEDS_REVIEW' ng-true-value="1" ng-false-value="0"> Needs Review
+				</label>
+			</div>
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" ng-model='options.IS_HIDDEN' ng-true-value="1" ng-false-value="0"> Hidden
+				</label>
 			</div>
 		</form>
 	<div class='list-group scroll-body'>
@@ -77,25 +87,25 @@
 		<form class='form-inline panel-heading scroll-header'>
 			<div class='form-group'>
 				<label class="control-label">Text</label>
-				<input type='text' class='form-control' placeholder='Search by text' ng-model='filter' autofocus/>
+				<input type='text' class='form-control' placeholder='Search by text' ng-model='options.filter' autofocus/>
 			</div>
 			<div ng-hide='limitCollectionId' class='form-group'>
 				<label class="control-label">Collection</label>
-				<span collection-chooser select-collection='selectCollection(collection)' model='selected'></span>
+				<span collection-chooser select-collection='selectCollection(collection)' model='options.selected'></span>
 			</div>
 			<div class="checkbox">
 				<label>
-					<input type="checkbox" ng-model='nonDigitized' ng-true-value="1" ng-false-value="0"> Include non-digitized
+					<input type="checkbox" ng-model='options.nonDigitized' ng-true-value="1" ng-false-value="0"> Include non-digitized
 				</label>
 			</div>
-			<div class="checkbox" ng-if='embedded'>
+			<div class="checkbox" ng-show='! embedded'>
 				<label>
-					<input type="checkbox" ng-model='NEEDS_REVIEW' ng-true-value="0" ng-false-value="1"> Needs Review
+					<input type="checkbox" ng-model='options.NEEDS_REVIEW' ng-true-value="1" ng-false-value="0"> Needs Review
 				</label>
 			</div>
-			<div class="checkbox" ng-if='embedded'>
+			<div class="checkbox" ng-show='! embedded'>
 				<label>
-					<input type="checkbox" ng-model='IS_HIDDEN' ng-true-value="1" ng-false-value="0"> Hidden
+					<input type="checkbox" ng-model='options.IS_HIDDEN' ng-true-value="1" ng-false-value="0"> Hidden
 				</label>
 			</div>
 		</form>
@@ -126,7 +136,7 @@
 			<div class='row' form-group model='document.TITLE' label='Title'></div>
 			<div class='row'>
 				<div form-group model='document.IS_HIDDEN' input-type='checkbox' label='Hidden'></div>
-				<div form-group model='document.NEEDS_REVIEW' input-type='checkbox' label='Reviewed'></div>
+				<div form-group model='document.NEEDS_REVIEW' input-type='checkbox' label='Needs Review'></div>
 			</div>
 			<div class='row'>
 				<div form-group model='document.CALL_NUMBER' label='Call Number'></div>
@@ -229,7 +239,7 @@
 					<div form-group model='collection.COLLECTION_NAME' label='Collection Name'></div>
 					<div form-group model='collection.PARENT_ID' label='Parent Collection' input-type='collectionChooser'></div>
 					<div form-group model='collection.IS_HIDDEN' label='Hidden' input-type='checkbox'></div>
-					<div form-group model='collection.NEEDS_REVIEW' label='Reviewed' input-type='checkbox'></div>
+					<div form-group model='collection.NEEDS_REVIEW' label='Needs Review' input-type='checkbox'></div>
 					<div form-group model='collection.CALL_NO' label='Call Number'></div>
 					<div form-group model='collection.ORGANIZATION' label='Organization/ Publisher'></div>
 					<div form-group model='collection.DATE_RANGE' label='Date Range'></div>
@@ -367,7 +377,7 @@
 									</div>
 									<div class='col-xs-6'>
 										<div class='pull-right btn-group'>	
-											<button class='btn btn-default btn-sm' ng-click='edit = !edit'>{{edit ? 'Cancel' : 'Edit'}}</button>
+											<button  class='btn btn-default btn-sm' ng-click='edit = !edit'>{{edit ? 'Cancel' : 'Edit'}}</button>
 											<button class='btn btn-danger btn-sm' ng-click='editItem(label, item, "delete")'>Delete</button>
 										</div>
 									</div>
@@ -394,7 +404,15 @@
 		</div>
 		<div ng-switch-when='reviewChanges'>
 			<p>Below is a list of all changes to the database since the last time the data was pushed to the live search site. Review the changes, and when you are satisfied, click the 'Push to Live Site' button.</p>
-			<p>The live site was last updated on <b>{{lastUpdate *1000| date:"MM/dd/yyyy 'at' h:mma"}}</b></p>
+			<div class='row vertical-align'>
+				<p class='col-xs-6'>The live site was last updated on <b>{{lastUpdate *1000| date:"MM/dd/yyyy 'at' h:mma"}}</b></p>
+				<div class="checkbox col-xs-6">
+					<label>
+						<input type="checkbox" ng-model='$parent.only_reviewed' value="">
+						Only show changes needing review
+					</label>
+				</div>
+			</div>
 			<!--<p>Show changes since <input type='date' ng-model='date'/> at <input type='time' ng-model='date'/> <input ng-model='date'/></p>-->
 			<div style='overflow: auto'>
 				<table class='table table-condensed table-bordered'>
@@ -404,6 +422,7 @@
 						<th>Action</th>
 						<th>User</th>
 						<th>Time</th>
+						<th>Reviewed</th>
 					</thead>
 					<tbody>
 						<tr ng-repeat='item in log | slice:(pagination.offset-1)*pagination.limit:pagination.limit'>
@@ -411,7 +430,11 @@
 							<td>{{item.type|ucf}}</td>
 							<td>{{item.action|ucf}}</td>
 							<td>{{item.user|ucf}}</td>
-							<td>{{item.time*1000| date:"MM/dd/yyyy 'at' h:mma"}}</td>
+							<td>{{item.time*1000| date:"MM/dd/yyyy 'at' hh:mm a"}}</td>
+							<td>
+									<button ng-click='reviewItem(item)' action-button='saving' type="button" style='min-width: 70%' ng-show='item.NEEDS_REVIEW == 0 || item.NEEDS_REVIEW == ""' class="btn btn-sm btn-success">Mark as Needs Review</button>
+									<button ng-click='reviewItem(item)' action-button='saving' type="button" style='min-width: 70%' ng-show='item.NEEDS_REVIEW' class="btn btn-sm btn-danger">Mark as Reviewed</button>
+							</td>
 						</tr>
 					</tbody>
 				</table>	
@@ -504,7 +527,7 @@
 						<div class='col-xs-2'> {{user.user_type}}</div>
 						<div class='col-xs-3'>
 							<button class='btn btn-primary' ng-click='editUser(user)'>Edit</button>
-							<button class='btn btn-danger' action-button loading='saving' ng-click='deleteUser(user)'>Delete</button>
+							<button class='btn btn-danger' action-button='saving' ng-click='deleteUser(user)'>Delete</button>
 						</div>
 					</div>
 					<div class='row vertical-align' ng-show='edit.user_id == user.user_id'>
@@ -519,7 +542,7 @@
 						</div>
 						<div class='col-xs-3'>
 							<button class='btn btn-default' ng-click='editUser({})'>Cancel</button>
-							<button class='btn btn-primary' action-button loading='saving' ng-click='saveUser()'>Save</button>
+							<button class='btn btn-primary' action-button='saving' ng-click='saveUser()'>Save</button>
 							<button class='btn btn-info' ng-show='user.user_id!="new"' ng-click='pw.id = user.user_id'>Change Password</button>
 						</div>
 					</div>

@@ -74,18 +74,20 @@ app.directive('actionButton', function() {
 	return {
 		restrict: 'A',
 		scope: {
-			loading:'='
+			actionButton:'='
 		},
-		link: function(scope,element) {
+		link: function(scope,element, attribs) {
 			angular.element(element).on('click', function(e) {
 				scope.$apply(function() {
-					scope.loading.status = true;
+					scope.actionButton.status = true;
+					attribs.$set('disabled', true);
 					element.prepend("<span class='processing-spinner glyphicon glyphicon-refresh spin'></span> ");
 				});
 			});
 
-			scope.$watch('loading', function(n, o) {
-				if (! scope.loading.status) {
+			scope.$watch('actionButton', function(n, o) {
+				if (! scope.actionButton.status) {
+					attribs.$set('disabled', false);
 					element.find('.processing-spinner').remove();
 				}
 			}, true)
@@ -165,7 +167,7 @@ app.directive('featuredDocs', function($requests) {
 	}
 });
 		
-app.directive('documentSearch', function($requests) {
+app.directive('documentSearch', function($requests, $search) {
 	return {
 		restrict: 'A',
 		templateUrl:'documentSearch.html',
@@ -181,28 +183,27 @@ app.directive('documentSearch', function($requests) {
 
 		},
 		link: function(scope,element, attribs) {
+			scope.options = $search.recordOpts;
+			if (scope.embedded) {
+				scope.options = $search.colRecordOpts;
+			}
 			scope.page = 1;
-			scope.filter = '';
 			scope.documents = [];
 			scope.count = 0;
-			scope.nonDigitized = scope.nonDigitizedDefault || 0;
-			scope.NEEDS_REVIEW = 1;
-			scope.IS_HIDDEN = 0;
-			scope.collection = '';
 			scope.selected = null;
 			
 			scope.fetchDocuments = function() { 
 				if (scope.limitCollectionId) { 
-					scope.collection = scope.limitCollectionId;
+					scope.options.collection = scope.limitCollectionId;
 				}
 				$requests.fetch('fetchDocuments', {
-					filter:scope.filter,
-					collection:scope.collection, 
+					filter:scope.options.filter,
+					collection:scope.options.collection, 
 					page:scope.page,
 					limit:scope.docLimit,
-					nonDigitized:scope.nonDigitized,
-					IS_HIDDEN: scope.IS_HIDDEN,
-					NEEDS_REVIEW: scope.NEEDS_REVIEW
+					nonDigitized:scope.options.nonDigitized,
+					IS_HIDDEN: scope.options.IS_HIDDEN,
+					NEEDS_REVIEW: scope.options.NEEDS_REVIEW
 				}).then(function(results) { 
 					scope.documents = results.docs;
 					scope.count = results.count;
@@ -211,13 +212,13 @@ app.directive('documentSearch', function($requests) {
 
 			scope.selectCollection = function(collection) { 
 				if (collection) { 
-					scope.collection = collection.id;
+					scope.options.collection = collection.id;
 				} else { 
-					scope.collection = '';
+					scope.options.collection = '';
 				}
 			}
 
-			scope.$watchCollection('[filter, limitCollectionId, collection, nonDigitized, NEEDS_REVIEW, IS_HIDDEN]', function() { 
+			scope.$watchCollection('[options.filter, limitCollectionId, options.collection, options.nonDigitized, options.NEEDS_REVIEW, options.IS_HIDDEN]', function() { 
 				scope.page = 1;
 				scope.fetchDocuments();
 			});
@@ -230,7 +231,7 @@ app.directive('documentSearch', function($requests) {
 	}
 });
 
-app.directive('collectionSearch', function($requests) {
+app.directive('collectionSearch', function($requests, $search) {
 	return {
 		restrict: 'A',
 		templateUrl:'collectionSearch.html',
@@ -244,15 +245,17 @@ app.directive('collectionSearch', function($requests) {
 			docLimit: '=?'
 		},
 		link: function(scope,element, attribs) {
+			scope.options = $search.collectionOpts;
 			scope.page = 1;
-			scope.filter = '';
 			scope.collections = [];
 			scope.count = 0;
 			scope.selected = null;
 
 			scope.fetchCollections = function() { 
 				$requests.fetch('fetchCollections', {
-					filter:scope.filter,
+					filter:scope.options.filter,
+					IS_HIDDEN: scope.options.IS_HIDDEN,
+					NEEDS_REVIEW: scope.options.NEEDS_REVIEW,
 					page:scope.page,
 					limit:scope.docLimit,
 				}).then(function(results) { 
@@ -261,7 +264,7 @@ app.directive('collectionSearch', function($requests) {
 				});
 			}
 
-			scope.$watchCollection('[filter]', function() { 
+			scope.$watchCollection('[options.filter, options.IS_HIDDEN, options.NEEDS_REVIEW]', function() { 
 				scope.page = 1;
 				scope.fetchCollections();
 			});

@@ -324,7 +324,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			
 			$scope.fetchList = function(label) {
 				var list = $scope.lists[label];
-				$requests.fetch('fetchList', {field: label, value: list.filter, limit: $scope.limit, offset: list.offset  })
+				$requests.fetch('fetchList', {field: label, value: list.filter, limit: $scope.limit, offset: (list.offset-1)*$scope.limit  })
 					.then(function(results){
 						$scope.lists[label].items = results.items;
 						$scope.lists[label].count = results.count;
@@ -345,7 +345,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 					items: [],
 					filter: '',
 					count: 0,
-					offset: 0,
+					offset: 1,
 					new: ''
 				}
 				$scope.fetchList(v);
@@ -446,13 +446,16 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			$scope.log = [];
 			$scope.pagination = {
 				limit: 10,
-				offset: 0,
-				count:0
+				offset: 1,
+				count:0,
+        page: 1
 			}
 			$scope.date = '';
+      $scope.only_reviewed = true;
 			$scope.lastUpdate = '';
-			$scope.fetchLog = function() {
-				$requests.fetch('fetchAuditLog', {'date': $scope.date}).then(function(results) {
+			$scope.saving = { status: false };
+      $scope.fetchLog = function() {
+				$requests.fetch('fetchAuditLog', {'date': $scope.date, 'only_reviewed': $scope.only_reviewed}).then(function(results) {
 					//var date = new Date(results.date*1000);
 					// $scope.date = date.getFullYear()+'-'+date.getMonth()+'-'+date.getDate();
 					//$scope.date = date;
@@ -463,13 +466,27 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 				})
 			}
 
+      $scope.reviewItem= function(item) {
+        var save = {
+          needs_review: item.NEEDS_REVIEW == 1 ? 0 : 1,
+        }
+        var action = item.type == 'document' ? 'saveDocument' : 'saveCollection';
+
+        $requests.write(action, save, item.id).then(function(results) {
+          $scope.saving = false;
+          $scope.fetchLog();
+        });
+      }
+
 			$scope.pushChanges = function() {
 				$requests.fetch('pushChanges').then(function(results) {
 					$messages.addMessage('Live site updated', 'success');
 					$scope.fetchLog();
 				})
 			}
-
+      $scope.$watch('only_reviewed', function() {
+        $scope.fetchLog();
+      })
 			$scope.fetchLog();
 			$scope.buttons = [{text:'Push Changes to Live Site', action:$scope.pushChanges, class:'btn-primary'}];
 
@@ -479,7 +496,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			$scope.duplicates = {};
 			$scope.pagination = {
 				limit: 5,
-				offset: 0,
+				offset: 1,
 				count:0
 			}
 			$requests.fetch('findDuplicates').then(function(results) { 
@@ -688,6 +705,37 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 			return true;
 		}
 	}
+});
+
+app.service('$search', function($rootScope) {
+  var service = this;
+
+  service.reset = function() {
+    service.records = [];
+    service.collections = [];
+    service.recordOpts = {
+      filter : '',
+      nonDigitized: 0,
+      NEEDS_REVIEW : 0,
+      IS_HIDDEN : 0,
+      collection : '',
+    };
+    service.colRecordOpts = {
+      filter : '',
+      nonDigitized: 0,
+      NEEDS_REVIEW : 0,
+      IS_HIDDEN : 0,
+      collection : '',
+    };
+    service.collectionOpts = {
+      filter : '',
+      NEEDS_REVIEW : 0,
+      IS_HIDDEN : 0,
+    };
+  }
+
+  service.reset();
+
 });
 
 

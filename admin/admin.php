@@ -108,17 +108,17 @@ if ($action) {
 			if(isset($request['IS_HIDDEN']) && $request['IS_HIDDEN']) { 
 				$where[] = " D.IS_HIDDEN = 1 ";
 			}
-			if(isset($request['NEEDS_REVIEW']) && ! $request['NEEDS_REVIEW']) { 
+			if(isset($request['NEEDS_REVIEW']) && $request['NEEDS_REVIEW']) { 
 				$where[] = " D.NEEDS_REVIEW = 1 ";
 			}
 			if (isset($request['filter']) && $request['filter']) { 
 				$filter = dbEscape($request['filter']);
 				$filter = str_replace(" ", '%', $filter);
-				$like = "like '%$filter%'";
-				if (isset($request['titleOnly']) && $request['titleOnly'])  {
+				$like = "like _utf8 '%$filter%'";
+				if (isset($request['titleOnly']) && $request['titleOnly'] && 0)  {
 					$where[] = "(D.TITLE $like or D.CALL_NUMBER $like or D.DOCID = '$filter')";
 				} else {
-					$where[] = "(D.TITLE $like or D.KEYWORDS $like or D.CALL_NUMBER $like or D.DESCRIPTION $like or D.DOCID = '$filter')";
+					$where[] = "(D.TITLE $like or D.KEYWORDS $like collate utf8_unicode_ci or D.CALL_NUMBER $like or D.DESCRIPTION $like collate utf8_unicode_ci or D.DOCID = '$filter')";
 				}
 			}	
 
@@ -141,6 +141,12 @@ if ($action) {
 				$like = "like '%$filter%'";
 				$where[] = "(COLLECTION_NAME $like or CALL_NO $like or COLLECTION_ID = '$filter')";
 			}
+			if(isset($request['IS_HIDDEN']) && $request['IS_HIDDEN']) { 
+				$where[] = " IS_HIDDEN = 1 ";
+			}
+			if(isset($request['NEEDS_REVIEW']) && $request['NEEDS_REVIEW']) { 
+				$where[] = " NEEDS_REVIEW = 1 ";
+			}
 
 			$wherestring = count($where) ? " WHERE ".implode(' AND ', $where)." " : "";
 
@@ -156,7 +162,7 @@ if ($action) {
 		case 'deleteDocument':
 			$doc = fetchItem('document', $request['id']);
 			dbwrite("delete from DOCUMENTS where DOCID = '".$request['id']."'");
-			updateLog('document', $doc, 'delete');
+			//updateLog('document', $doc, 'delete');
 			$data = 1;
 			break;
 		
@@ -179,7 +185,10 @@ if ($action) {
 		case 'exportCollection':
 			$filename = 'All Collections';
 			$where = isset($request['collection_id']) ? " and c.collection_id = ".dbEscape($request['collection_id']). " " : "";
-			$docs = dbLookupArray("Select d.docid as 'Document Id', Call_Number, c.collection_name as Folder, Title, Authors, publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication' from COLLECTIONS c left join DOCUMENTS d using(collection_id) where c.collection_id != 20 $where group by docid");
+			$docs = dbLookupArray("Select d.docid as 'Document Id', Call_Number, c.collection_name as Folder, Title, Authors, 
+				publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, 
+				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
+				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where c.collection_id != 20 $where group by docid");
 
 			$first = reset($docs); 
 			if (isset($request['collection_id'])) { 
@@ -192,8 +201,6 @@ if ($action) {
 			//header('Content-type: text/csv; charset=UTF-8');
 			//header("Content-Disposition: attachment; filename=\"$filename.csv\"");
 			$csv = "\xEF\xBB\xBF"; // UTF-8 BOM
-			//fwrite($output, $data);
-			//fwrite($output, "Select d.docid as 'Document Id', c.collection_name as Folder, Title, Author, publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, url as 'File Name', subject_list as 'Subjects', location as 'Place of Publication' from COLLECTIONS c join DOCUMENTS d using(collection_id) where c.collection_id != 20 $where group by docid");
 			$csv .= str_putcsv($headers);
 			foreach($docs as $doc) { 
 				//Not sure why this was happening, but it was broken
@@ -215,11 +222,11 @@ if ($action) {
 			if (isset($request['offset'])) { 
 				$offset = dbEscape($request['offset']);
 			}
-			$query = "select item from LIST_ITEMS where type = '$field' and item like('%$value%')";
+			$query = "select item from LIST_ITEMS where type = '$field' and item like('%$value%') collate utf8_unicode_ci order by ucase(item) limit $offset, $limit";
 
 			$data = array(
-				'items'=> fetchCol("select item from LIST_ITEMS where type = '$field' and item like('%$value%') order by item limit $offset, $limit"),
-				'count' => fetchValue("select count(*) from LIST_ITEMS where type = '$field' and item like('%$value%')")
+				'items'=> fetchCol("$query"),
+				'count' => fetchValue("select count(*) from LIST_ITEMS where type = '$field' and item like('%$value%') collate utf8_unicode_ci")
 			);
 			break;
 
@@ -354,7 +361,9 @@ if ($action) {
 				$title = trim($doc['TITLE']);
 				$desc = trim($doc['DESCRIPTION']);
 				$vol = trim($doc['VOL_NUMBER']);
-				foreach( array('TITLE', 'DESCRIPTION', 'VOL_NUMBER', 'CREATOR', 'CONTRIBUTOR', 'DATE_AVAILABLE', 'DATE_MODIFIED', 'SOURCE', 'IDENTIFIER', 'LANGUAGE', 'RELATION', 'COVERAGE', 'RIGHTS', 'AUDIENCE', 'DIGITIZATION_SPECIFICATION', 'PBCORE_CREATOR', 'PBCORE_COVERAGE', 'PBCORE_RIGHTS_SUMMARY', 'PBCORE_EXTENSION', 'URL_TEXT', 'LENGTH') as $field) { 
+				foreach( array('TITLE', 'DESCRIPTION', 'VOL_NUMBER', 'CREATOR', 'CONTRIBUTOR', 'DATE_AVAILABLE', 'DATE_MODIFIED', 'SOURCE', 'IDENTIFIER', 
+					'LANGUAGE', 'RELATION', 'COVERAGE', 'RIGHTS', 'AUDIENCE', 'DIGITIZATION_SPECIFICATION', 'PBCORE_CREATOR', 'PBCORE_COVERAGE', 
+					'PBCORE_RIGHTS_SUMMARY', 'PBCORE_EXTENSION', 'URL_TEXT', 'LENGTH') as $field) { 
 					unset($doc[$field]);
 				}
 
@@ -371,16 +380,27 @@ if ($action) {
 		case 'fetchAuditLog':
 			$lastUpdate = fetchValue("select unix_timestamp(max(timestamp)) from audit_log where action='push'");
 			$date = $request['date'] ? dbEscape($request['date']) : $lastUpdate;
-			$log = fetchRows("select *, unix_timestamp(timestamp) as time from audit_log where unix_timestamp(timestamp) > '$date' and action != 'push'"); // limit ".(($page-1)*$limit).",$limit");
+			$needs_review = $request['only_reviewed'] =='true' ? " and NEEDS_REVIEW = 1 " : "";
+			// $log = fetchRows("select *, unix_timestamp(timestamp) as time from audit_log where unix_timestamp(timestamp) > '$date' and action != 'push'"); // limit ".(($page-1)*$limit).",$limit");
+			$query = "
+				select * from (
+				select DOCID as id, TITLE as description, 'document' as type, CONTRIBUTOR as user, IF(DATE_MODIFIED = DATE_CREATED, 'create', 'update') as action, 
+					NEEDS_REVIEW, unix_timestamp(DATE_MODIFIED) as time from DOCUMENTS where unix_timestamp(DATE_MODIFIED) > '$date' $needs_review
+				union 
+					select COLLECTION_ID as id, COLLECTION_NAME as description, 'collection' as type, CONTRIBUTOR as user, IF(DATE_MODIFIED = DATE_CREATED, 'create', 'update') as action, 
+						NEEDS_REVIEW, unix_timestamp(DATE_MODIFIED) as time from COLLECTIONS where unix_timestamp(DATE_MODIFIED) > '$date' $needs_review
+				) a order by time desc
+				"; // limit ".(($page-1)*$limit).",$limit");
+			$log = fetchRows($query);
 			$data = array('lastUpdate'=>$lastUpdate,'log'=>$log, 'date'=>$date);
 			break;
 
 		case 'pushChanges':
 			foreach (array('DOCUMENTS', 'COLLECTIONS', 'LIST_ITEMS_LOOKUP', 'FEATURED_DOCS') as $table) {
+				$where = ($table == 'DOCUMENTS' || $table == 'COLLECTIONS') ? " where IS_HIDDEN = 0 and NEEDS_REVIEW = 0 " : "";
 				dbwrite("drop table IF EXISTS $table"."_LIVE");
 				dbwrite("create table $table"."_LIVE like $table");
-				dbwrite("insert into $table"."_LIVE select * from $table");
-				# code...
+				dbwrite("insert into $table"."_LIVE select * from $table $where");
 			}
 			$data = 1;
 			updateLog('', array(), 'push');
@@ -482,6 +502,7 @@ function fetchItem($type, $id) {
 function saveItem($type, $id, $data, $noLog=false) { 
 	$table = strtoupper($type)."S";
 	$idfield = $type == 'document' ? 'DOCID' : strtoupper($type)."_ID";
+	$data[$idfield] = $id;
 	$oldItem = fetchItem($type, $id);
 	$tags = array(
 		'_keywords'=> isset($data['_keywords']) ? $data['_keywords'] : null,
@@ -561,7 +582,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 	updateTags($id, $type, $tags);
 	$item = fetchItem($type, $id);
 	if (! $noLog) {
-		updateLog($type, $item, $action);
+		//updateLog($type, $item, $action);
 	}
 	return $item;
 }
@@ -654,7 +675,11 @@ function updateSubcollections($id, $data) {
 }
 
 function csvImport($data) { 
-	$fields = array('docid', 'title', 'creator', 'subjects', 'description', 'publisher', 'contributor', 'identifier', 'source', 'language', 'relation', 'coverage', 'rights', 'audience', 'format', 'keywords', 'authors', 'vol_number', 'no_copies', 'file_name', 'doc_text', 'file_extension', 'collection_id', 'url', 'url_text', 'producers', 'program', 'generation', 'quality', 'year', 'location', 'needs_review', 'is_hidden', 'call_number', 'notes', 'thumbnail', 'length', 'collection');
+	$fields = array('docid', 'title', 'creator', 'subjects', 'description', 'publisher', 'contributor', 
+		'identifier', 'source', 'language', 'relation', 'coverage', 'rights', 'audience', 'format', 
+		'keywords', 'authors', 'vol_number', 'no_copies', 'file_name', 'doc_text', 'file_extension', 
+		'collection_id', 'url', 'url_text', 'producers', 'program', 'generation', 'quality', 'year', 
+		'location', 'needs_review', 'is_hidden', 'call_number', 'notes', 'thumbnail', 'length', 'collection');
 
 	$aliases = array(
 		'no. copies'=>'no_copies',
@@ -853,8 +878,8 @@ function filemakerImport($data_encoded) {
 		$file = saveItem('document', $id, $file, true);
 		$count++;
 	}
-	dbwrite("update freedom_archives.RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.title = b.title where a.title = ''");
-	dbwrite("update freedom_archives.RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.description = b.description where a.description = ''");
+	dbwrite("update RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.title = b.title where a.title = ''");
+	dbwrite("update RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.description = b.description where a.description = ''");
 	return array("status"=>"success", "count"=>$count);
 }
 
@@ -961,8 +986,8 @@ function updateLog($type, $item, $action, $description="") {
 	$data = array(
 		'action' => $action,
 		'type' => $type,
-		'user'=> $_SESSION['username']
-	);
+		'user'=> $_SESSION['username'],
+		'needs_review'=>$item['NEEDS_REVIEW']	);
 	if ($type == 'collection') {
 		$data['id'] = $item['COLLECTION_ID'];
 		$data['description'] = $item['COLLECTION_NAME'];
