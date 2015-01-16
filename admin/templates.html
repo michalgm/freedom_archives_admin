@@ -79,8 +79,8 @@
 	</div>
 	<div class='panel-footer scroll-footer'>
 		<div class='row vertical-align'>
-			<div class='col-xs-3 text-left'>{{count}} total collections found</div>
-			<div class='col-xs-6 text-center'><pagination items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination></div>
+			<div class='col-xs-3 text-left'><span class='count label label-primary'>{{count}} total collections found</span></div>
+			<div class='col-xs-6 text-center'><pagination previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination></div>
 		</div>
 	</div>
 </script>
@@ -129,8 +129,8 @@
 		</div>
 		<div class='panel-footer scroll-footer'>
 			<div class='row vertical-align'>
-				<div class='col-xs-3 text-left'>{{count}} total records / {{digitized}} digitized found</div>
-				<div class='col-xs-6 text-center'><pagination items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination></div>
+				<div class='col-xs-3 text-left'><span class='count label label-primary'>{{count}} records / {{digitized}} digitized</span></div>
+				<div class='col-xs-6 text-center'><pagination previous-text="&lsaquo;" next-text="&rsaquo;" ng-class='{"pagination-sm": embedded}' items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination></div>
 			</div>
 		</div>
 </script>
@@ -395,8 +395,13 @@
 								</div>
 							</li>
 						</ul>
-						<div class='panel-footer text-center scroll-footer'>
-							<pagination ng-click='fetchList(label)' items-per-page='limit' total-items="list.count" boundary-links="true" max-size='5' ng-model="list.offset"></pagination>
+						<div class='panel-footer scroll-footer'>
+							<div class='row vertical-align'>
+								<div class='col-xs-3 text-left'><span class='count label label-primary'>{{list.count}} {{label|ucf}}s</span></div>
+								<div class='col-xs-6 text-center'>
+									<pagination previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page='limit' total-items="list.count" boundary-links="true" max-size='5' ng-model="list.offset"></pagination>
+								</div>
+							</div>
 						</div>
 					</div>
 				</tab>
@@ -576,7 +581,7 @@
 		</div>
 	</div>
 	<div ng-if="util == 'findDuplicates' || util == 'reviewChanges'" id='footer' class='well well-sm text-center'>
-		<pagination items-per-page='pagination.limit' total-items="pagination.count" boundary-links="true" max-size='5' ng-model="pagination.offset"></pagination>
+		<pagination previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page='pagination.limit' total-items="pagination.count" boundary-links="true" max-size='5' ng-model="pagination.offset"></pagination>
 	</div>
 </script>
 

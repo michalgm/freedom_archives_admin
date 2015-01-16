@@ -206,3 +206,11 @@ form.form-inline .form-group .input-group input, .input-group-addon, .input-grou
     display: flex;
     align-items: center;
 }
+
+.pagination {
+  margin: 5px 0px;
+}
+
+.count { 
+  padding: 10px;
+}
