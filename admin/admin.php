@@ -21,6 +21,7 @@ $action_access = array(
 	'fetch_data'=>'all',
 	'fetchDocuments'=>'all',
 	'fetchCollections'=>'all',
+	'deleteCollection'=>'all',
 	'deleteDocument'=>'all',
 	'fetchDocument'=>'all',
 	'saveDocument'=>'all',
@@ -106,10 +107,13 @@ if ($action) {
 			$data = fetchItems('collection', $request);
 			break;
 
+		case 'deleteCollection':
+			dbwrite("delete from COLLECTIONS where COLLECTION_ID = '".dbEscape($request['id'])."'");
+			$data = 1;
+			break;
+
 		case 'deleteDocument':
-			$doc = fetchItem('document', $request['id']);
-			dbwrite("delete from DOCUMENTS where DOCID = '".$request['id']."'");
-			//updateLog('document', $doc, 'delete');
+			dbwrite("delete from DOCUMENTS where DOCID = '".dbEscape($request['id'])."'");
 			$data = 1;
 			break;
 		
@@ -523,7 +527,7 @@ function fetchItem($type, $id) {
 
 	if ($type == 'collection') { 
 		$data['_featured_docs'] = array_values(dbLookupArray("select F.DOCID, F.DOC_ORDER, F.DESCRIPTION, D.TITLE, D.THUMBNAIL from FEATURED_DOCS F join DOCUMENTS D using(DOCID) where F.COLLECTION_ID = $id order by F.DOC_ORDER"));
-		$data['_subcollections'] = array_values(dbLookupArray("select COLLECTION_ID, PARENT_ID, COLLECTION_NAME, IS_HIDDEN from COLLECTIONS where PARENT_ID = $id order by DISPLAY_ORDER, COLLECTION_NAME"));
+		$data['_subcollections'] = array_values(dbLookupArray("select COLLECTION_ID, PARENT_ID, COLLECTION_NAME, IS_HIDDEN from COLLECTIONS where PARENT_ID = $id and COLLECTION_ID != $id order by DISPLAY_ORDER, COLLECTION_NAME"));
 	}
 	if ($type == 'document') { 
 		$data['_authors'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='author' order by `order`");
@@ -534,6 +538,7 @@ function fetchItem($type, $id) {
 }
 
 function saveItem($type, $id, $data, $noLog=false) { 
+	global $query;
 	$table = strtoupper($type)."S";
 	$idfield = $type == 'document' ? 'DOCID' : strtoupper($type)."_ID";
 	$data[$idfield] = $id;
@@ -573,12 +578,17 @@ function saveItem($type, $id, $data, $noLog=false) {
 	}
 	if ($_SESSION['user_type'] != 'Administrator') {
 		$data['NEEDS_REVIEW'] =1;
+ 	} else if (! isset($data['NEEDS_REVIEW'])) {
+		$data['NEEDS_REVIEW'] =0;
  	}
-	$query = "insert into $table set ".arrayToUpdateString($data) ." on duplicate key update ".arrayToUpdateString($data);
-	$newid = dbInsert($query);
-	if ($id == 'new') {
-		$id = $newid;
-	}
+
+ 	if ($id === 'new') {
+		$query = "insert into $table set ".arrayToUpdateString($data);
+		$id = dbInsert($query);
+ 	} else {
+		$query = "update $table set ".arrayToUpdateString($data) ." where $idfield = '$id'";
+		dbInsert($query);
+ 	}
 	
 	if ($type == 'collection') {
 		if ($tags['_featured_docs'] !== null) {
@@ -701,9 +711,9 @@ function updateFeatured($id, $data) {
 }
 
 function updateSubcollections($id, $data) { 
-	$x = 0;
+	dbwrite("update COLLECTIONS set PARENT_ID = NULL, DISPLAY_ORDER = 1000 where PARENT_ID = $id");
 
-	dbwrite("update COLLECTIONS set PARENT_ID = 0, DISPLAY_ORDER = 1000 where PARENT_ID = $id");
+	$x = 0;
 	foreach($data as $col) { 
 		dbwrite("update COLLECTIONS set PARENT_ID = $id, DISPLAY_ORDER = $x where COLLECTION_ID = $col[COLLECTION_ID]");
 		$x++;
@@ -1053,6 +1063,9 @@ function updateLog($type, $item, $action, $description="") {
 	if ($type == 'collection') {
 		$data['id'] = $item['COLLECTION_ID'];
 		$data['description'] = $item['COLLECTION_NAME'];
+		if ($data['id'] == 0 ) {
+			$data['description'] = 'Top-level collection';
+		}
 	} elseif ($type == 'document') {
 		$data['id'] = $item['DOCID'];
 		$data['description'] = $item['TITLE'];

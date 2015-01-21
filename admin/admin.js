@@ -228,6 +228,17 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 			}
 		}
 	}
+
+  $scope.deleteCollection = function() { 
+    if(window.confirm("Are you sure you want to delete the collection '"+$scope.collection.COLLECTION_NAME+"'?")) { 
+      $requests.write('deleteCollection', null, $scope.collection.COLLECTION_ID).then(function(results) { 
+        $data.updateData().then(function() { 
+          $messages.addMessage("Collection '"+$scope.collection.COLLECTION_NAME+"' successfully deleted");
+          $location.path('/collections');
+        })
+      });
+    }
+  }
 	
 	$scope.removeSubcollection = function(index) { 
 		$scope.collection._subcollections.splice(index, 1);
@@ -266,7 +277,7 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
     }
   }
 
-	$scope.buttons = [{text:'Export Collection', action:$scope.exportCollection, class:'btn-default'}, {text:'Save', action:$scope.saveCollection, class:'btn-primary'}];
+	$scope.buttons = [{text:'Export Collection', action:$scope.exportCollection, class:'btn-default'}, {text:'Delete', action:$scope.deleteCollection, class:'btn-danger'}, {text:'Save', action:$scope.saveCollection, class:'btn-primary'}];
 
 	if ($scope.id != 'new') { 
 		$scope.loadCollection();

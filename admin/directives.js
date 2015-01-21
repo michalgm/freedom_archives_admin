@@ -411,7 +411,7 @@ app.directive('callNumber', function(){
 			];
 
 			scope.$watch('model', function() {
-				console.log(scope.model)
+				// console.log(scope.model)
 				if (scope.model && scope.model != '') {
 					var pieces = scope.model.split(/ +(.*)/);
 					scope.callNumber = pieces[0] || '';
