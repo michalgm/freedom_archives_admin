@@ -55,8 +55,6 @@ app.config(function($routeProvider, $compileProvider) {
 
 app.controller('documents', function($scope, $data, $requests, $location) {
 	$scope.data = $data;
-	$scope.count = 0;
-	$scope.page = 0;
 	$scope.selectDoc = function(doc) { 
 		$location.path('documents/'+doc.id);
 	}
@@ -64,8 +62,6 @@ app.controller('documents', function($scope, $data, $requests, $location) {
 
 app.controller('collections', function($scope, $data, $requests, $location) {
 	$scope.data = $data;
-	$scope.count = 0;
-	$scope.page = 0;
 	$scope.selectCollection = function(collection) { 
 		$location.path('collections/'+collection.COLLECTION_ID);
 	}
@@ -164,6 +160,10 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
     }
   });
   
+  $scope.$on('$destroy', function() {
+     window.onbeforeunload = undefined;
+  });
+
   window.onbeforeunload = function(event) {
     if (typeof event == 'undefined') {event = window.event; }
     var msg = "You have unsaved changes.";
@@ -253,6 +253,10 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
     }
   });
   
+  $scope.$on('$destroy', function() {
+     window.onbeforeunload = undefined;
+  });
+
   window.onbeforeunload = function(event) {
     if (typeof event == 'undefined') {event = window.event; }
     var msg = "You have unsaved changes."
@@ -719,6 +723,10 @@ app.service('$search', function($rootScope) {
       NEEDS_REVIEW : 0,
       IS_HIDDEN : 0,
       collection : '',
+      page: 1,
+      count: 0,
+      digitized: 0,
+      filters: []
     };
     service.colRecordOpts = {
       filter : '',
@@ -726,11 +734,18 @@ app.service('$search', function($rootScope) {
       NEEDS_REVIEW : 0,
       IS_HIDDEN : 0,
       collection : '',
+      page: 1,
+      count: 0,
+      digitized: 0,
+      filters: []
     };
     service.collectionOpts = {
       filter : '',
       NEEDS_REVIEW : 0,
       IS_HIDDEN : 0,
+      page: 1,
+      count: 0,
+      filters: []
     };
   }
 

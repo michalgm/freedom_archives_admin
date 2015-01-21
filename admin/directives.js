@@ -167,47 +167,77 @@ app.directive('featuredDocs', function($requests) {
 	}
 });
 		
-app.directive('documentSearch', function($requests, $search) {
+app.directive('itemSearch', function($requests, $search) {
 	return {
 		restrict: 'A',
-		templateUrl:'documentSearch.html',
+		templateUrl:'itemSearch.html',
 		scope: {
 			docLimit:'@',
-			selectDoc:'=',
+			selectAction:'=',
 			nonDigitizedDefault:'@',
 			limitCollectionId:'@',
 			embedded: '=',
 			page:'=?',
 			count: '=?',
-			docLimit: '=?',
+			itemLimit: '=?',
+			itemType: '@itemSearch'
 		},
 		link: function(scope,element, attribs) {
-			scope.options = $search.recordOpts;
-			if (scope.embedded) {
-				scope.options = $search.colRecordOpts;
-			}
-			scope.page = 1;
-			scope.documents = [];
-			scope.count = 0;
+			
+			scope.options = {};
+			scope.items = [];
 			scope.selected = null;
 			scope.digitized = 0;
-			
-			scope.fetchDocuments = function() { 
+			scope.isDoc = false;
+
+			var action = '';
+			if (scope.itemType == 'document') {
+				action =  'fetchDocuments';
+				scope.filters = ['author', 'format', 'generation', 'keyword', 'producer', 'program', 'quality', 'subject'];
+				scope.isDoc = true;
+				if (scope.embedded) {
+					scope.options = $search.colRecordOpts;
+				}
+				scope.options = $search.recordOpts;
+
+			} else {
+				action = 'fetchCollections';
+				scope.filters = ['keyword', 'subject'];
+				scope.isDoc = false;
+				scope.options = $search.collectionOpts;
+			}
+
+			scope.fetchItems = function() { 
 				if (scope.limitCollectionId) { 
 					scope.options.collection = scope.limitCollectionId;
 				}
-				$requests.fetch('fetchDocuments', {
+				var params = {
 					filter:scope.options.filter,
 					collection:scope.options.collection, 
-					page:scope.page,
-					limit:scope.docLimit,
+					page:scope.options.page,
+					limit:scope.itemLimit,
 					nonDigitized:scope.options.nonDigitized,
 					IS_HIDDEN: scope.options.IS_HIDDEN,
-					NEEDS_REVIEW: scope.options.NEEDS_REVIEW
-				}).then(function(results) { 
-					scope.documents = results.docs;
-					scope.count = results.count;
-					scope.digitized = results.digitized || 0;
+					NEEDS_REVIEW: scope.options.NEEDS_REVIEW,
+					'filter_types[]': [],
+					'filter_values[]': [],
+				};
+				$.each(scope.options.filters, function(i, filter) {
+					params['filter_types[]'].push(filter.type);
+					params['filter_values[]'].push(filter.value);
+				})
+
+				$requests.fetch(action, params).then(function(results) { 
+					if (scope.itemType == 'document') {
+						scope.items = results.docs;
+						scope.options.digitized = results.digitized || 0;
+					} else {
+						scope.items = results.collections;					
+					}
+					if (results.count != scope.options.count) {
+						scope.options.count = results.count;
+						scope.options.page = 1;
+					}
 				});
 			}
 
@@ -219,60 +249,23 @@ app.directive('documentSearch', function($requests, $search) {
 				}
 			}
 
-			scope.$watchCollection('[options.filter, limitCollectionId, options.collection, options.nonDigitized, options.NEEDS_REVIEW, options.IS_HIDDEN]', function() { 
-				scope.page = 1;
-				scope.fetchDocuments();
-			});
-
-			scope.$watch('page', function() {
-				scope.fetchDocuments();
-			});
-
-		}
-	}
-});
-
-app.directive('collectionSearch', function($requests, $search) {
-	return {
-		restrict: 'A',
-		templateUrl:'collectionSearch.html',
-		scope: {
-			docLimit:'@',
-			selectAction:'=',
-			nonDigitizedDefault:'@',
-			limitCollectionId:'@',
-			page:'=?',
-			count: '=?',
-			docLimit: '=?'
-		},
-		link: function(scope,element, attribs) {
-			scope.options = $search.collectionOpts;
-			scope.page = 1;
-			scope.collections = [];
-			scope.count = 0;
-			scope.selected = null;
-
-			scope.fetchCollections = function() { 
-				$requests.fetch('fetchCollections', {
-					filter:scope.options.filter,
-					IS_HIDDEN: scope.options.IS_HIDDEN,
-					NEEDS_REVIEW: scope.options.NEEDS_REVIEW,
-					page:scope.page,
-					limit:scope.docLimit,
-				}).then(function(results) { 
-					scope.collections = results.collections;
-					scope.count = results.count;
-				});
+			scope.addFilter = function() {
+				scope.options.filters.push({type: '', value: ''});
 			}
 
-			scope.$watchCollection('[options.filter, options.IS_HIDDEN, options.NEEDS_REVIEW]', function() { 
-				scope.page = 1;
-				scope.fetchCollections();
-			});
+			scope.fetchList = function(field, value) {
+				return $requests.fetch('fetchList', {field: field, value: value, limit: 10})
+					.then(function(response){
+						var results = response.items;
+						return results;
+					})
+			}
 
-			scope.$watch('page', function() {
-				scope.fetchCollections();
-			});
+			scope.$watch('options', function(o, n) {
+				if (scope.searchoptions.$valid) {
+					scope.fetchItems();
+				}
+			}, true);
 		}
 	}
 });
@@ -365,6 +358,60 @@ app.directive('formGroup', function($requests) {
 		}
 	}
 });
+
+app.directive('callNumber', function(){
+	return {
+		restrict: 'A',
+		scope: {
+			model:'=',
+		},
+		templateUrl: 'callNumber.html',
+		link: function(scope, element) {
+			scope.callNumber = '';
+			scope.desc = '';
+			scope.subjects = [
+				['AFR','Africa'],
+				['CMA','Comomis Antepasados'],
+				['CAA','Comunicacion Aztlan Arts'],
+				['CAP','Comunicacion Aztlan Politics'],
+				['CD','Compact Disc and DVD'],
+				['CV','Chuy Varela'],
+				['FI','Freedom is a Constant Struggle'],
+				['JG/LS','Judy Gerber and Laurie Simms'],
+				['JH','Pajaro Latino'],
+				['KN','Kiilu Nyasha'],
+				['KP','General Materials'],
+				['LA','Latin America'],
+				['MAJ','Mumia Abu Jamal'],
+				['NI','Nothing is More Precious Than'],
+				['PM','Prison Movement'],
+				['POE','Poetry'],
+				['PR','Paul Robeson'],
+				['RD','Real Dragon'],
+				['RFW','Robert F. Williams'],
+				['RP','Reflecciones de La Raza'],
+				['SS','Sue Supriano'],
+				['V','Video all formats'],
+				['WP','Wild Poppies'],
+				['DOC','Document'],
+			];
+
+			scope.$watch('model', function() {
+				console.log(scope.model)
+				if (scope.model && scope.model != '') {
+					var pieces = scope.model.split(/ +(.*)/);
+					scope.callNumber = pieces[0] || '';
+					scope.desc = pieces[1] || '';				
+				}
+	
+			})
+			scope.$watchCollection('[callNumber, desc]', function () {
+				scope.model = scope.callNumber + ' '+scope.desc;
+			})
+		}
+
+	}
+})
 
 app.directive('messages', function($messages) {
 	return {

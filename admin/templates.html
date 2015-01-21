@@ -34,105 +34,81 @@
 <script type="text/ng-template" id="documents.html">
 	<div header title='Records' buttons='buttons'></div>
 	<div content class='content-body'>
-		<div document-search page='page' count='count' doc-limit='10' non-digitized-default='1' select-doc='selectDoc'></div>
+		<div item-search='document' item-limit='10' non-digitized-default='1' select-action='selectDoc'></div>
 	</div>
 </script>
 
 <script type="text/ng-template" id="collections.html">
 	<div header title='Collections' buttons='buttons'></div>
 	<div content class='content-body'>
-		<div collection-search page='page' count='count' doc-limit='10' select-action='selectCollection'></div>
+		<div item-search='collection' item-limit='10' select-action='selectCollection'></div>
 	</div>
 </script>
 
-<script type="text/ng-template" id="collectionSearch.html">
-	<div id='collectionSearch' autoheight class='panel panel-primary'>
-		<form class='form-inline panel-heading scroll-header'>
-			<div class='form-group'>
-				<label class="control-label">Text</label>
-				<input type='text' class='form-control' placeholder='Search by title or ID' ng-model='options.filter' autofocus/>
-			</div>
-			<div class="checkbox">
-				<label>
-					<input type="checkbox" ng-model='options.NEEDS_REVIEW' ng-true-value="1" ng-false-value="0"> Needs Review
-				</label>
-			</div>
-			<div class="checkbox">
-				<label>
-					<input type="checkbox" ng-model='options.IS_HIDDEN' ng-true-value="1" ng-false-value="0"> Hidden
-				</label>
-			</div>
-		</form>
-	<div class='list-group scroll-body'>
-		<a href='javascript:void(0);' class='list-group-item' ng-click='selectAction(collection)' ng-repeat='collection in collections | toArray | orderBy:"label"'>
-			<div class='media'>
-				<span class='pull-left'>
-					<img ng-if='collection.THUMBNAIL' class="media-object" style='width: 75px' ng-src='../{{collection.THUMBNAIL}}'/>
-				</span>
-				<div class='media-body'>
-					<span class='pull-right text-right'>ID: {{collection.COLLECTION_ID}}<span ng-if='document.CALL_NO'><br/>Call #: {{collection.CALL_NO}}</span></span>
-					<h4 class='list-group-item-heading'>{{collection.COLLECTION_NAME  || 'Untitled'| truncate:100}}</h4>
-					<p>{{collection.SUMMARY | truncate:150}}</p>
+<script type="text/ng-template" id="itemSearch.html">
+	<div id='itemSearch' autoheight class='panel panel-primary'>
+		<form name='searchoptions' class='form-inline panel-heading scroll-header search-options'>
+			<div>
+				<div class='form-group'>
+					<label class="control-label">Text</label>
+					<input type='text' class='form-control' placeholder='Search by text' ng-model='options.filter' autofocus/>
 				</div>
+				<div ng-hide='limitCollectionId || ! isDoc' class='form-group'>
+					<label class="control-label">Collection</label>
+					<span collection-chooser select-collection='selectCollection(collection)' model='options.selected'></span>
+				</div>
+				<div class="checkbox form-group" ng-show="isDoc">
+					<label>
+						<input type="checkbox" ng-model='options.nonDigitized' ng-true-value="1" ng-false-value="0"> Include non-digitized
+					</label>
+				</div>
+				<div class="checkbox form-group" ng-show='! embedded'>
+					<label>
+						<input type="checkbox" ng-model='options.NEEDS_REVIEW' ng-true-value="1" ng-false-value="0"> Needs Review
+					</label>
+				</div>
+				<div class="checkbox form-group" ng-show='! embedded'>
+					<label>
+						<input type="checkbox" ng-model='options.IS_HIDDEN' ng-true-value="1" ng-false-value="0"> Hidden
+					</label>
+				</div>
+				<button ng-click='addFilter()' class='btn btn-default pull-right'><span class="glyphicon glyphicon-plus"></span> Add Filter</button>
 			</div>
-		</a>
-	</div>
-	<div class='panel-footer scroll-footer'>
-		<div class='row vertical-align'>
-			<div class='col-xs-3 text-left'><span class='count label label-primary'>{{count}} total collections found</span></div>
-			<div class='col-xs-6 text-center'><pagination previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination></div>
-		</div>
-	</div>
-</script>
-
-<script type="text/ng-template" id="documentSearch.html">
-	<div id='docSearch' autoheight class='panel panel-primary'>
-		<form class='form-inline panel-heading scroll-header'>
-			<div class='form-group'>
-				<label class="control-label">Text</label>
-				<input type='text' class='form-control' placeholder='Search by text' ng-model='options.filter' autofocus/>
-			</div>
-			<div ng-hide='limitCollectionId' class='form-group'>
-				<label class="control-label">Collection</label>
-				<span collection-chooser select-collection='selectCollection(collection)' model='options.selected'></span>
-			</div>
-			<div class="checkbox">
-				<label>
-					<input type="checkbox" ng-model='options.nonDigitized' ng-true-value="1" ng-false-value="0"> Include non-digitized
-				</label>
-			</div>
-			<div class="checkbox" ng-show='! embedded'>
-				<label>
-					<input type="checkbox" ng-model='options.NEEDS_REVIEW' ng-true-value="1" ng-false-value="0"> Needs Review
-				</label>
-			</div>
-			<div class="checkbox" ng-show='! embedded'>
-				<label>
-					<input type="checkbox" ng-model='options.IS_HIDDEN' ng-true-value="1" ng-false-value="0"> Hidden
-				</label>
+			<div>
+				<div class='panel panel-info form-group search-filter' ng-repeat='filter in options.filters'>
+					<div class='panel-body bg-info'>
+						<button ng-click='options.filters.splice($index, 1)' class='btn btn-danger btn-xs' tooltip='Remove filter'><span class="glyphicon glyphicon-remove"></span></button>
+						<select class='form-control' ng-model='filter.type' ng-options="item as item|ucf for item in filters"/>
+						<input ng-model-options="{allowInvalid: false}" ng-show='filter.type' type="text" ng-model="filter.value" autocomplete="off" typeahead-editable="false" typeahead="item for item in fetchList(filter.type, $viewValue, 10)" class="form-control" placeholder='{{filter.type ? "Choose a "+filter.type:""}}' />
+					</div>
+				</div>
 			</div>
 		</form>
 		<div class='list-group scroll-body'>
-			<a href='javascript:void(0);' class='list-group-item' ng-click='selectDoc(document)' ng-repeat='document in documents | toArray | orderBy:"label"'>
+			<a href='javascript:void(0);' class='list-group-item' ng-click='selectAction(item)' ng-repeat='item in items | toArray | orderBy:"label"'>
 				<div class='media'>
 					<span class='pull-left'>
-						<img class="media-object" style='width: 75px' ng-src='../{{document.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
+						<img class="media-object" style='width: 75px' ng-src='../{{item.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
 					</span>
 					<div class='media-body'>
-						<span class='pull-right text-right'>ID: {{document.id}}<span ng-if='document.CALL_NUMBER'><br/>Call #: {{document.CALL_NUMBER}}</span></span>
-						<h4 class='list-group-item-heading'>{{document.label  || 'Untitled'| truncate:100}}</h4>
-						<p><i>Collection:{{document.COLLECTION_NAME}}</i></p>
-						<p>{{document.DESCRIPTION | truncate:150}}</p>
+						<span class='pull-right text-right'>ID: {{item.id}}<span ng-if='item.CALL_NUMBER'><br/>Call #: {{item.CALL_NUMBER || item.CALL_NO}}</span></span>
+						<h4 class='list-group-item-heading'>{{item.label  || item.COLLECTION_NAME || 'Untitled' | truncate:100}}</h4>
+						<p ng-if='isDoc'><i>Collection:{{item.COLLECTION_NAME}}</i></p>
+						<p>{{item.DESCRIPTION | truncate:150}}</p>
 					</div>
 				</div>
 			</a>
 		</div>
 		<div class='panel-footer scroll-footer'>
 			<div class='row vertical-align'>
-				<div class='col-xs-3 text-left'><span class='count label label-primary'>{{count}} records / {{digitized}} digitized</span></div>
-				<div class='col-xs-6 text-center'><pagination previous-text="&lsaquo;" next-text="&rsaquo;" ng-class='{"pagination-sm": embedded}' items-per-page='docLimit' total-items="count" boundary-links="true" max-size='5' ng-model="page"></pagination></div>
+				<div class='col-xs-3 text-left'>
+					<span ng-if='isDoc' class='count label label-primary'>{{options.count}} records / {{options.digitized}} digitized</span>
+					<span ng-if='!isDoc' class='count label label-primary'>{{options.count}} collections</span>
+				</div>
+				<div class='col-xs-6 text-center'><pagination previous-text="&lsaquo;" next-text="&rsaquo;" ng-class='{"pagination-sm": embedded}' items-per-page='itemLimit' total-items="options.count" boundary-links="true" max-size='5' ng-model="options.page"></pagination></div>
 			</div>
 		</div>
+	</div>
 </script>
 
 <script type="text/ng-template" id="documentEdit.html">
@@ -145,7 +121,7 @@
 				<div form-group model='document.NEEDS_REVIEW' input-type='checkbox' label='Needs Review'></div>
 			</div>
 			<div class='row'>
-				<div form-group model='document.CALL_NUMBER' label='Call Number'></div>
+				<div form-group model='document.CALL_NUMBER' label='Call Number' input-type='callNumber'></div>
 			</div>
 
 			<div class='row'>
@@ -251,7 +227,7 @@
 					<div form-group model='collection.PARENT_ID' label='Parent Collection' input-type='collectionChooser'></div>
 					<div form-group model='collection.IS_HIDDEN' label='Hidden' input-type='checkbox'></div>
 					<div form-group model='collection.NEEDS_REVIEW' label='Needs Review' input-type='checkbox'></div>
-					<div form-group model='collection.CALL_NO' label='Call Number'></div>
+					<div form-group model='collection.CALL_NO' label='Call Number' input-type='callNumber'></div>
 					<div form-group model='collection.ORGANIZATION' label='Organization/ Publisher'></div>
 					<div form-group model='collection.DATE_RANGE' label='Date Range'></div>
 					<div form-group model='collection.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'collection', id:id}"></div>
@@ -324,7 +300,7 @@
 		</div>
 		<div class='col-xs-6'>
 			<h3>Add a Record</h3>
-			<div document-search doc-limit='5' embedded=1 select-doc='addFeaturedDoc' limit-collection-id='{{limitCollectionId}}'></div>
+			<div item-search='document' item-limit='5' embedded=1 select-action='addFeaturedDoc' limit-collection-id='{{limitCollectionId}}'></div>
 		</div>
 	</div>
 </script>
@@ -399,7 +375,7 @@
 							<div class='row vertical-align'>
 								<div class='col-xs-3 text-left'><span class='count label label-primary'>{{list.count}} {{label|ucf}}s</span></div>
 								<div class='col-xs-6 text-center'>
-									<pagination previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page='limit' total-items="list.count" boundary-links="true" max-size='5' ng-model="list.offset"></pagination>
+									<pagination ng-click='fetchList(label)' previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page='limit' total-items="list.count" boundary-links="true" max-size='5' ng-model="list.offset"></pagination>
 								</div>
 							</div>
 						</div>
@@ -675,10 +651,25 @@
 			<div ng-switch-when='tagger'>
 				<div tagger model='$parent.model' type='{{options.type}}' editable='options.editable'/>
 			</div>
+			<div ng-switch-when='callNumber'>
+				<div call-number model='$parent.model'/>
+			</div>
 			<input ng-switch-default='text' type='{{type}}' class='form-control' ng-model='$parent.model' />
 		</div>
 	</div>
 </script>
+
+<script type="text/ng-template" id="callNumber.html">
+	<div class='call-number'>
+		<div class='col-xs-8'>
+			<select class='form-control' ng-model='callNumber' ng-options='item[0] as item[0]+" - "+item[1] for item in subjects'> </select>
+		</div>
+		<div class='col-xs-4'>
+			<input class='form-control' type='text' ng-model='desc'/>
+		</div>
+	</div>
+</script>
+
 
 <script type="text/ng-template" id="tagger.html">
 	<form class='well well-sm form-inline tagger' ng-submit='addItem()'>

@@ -129,6 +129,8 @@ function arrayToUpdateString($array, $keys='', $ignore_empty=0) {
 	return implode(",", $values);	
 }
 
+
+
 /* This doesn't work  - need to support OR/LIKE/IN and clusterin
 function arrayToWhereString($array, $ignore_empty=0) {
 	$values = Array();

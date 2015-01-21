@@ -121,14 +121,30 @@ if ($action) {
 				} else {
 					$where[] = "(D.TITLE $like or D.KEYWORDS $like collate utf8_unicode_ci or D.CALL_NUMBER $like or D.DESCRIPTION $like collate utf8_unicode_ci or D.DOCID = '$filter')";
 				}
-			}	
+			}
+
+			$filters = "";
+			$filter_count = "filter_a";
+			if (isset($request['filter_types']) && isset($request['filter_values'])) {
+				foreach ($request['filter_types'] as $filter_type) {
+					$filter_value = dbEscape(array_shift($request['filter_values']));
+					$filter_type = dbEscape($filter_type);
+					if ($filter_type && $filter_value) {
+						if (in_array($filter_type, array('keyword', 'author', 'subject', 'producer'))) {
+							$filters.= " JOIN LIST_ITEMS_LOOKUP $filter_count on $filter_count.id = D.DOCID and IS_DOC = 1 and $filter_count.type = '$filter_type' and $filter_count.item = '$filter_value' ";
+						} else {
+							$where[] = "D.$filter_type = '$filter_value'";
+						}
+					}
+					$filter_count++;
+				}
+			}
 
 			$wherestring = count($where) ? " WHERE ".implode(' AND ', $where)." " : "";
 
-			$query = "from DOCUMENTS D left JOIN COLLECTIONS C using(COLLECTION_ID) $wherestring order by D.TITLE";
+			$query = "from DOCUMENTS D $filters left JOIN COLLECTIONS C using(COLLECTION_ID) $wherestring order by D.TITLE";
 			
 			$data = fetchRow("Select count(*) as count, sum(if(URL is not null and URL != '', 1, 0)) as digitized $query", true);
-
 			$request['limit'] = dbEscape($request['limit']);
 			$query = "select D.DOCID as id, D.TITLE as label, D.DESCRIPTION, D.THUMBNAIL, C.COLLECTION_NAME, D.AUTHORS, D.CALL_NUMBER $query limit ".(($request['page']-1)*$request['limit']).",$request[limit]";
 			$data['docs'] = array_values(dbLookupArray($query));
@@ -140,7 +156,7 @@ if ($action) {
 			if (isset($request['filter']) && $request['filter']) { 
 				$filter = dbEscape($request['filter']);
 				$filter = str_replace(" ", '%', $filter);
-				$like = "like '%$filter%'";
+				$like = "like _utf8 '%$filter%'";
 				$where[] = "(COLLECTION_NAME $like or CALL_NO $like or COLLECTION_ID = '$filter')";
 			}
 			if(isset($request['IS_HIDDEN']) && $request['IS_HIDDEN']) { 
@@ -150,14 +166,31 @@ if ($action) {
 				$where[] = " NEEDS_REVIEW = 1 ";
 			}
 
+			$filters = "";
+			$filter_count = "filter_a";
+			if (isset($request['filter_types']) && isset($request['filter_values'])) {
+				foreach ($request['filter_types'] as $filter_type) {
+					$filter_value = dbEscape(array_shift($request['filter_values']));
+					$filter_type = dbEscape($filter_type);
+					if ($filter_type && $filter_value) {
+						if (in_array($filter_type, array('keyword', 'author', 'subject', 'producer'))) {
+							$filters.= " JOIN LIST_ITEMS_LOOKUP $filter_count on $filter_count.id = C.COLLECTION_ID and IS_DOC = 0 and $filter_count.type = '$filter_type' and $filter_count.item = '$filter_value' ";
+						} else {
+							$where[] = "C.$filter_type = '$filter_value'";
+						}
+					}
+					$filter_count++;
+				}
+			}
+
 			$wherestring = count($where) ? " WHERE ".implode(' AND ', $where)." " : "";
 
-			$query = " from COLLECTIONS $wherestring order by COLLECTION_NAME";
-			$data['count'] = fetchValue("Select count(*) $query");
+			$query = " from COLLECTIONS C $filters $wherestring order by COLLECTION_NAME";
+			$data['count'] = fetchValue("Select count(*) as count $query");
 			
 			$request['limit'] = dbEscape($request['limit']);
 
-			$query = "select * $query limit ".(($request['page']-1)*$request['limit']).",$request[limit]";
+			$query = "select COLLECTION_ID as id, C.* $query limit ".(($request['page']-1)*$request['limit']).",$request[limit]";
 			$data['collections'] = array_values(dbLookupArray($query));
 			break;
 
@@ -224,7 +257,7 @@ if ($action) {
 			if (isset($request['offset'])) { 
 				$offset = dbEscape($request['offset']);
 			}
-			$query = "select item from LIST_ITEMS where type = '$field' and item like('%$value%') collate utf8_unicode_ci order by ucase(item) limit $offset, $limit";
+			$query = "select item from LIST_ITEMS where type = '$field' and item like('%$value%') collate utf8_unicode_ci order by if(item like('$value%') collate utf8_unicode_ci, 0, 1), ucase(item) limit $offset, $limit";
 
 			$data = array(
 				'items'=> fetchCol("$query"),

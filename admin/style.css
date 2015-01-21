@@ -176,7 +176,6 @@ div[ng-view].ng-leave {
 
 .scroll-header, .scroll-footer { 
   flex: 0 0 auto;
-  max-height: 100px;
 }
 
 .scroll-body { 
@@ -214,3 +213,11 @@ form.form-inline .form-group .input-group input, .input-group-addon, .input-grou
 .count { 
   padding: 10px;
 }
+
+.call-number>div {padding-left: 0px;}
+
+.search-options .form-group { margin: 0px 5px;}
+
+.search-options .search-filter {margin-top: 10px;}
+.search-filter .panel-body { padding: 5px;}
+
