@@ -207,7 +207,7 @@ app.directive('itemSearch', function($requests, $search) {
 				scope.options = $search.collectionOpts;
 			}
 
-			scope.fetchItems = function() { 
+			var buildSearch = function() {
 				if (scope.limitCollectionId) { 
 					scope.options.collection = scope.limitCollectionId;
 				}
@@ -225,8 +225,13 @@ app.directive('itemSearch', function($requests, $search) {
 				$.each(scope.options.filters, function(i, filter) {
 					params['filter_types[]'].push(filter.type);
 					params['filter_values[]'].push(filter.value);
-				})
+				});
 
+				return params;
+			}
+
+			scope.fetchItems = function() { 
+				var params = buildSearch();
 				$requests.fetch(action, params).then(function(results) { 
 					if (scope.itemType == 'document') {
 						scope.items = results.docs;
@@ -259,6 +264,15 @@ app.directive('itemSearch', function($requests, $search) {
 						var results = response.items;
 						return results;
 					})
+			}
+
+			scope.exportItems = function() { 
+				var params = buildSearch();
+				delete params.limit;
+				delete params.page;
+				$requests.fetch('exportRecordsSearch', params).then(function(results) { 
+					downloadFile(results.filename+'.csv', 'text/csv', results.file);
+				});
 			}
 
 			scope.$watch('options', function(o, n) {

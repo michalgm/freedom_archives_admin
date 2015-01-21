@@ -27,6 +27,7 @@ $action_access = array(
 	'fetchCollection'=>'all',
 	'saveCollection'=>'all',
 	'exportCollection'=>'all',
+	'exportRecordsSearch'=>'all',
 	'fetchLists'=>'Administrator',
 	'editListItem'=>'Administrator',
 	'csvImport'=>'Administrator',
@@ -98,100 +99,11 @@ if ($action) {
 			break;
 
 		case 'fetchDocuments':
-			$where = array();
-			if (isset($request['collection']) && $request['collection']) { 
-				$cid = dbEscape($request['collection']);
-				$where[] = "D.COLLECTION_ID in (select COLLECTION_ID from COLLECTIONS where COLLECTION_ID = $cid or PARENT_ID = $cid) ";
-			}
-			if(! $request['nonDigitized']) { 
-				$where[] = " URL is not null and URL != '' ";
-			}
-			if(isset($request['IS_HIDDEN']) && $request['IS_HIDDEN']) { 
-				$where[] = " D.IS_HIDDEN = 1 ";
-			}
-			if(isset($request['NEEDS_REVIEW']) && $request['NEEDS_REVIEW']) { 
-				$where[] = " D.NEEDS_REVIEW = 1 ";
-			}
-			if (isset($request['filter']) && $request['filter']) { 
-				$filter = dbEscape($request['filter']);
-				$filter = str_replace(" ", '%', $filter);
-				$like = "like _utf8 '%$filter%'";
-				if (isset($request['titleOnly']) && $request['titleOnly'] && 0)  {
-					$where[] = "(D.TITLE $like or D.CALL_NUMBER $like or D.DOCID = '$filter')";
-				} else {
-					$where[] = "(D.TITLE $like or D.KEYWORDS $like collate utf8_unicode_ci or D.CALL_NUMBER $like or D.DESCRIPTION $like collate utf8_unicode_ci or D.DOCID = '$filter')";
-				}
-			}
-
-			$filters = "";
-			$filter_count = "filter_a";
-			if (isset($request['filter_types']) && isset($request['filter_values'])) {
-				foreach ($request['filter_types'] as $filter_type) {
-					$filter_value = dbEscape(array_shift($request['filter_values']));
-					$filter_type = dbEscape($filter_type);
-					if ($filter_type && $filter_value) {
-						if (in_array($filter_type, array('keyword', 'author', 'subject', 'producer'))) {
-							$filters.= " JOIN LIST_ITEMS_LOOKUP $filter_count on $filter_count.id = D.DOCID and IS_DOC = 1 and $filter_count.type = '$filter_type' and $filter_count.item = '$filter_value' ";
-						} else {
-							$where[] = "D.$filter_type = '$filter_value'";
-						}
-					}
-					$filter_count++;
-				}
-			}
-
-			$wherestring = count($where) ? " WHERE ".implode(' AND ', $where)." " : "";
-
-			$query = "from DOCUMENTS D $filters left JOIN COLLECTIONS C using(COLLECTION_ID) $wherestring order by D.TITLE";
-			
-			$data = fetchRow("Select count(*) as count, sum(if(URL is not null and URL != '', 1, 0)) as digitized $query", true);
-			$request['limit'] = dbEscape($request['limit']);
-			$query = "select D.DOCID as id, D.TITLE as label, D.DESCRIPTION, D.THUMBNAIL, C.COLLECTION_NAME, D.AUTHORS, D.CALL_NUMBER $query limit ".(($request['page']-1)*$request['limit']).",$request[limit]";
-			$data['docs'] = array_values(dbLookupArray($query));
+			$data = fetchItems('document', $request);
 			break;
 
 		case 'fetchCollections':
-			$where = array();
-
-			if (isset($request['filter']) && $request['filter']) { 
-				$filter = dbEscape($request['filter']);
-				$filter = str_replace(" ", '%', $filter);
-				$like = "like _utf8 '%$filter%'";
-				$where[] = "(COLLECTION_NAME $like or CALL_NO $like or COLLECTION_ID = '$filter')";
-			}
-			if(isset($request['IS_HIDDEN']) && $request['IS_HIDDEN']) { 
-				$where[] = " IS_HIDDEN = 1 ";
-			}
-			if(isset($request['NEEDS_REVIEW']) && $request['NEEDS_REVIEW']) { 
-				$where[] = " NEEDS_REVIEW = 1 ";
-			}
-
-			$filters = "";
-			$filter_count = "filter_a";
-			if (isset($request['filter_types']) && isset($request['filter_values'])) {
-				foreach ($request['filter_types'] as $filter_type) {
-					$filter_value = dbEscape(array_shift($request['filter_values']));
-					$filter_type = dbEscape($filter_type);
-					if ($filter_type && $filter_value) {
-						if (in_array($filter_type, array('keyword', 'author', 'subject', 'producer'))) {
-							$filters.= " JOIN LIST_ITEMS_LOOKUP $filter_count on $filter_count.id = C.COLLECTION_ID and IS_DOC = 0 and $filter_count.type = '$filter_type' and $filter_count.item = '$filter_value' ";
-						} else {
-							$where[] = "C.$filter_type = '$filter_value'";
-						}
-					}
-					$filter_count++;
-				}
-			}
-
-			$wherestring = count($where) ? " WHERE ".implode(' AND ', $where)." " : "";
-
-			$query = " from COLLECTIONS C $filters $wherestring order by COLLECTION_NAME";
-			$data['count'] = fetchValue("Select count(*) as count $query");
-			
-			$request['limit'] = dbEscape($request['limit']);
-
-			$query = "select COLLECTION_ID as id, C.* $query limit ".(($request['page']-1)*$request['limit']).",$request[limit]";
-			$data['collections'] = array_values(dbLookupArray($query));
+			$data = fetchItems('collection', $request);
 			break;
 
 		case 'deleteDocument':
@@ -220,33 +132,31 @@ if ($action) {
 		case 'exportCollection':
 			$filename = 'All Collections';
 			$where = isset($request['collection_id']) ? " and c.collection_id = ".dbEscape($request['collection_id']). " " : "";
-			$docs = dbLookupArray("Select d.docid as 'Document Id', Call_Number, c.collection_name as Folder, Title, Authors, 
+			$docs = fetchRows("Select d.docid as 'Document Id', Call_Number, c.collection_name as Folder, Title, Authors, 
 				publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, 
 				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
 				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where c.collection_id != 20 $where group by docid");
 
-			$first = reset($docs); 
-			if (isset($request['collection_id'])) { 
-				$filename = $first['Folder'];
+			if (isset($request['collection_id']) && isset($docs[0])) { 
+				$filename = $docs[0]['Folder'];
 			}
-
-			$headers = array_keys($first);
-
-			//header('Content-Encoding: UTF-8');
-			//header('Content-type: text/csv; charset=UTF-8');
-			//header("Content-Disposition: attachment; filename=\"$filename.csv\"");
-			$csv = "\xEF\xBB\xBF"; // UTF-8 BOM
-			$csv .= str_putcsv($headers);
-			foreach($docs as $doc) { 
-				//Not sure why this was happening, but it was broken
-				// if(!isset($doc['Collection']) || ! $doc['Collection']) { 
-				// 	$doc['Collection'] = $doc['Folder'];
-				// 	$doc['Folder'] = "";
-				// }
-				$csv .= str_putcsv($doc);
-			}
-			//$data = array("filename"=>$filename, "file"=>"data:text/csv;base64,".base64_encode($csv));
+			$csv = arrayToCSV($docs);
 			$data = array("filename"=>$filename, "file"=>$csv);
+			break;
+
+		case 'exportRecordsSearch':
+			$searchdocs = fetchItems('document', $request);
+			$ids = arrayToInString(array_map(function($doc) { return $doc['id']; }, $searchdocs['docs']));
+
+			$docs = fetchRows("Select d.docid as 'Document Id', Call_Number, c.collection_name as Folder, Title, Authors, 
+				publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, 
+				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
+				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where c.collection_id != 20 and d.docid in ($ids) group by docid");
+
+			$filename = "Search Results";
+			$csv = arrayToCSV($docs);
+			$data = array("filename"=>$filename, "file"=>$csv);
+
 			break;
 
 		case 'fetchList':
@@ -505,6 +415,95 @@ if ($action) {
 	setResponse(1, 'Success', $data, $query);
 } else {
 	trigger_error('No action specified', E_USER_ERROR);
+}
+
+function fetchItems($type, $request) {
+	$where = array();
+	$idfield = 'DOCID';
+	$isDoc = 1;
+
+	if ($type == 'document') {		
+		if (isset($request['collection']) && $request['collection']) { 
+			$cid = dbEscape($request['collection']);
+			$where[] = "I.COLLECTION_ID in (select COLLECTION_ID from COLLECTIONS where COLLECTION_ID = $cid or PARENT_ID = $cid) ";
+		}
+		if(! $request['nonDigitized']) { 
+			$where[] = " URL is not null and URL != '' ";
+		}
+	} else {
+		$idfield = 'COLLECTION_ID';
+		$isDoc = 0;
+	}
+
+
+	if(isset($request['IS_HIDDEN']) && $request['IS_HIDDEN']) { 
+		$where[] = " I.IS_HIDDEN = 1 ";
+	}
+	if(isset($request['NEEDS_REVIEW']) && $request['NEEDS_REVIEW']) { 
+		$where[] = " I.NEEDS_REVIEW = 1 ";
+	}
+	if (isset($request['filter']) && $request['filter']) { 
+		$filter = dbEscape($request['filter']);
+		$filter = str_replace(" ", '%', $filter);
+		$like = "like _utf8 '%$filter%'";
+		if (isset($request['titleOnly']) && $request['titleOnly'] && 0)  {
+			$where[] = "(I.TITLE $like or I.CALL_NUMBER $like or I.DOCID = '$filter')";
+		} else {
+			if ($isDoc) {
+				$where[] = "(I.TITLE $like or I.KEYWORDS $like collate utf8_unicode_ci or I.CALL_NUMBER $like or I.DESCRIPTION $like collate utf8_unicode_ci or I.DOCID = '$filter')";
+			} else {
+				$where[] = "(I.COLLECTION_NAME $like or I.CALL_NO $like or I.COLLECTION_ID = '$filter')";
+			}
+		}
+	}
+
+	$filters = "";
+	$filter_count = "filter_a";
+	if (isset($request['filter_types']) && isset($request['filter_values'])) {
+		foreach ($request['filter_types'] as $filter_type) {
+			$filter_value = dbEscape(array_shift($request['filter_values']));
+			$filter_type = dbEscape($filter_type);
+			if ($filter_type && $filter_value) {
+				if (in_array($filter_type, array('keyword', 'author', 'subject', 'producer'))) {
+					$filters.= " JOIN LIST_ITEMS_LOOKUP $filter_count on $filter_count.id = I.$idfield and IS_DOC = $isDoc and $filter_count.type = '$filter_type' and $filter_count.item = '$filter_value' ";
+				} else {
+					$where[] = "I.$filter_type = '$filter_value'";
+				}
+			}
+			$filter_count++;
+		}
+	}
+
+	$wherestring = count($where) ? " WHERE ".implode(' AND ', $where)." " : "";
+
+	$query = "";
+	$data = array();
+	$select = "";
+	$limit = "";
+	if ($isDoc) {
+		$query = "from DOCUMENTS I $filters left JOIN COLLECTIONS C using(COLLECTION_ID) $wherestring order by I.TITLE";
+		$data = fetchRow("Select count(*) as count, sum(if(URL is not null and URL != '', 1, 0)) as digitized $query", true);
+		$select = " I.DOCID as id, I.TITLE as label, I.DESCRIPTION, I.THUMBNAIL, C.COLLECTION_NAME, I.AUTHORS, I.CALL_NUMBER ";
+	} else {
+		$query = " from COLLECTIONS I $filters $wherestring order by COLLECTION_NAME";
+		$data = fetchRow("Select count(*) as count $query", true);
+		$select = " COLLECTION_ID as id, I.* ";
+	}
+
+	if (isset($request['limit']) && isset($request['page'])) {
+		$request['limit'] = dbEscape($request['limit']);
+		$request['page'] = dbEscape($request['page']);
+		$limit = " limit ".(($request['page']-1)*$request['limit']).",$request[limit]";
+	}
+
+	$query = "select $select $query $limit";
+	$results = array_values(dbLookupArray($query));
+	if ($isDoc) {
+		$data['docs'] = $results;
+	} else { 
+		$data['collections'] = $results;
+	}
+	return $data;
 }
 
 function fetchItem($type, $id) { 
@@ -1007,6 +1006,23 @@ function str_putcsv($array) {
 	ob_start(); // buffer the output ...
 	outputCSV($array);
 	return ob_get_clean(); // ... then return it as a string!
+}
+
+function arrayToCSV($array) {
+	$first = reset($array); 
+	$headers = array_keys($first);
+
+	$csv = "\xEF\xBB\xBF"; // UTF-8 BOM
+	$csv .= str_putcsv($headers);
+	foreach($array as $row) { 
+		//Not sure why this was happening, but it was broken
+		// if(!isset($doc['Collection']) || ! $doc['Collection']) { 
+		// 	$doc['Collection'] = $doc['Folder'];
+		// 	$doc['Folder'] = "";
+		// }
+		$csv .= str_putcsv($row);
+	}
+	return $csv;
 }
 
 function checkLogin() {

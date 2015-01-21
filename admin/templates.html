@@ -73,6 +73,7 @@
 					</label>
 				</div>
 				<button ng-click='addFilter()' class='btn btn-default pull-right'><span class="glyphicon glyphicon-plus"></span> Add Filter</button>
+				<button ng-if='isDoc' ng-click='exportItems()' class='btn btn-default pull-right'><span class="glyphicon glyphicon-download-alt"></span> Export to CSV</button>
 			</div>
 			<div>
 				<div class='panel panel-info form-group search-filter' ng-repeat='filter in options.filters'>
