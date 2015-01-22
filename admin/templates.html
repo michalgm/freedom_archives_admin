@@ -32,14 +32,14 @@
 </script>
 
 <script type="text/ng-template" id="documents.html">
-	<div header title='Records' buttons='buttons'></div>
+	<div header buttons='buttons'></div>
 	<div content class='content-body'>
 		<div item-search='document' item-limit='10' non-digitized-default='1' select-action='selectDoc'></div>
 	</div>
 </script>
 
 <script type="text/ng-template" id="collections.html">
-	<div header title='Collections' buttons='buttons'></div>
+	<div header buttons='buttons'></div>
 	<div content class='content-body'>
 		<div item-search='collection' item-limit='10' select-action='selectCollection'></div>
 	</div>
@@ -73,7 +73,7 @@
 					</label>
 				</div>
 				<button ng-click='addFilter()' class='btn btn-default pull-right'><span class="glyphicon glyphicon-plus"></span> Add Filter</button>
-				<button ng-if='isDoc' ng-click='exportItems()' class='btn btn-default pull-right'><span class="glyphicon glyphicon-download-alt"></span> Export to CSV</button>
+				<button ng-if='isDoc && ! embedded' ng-click='exportItems()' class='btn btn-default pull-right'><span class="glyphicon glyphicon-download-alt"></span> Export to CSV</button>
 			</div>
 			<div>
 				<div class='panel panel-info form-group search-filter' ng-repeat='filter in options.filters'>
@@ -96,7 +96,7 @@
 						<span class='pull-right text-right'>ID: {{item.id}}<span ng-if='item.CALL_NUMBER'><br/>Call #: {{item.CALL_NUMBER || item.CALL_NO}}</span></span>
 						<h4 class='list-group-item-heading'>{{item.label  || item.COLLECTION_NAME || 'Untitled' | truncate:100}}</h4>
 						<p ng-if='isDoc'><i>Collection:{{item.COLLECTION_NAME}}</i></p>
-						<p ng-bind-html='item.DESCRIPTION | truncate: 150'></p>
+						<p style='max-height: 150px; overflow: hidden;' ng-bind-html='item.DESCRIPTION || " "'></p>
 					</div>
 				</div>
 			</a>
@@ -114,7 +114,7 @@
 </script>
 
 <script type="text/ng-template" id="documentEdit.html">
-	<div header title='Records > {{id == "new" ? "New Record" : (document.TITLE || "Untitled Record")}}' buttons='buttons'></div>
+	<div header title='{{id == "new" ? "New Record" : (document.TITLE || "Untitled Record")}}' buttons='buttons'></div>
 	<div content class='content-body'>
 		<form class="form-horizontal" id='documentEdit'>
 			<div class='row' form-group model='document.TITLE' label='Title'></div>
@@ -208,7 +208,9 @@
 	<nav id='header' class="navbar navbar-default " >
 		<div class="container-fluid">
       <div class="navbar-header">
-        <h2 class='navbar-text'>{{title}}</h2>
+      	<ol class="breadcrumb h2">
+	      	<li ng-repeat="breadcrumb in breadcrumbs.get() track by breadcrumb.path" ng-class="{ active: $last }"><a ng-if="!$last" ng-href="#{{ breadcrumb.path }}" ng-bind="breadcrumb.label"></a><span ng-if="$last" ng-bind="title || breadcrumb.label"></span>&nbsp;</li>
+	      </ol>
       </div>
       <div class="navbar-right">
 			  <span ng-bind-html='safeExtraHeader' />
@@ -219,7 +221,7 @@
 </script>
 
 <script type="text/ng-template" id="collectionEdit.html">
-	<div header title='Collections > {{collection.COLLECTION_NAME || (id == 0 ? "Top-level collection" : "New Collection")}}' extra-header="extra_header" buttons='buttons'></div>
+	<div header title='{{id == "new" ? "New Collection" : (collection.COLLECTION_NAME || "Untitled Collection")}}' extra-header="extra_header" buttons='buttons'></div>
 	<div content class='content-body'>
 		<tabset>
 			<tab ng-if="id != 0" heading="Edit Collection">
@@ -306,7 +308,7 @@
 	</div>
 </script>
 <script type="text/ng-template" id="siteUtils.html">
-	<div header title='Site > {{title}}' buttons='buttons'></div>
+	<div header title='{{title}}' buttons='buttons'></div>
 	<div content class='content-body' ng-switch='util'>
 		<div ng-switch-when='backupDatabase'>
 			<p>This will allow you to save a backup of the entire search.freedomarchives.org database (in SQL format).</p>
@@ -563,7 +565,7 @@
 </script>
 
 <script type="text/ng-template" id="siteFeaturedDocs.html">
-	<div header title='Site > Featured Records' buttons='buttons'></div>
+	<div header title='Featured Records' buttons='buttons'></div>
 	<div content class='content-body'>
 		<div featured-docs documents='featuredDocs' limit-collection-id='0'/>
 	</div>
@@ -621,7 +623,9 @@
 </script>
 
 <script type="text/ng-template" id="adminIndex.html">
-	<h1>Admin</h1>
+	<div header title='{{title}}' extra-header="extra_header" buttons='buttons'></div>
+	<div content class='content-body'>
+	</div>
 </script>
 
 <script type="text/ng-template" id="collectionChooser.html">

@@ -50,7 +50,7 @@ app.directive('navLink', function($data, AuthenticationService) {
 	}
 });
 
-app.directive('header', function($requests, $sce) {
+app.directive('header', function($requests, $sce, breadcrumbs) {
 	return {
 		restrict: 'A',
 		templateUrl:'header.html',
@@ -60,6 +60,7 @@ app.directive('header', function($requests, $sce) {
 			extraHeader:'='
 		},
 		link: function(scope,element, attribs) {
+			scope.breadcrumbs = breadcrumbs;
 			scope.safeExtraHeader = $sce.trustAsHtml(scope.extraHeader);
 			scope.doAction = function(action, index) {
 				b = $(element.find('.btn')[index]);

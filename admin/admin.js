@@ -1,6 +1,6 @@
 'use strict';
 
-var app = angular.module('FA_Admin', ['ngRoute', 'ui.bootstrap', 'textAngular', 'ui.sortable', 'angularFileUpload']);
+var app = angular.module('FA_Admin', ['ngRoute', 'ui.bootstrap', 'textAngular', 'ui.sortable', 'angularFileUpload', 'ng-breadcrumbs']);
 
 /*app.run(function($rootScope, $location, AuthenticationService) { 
 	var original_path = $location.path;
@@ -20,12 +20,14 @@ app.config(function($routeProvider, $compileProvider) {
 	$routeProvider.
 		when('/login', {
 			templateUrl: 'login.html',
-			controller: 'login'
+			controller: 'login',
+      label: 'Login'
 		}).
 
 		when('/documents', {
 			templateUrl: 'documents.html',
-			controller: 'documents'
+			controller: 'documents',
+      label: 'Records'
 		}).
 		when('/documents/:id', {
 			templateUrl: 'documentEdit.html',
@@ -33,7 +35,8 @@ app.config(function($routeProvider, $compileProvider) {
 		}).
 		when('/collections', {
 			templateUrl: 'collections.html',
-			controller: 'collections'
+			controller: 'collections',
+      label: 'Collections'
 		}).
 		when('/collections/:id', {
 			templateUrl: 'collectionEdit.html',
@@ -41,15 +44,23 @@ app.config(function($routeProvider, $compileProvider) {
 		}).
 		when('/site/featuredDocs', {
 			templateUrl: 'siteFeaturedDocs.html',
-			controller: 'siteFeaturedDocs'
+			controller: 'siteFeaturedDocs',
+      label: 'Featured Docs'
 		}).
 		when('/site/:util', {
 			templateUrl: 'siteUtils.html', 
-			controller: 'siteUtils'
+			controller: 'siteUtils',
+      label: 'Site'
 		}).
+    when('/', {
+      templateUrl: 'adminIndex.html',
+      controller: 'adminIndex',
+      label: 'Admin'
+    }).
 		otherwise({
 			templateUrl: 'adminIndex.html',
-			controller: 'adminIndex'
+			controller: 'adminIndex',
+      label: 'Admin'
 		});
 });
 
