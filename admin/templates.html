@@ -80,7 +80,8 @@
 					<div class='panel-body bg-info'>
 						<button ng-click='options.filters.splice($index, 1)' class='btn btn-danger btn-xs' tooltip='Remove filter'><span class="glyphicon glyphicon-remove"></span></button>
 						<select class='form-control' ng-model='filter.type' ng-options="item as item|ucf for item in filters"/>
-						<input ng-model-options="{allowInvalid: false}" ng-show='filter.type' type="text" ng-model="filter.value" autocomplete="off" typeahead-editable="false" typeahead="item for item in fetchList(filter.type, $viewValue, 10)" class="form-control" placeholder='{{filter.type ? "Choose a "+filter.type:""}}' />
+						<input ng-if='! static[filter.type]' ng-model-options="{allowInvalid: false}" ng-show='filter.type' type="text" ng-model="filter.value" autocomplete="off" typeahead-editable="false" typeahead="item for item in fetchList(filter.type, $viewValue, 10)" class="form-control" placeholder='{{filter.type ? "Choose a "+filter.type:""}}' />
+						<input ng-if='static[filter.type]' class='form-control' type="text" ng-model="filter.value" ng-show='filter.type' placeholder='Search on {{filter.type}}' />
 					</div>
 				</div>
 			</div>
@@ -208,7 +209,6 @@
 		<div class="container-fluid">
       <div class="navbar-header">
         <h2 class='navbar-text'>{{title}}</h2>
-
       </div>
       <div class="navbar-right">
 			  <span ng-bind-html='safeExtraHeader' />

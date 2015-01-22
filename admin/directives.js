@@ -167,7 +167,7 @@ app.directive('featuredDocs', function($requests) {
 	}
 });
 		
-app.directive('itemSearch', function($requests, $search) {
+app.directive('itemSearch', function($requests, $search, $sce) {
 	return {
 		restrict: 'A',
 		templateUrl:'itemSearch.html',
@@ -189,11 +189,15 @@ app.directive('itemSearch', function($requests, $search) {
 			scope.selected = null;
 			scope.digitized = 0;
 			scope.isDoc = false;
+			scope.static = {
+				'location': true,
+				'organization': true
+			};
 
 			var action = '';
 			if (scope.itemType == 'document') {
 				action =  'fetchDocuments';
-				scope.filters = ['author', 'format', 'generation', 'keyword', 'producer', 'program', 'quality', 'subject'];
+				scope.filters = ['author', 'format', 'generation', 'keyword', 'location', 'organization', 'producer', 'program', 'quality', 'subject'];
 				scope.isDoc = true;
 				if (scope.embedded) {
 					scope.options = $search.colRecordOpts;
@@ -202,7 +206,7 @@ app.directive('itemSearch', function($requests, $search) {
 
 			} else {
 				action = 'fetchCollections';
-				scope.filters = ['keyword', 'subject'];
+				scope.filters = ['keyword', 'organization', 'subject'];
 				scope.isDoc = false;
 				scope.options = $search.collectionOpts;
 			}
