@@ -172,7 +172,7 @@ if ($action) {
 			if (isset($request['offset'])) { 
 				$offset = dbEscape($request['offset']);
 			}
-			if (isset($request['limit']) && $value != "") {
+			if (isset($request['limit'])) {
 				$limit = " limit $offset, ".dbEscape($request['limit']);
 			}
 			$query = "select item from LIST_ITEMS where type = '$field' and item like('%$value%') collate utf8_unicode_ci order by if(item like('$value%') collate utf8_unicode_ci, 0, 1), ucase(item) $limit";

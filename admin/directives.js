@@ -359,7 +359,7 @@ app.directive('formGroup', function($requests) {
 			}
 
 			scope.fetchList = function(field, value, limit) {
-				limit = limit;
+				//limit = limit;
 				return $requests.fetch('fetchList', {field: field, value: value, limit: limit})
 					.then(function(response){
 						var results = response.items;

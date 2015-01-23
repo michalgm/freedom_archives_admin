@@ -629,7 +629,7 @@
 </script>
 
 <script type="text/ng-template" id="collectionChooser.html">
-	<input id='colchoose' type="text" ng-change='checkBlank(this.value)' ng-model="value" typeahead-on-select='selectCollection()' autocomplete="off" typeahead-editable="false" typeahead="collection as collection.label for collection in data.collections | filter:$viewValue | limitTo:8" class="form-control" placeholder="Find Collection by Name or ID"/>
+	<input id='colchoose' type="text" ng-change='checkBlank(this.value)' typeahead-append-to-body='true' ng-model="value" typeahead-on-select='selectCollection()' autocomplete="off" typeahead-editable="false" typeahead="collection as collection.label for collection in data.collections | filter:$viewValue | limitTo:8" class="form-control" placeholder="Find Collection by Name or ID"/>
 </script>
 
 <script type="text/ng-template" id="formGroup.html">
