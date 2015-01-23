@@ -351,17 +351,16 @@ app.directive('formGroup', function($requests) {
 
 			scope.addItem = function() {
 				if (scope.model) {
-					console.log(scope.inputType)
 					scope.model = scope.model.replace("New "+scope.options.field+': ', '');
 				}
 			}
 
 			scope.fetchList = function(field, value, limit) {
-				limit = limit || 8;
+				limit = limit;
 				return $requests.fetch('fetchList', {field: field, value: value, limit: limit})
 					.then(function(response){
 						var results = response.items;
-						if (scope.options.editable && results[0] != value) {
+						if (scope.options.editable && results[0] != value && value != ' ') {
 							results.unshift('New '+field+': '+value);
 						}
 						return results;
@@ -641,3 +640,37 @@ app.directive('autoheight', function() {
 		}
 	}
 })
+
+app.directive('typeaheadFocus', function () {
+  return {
+    require: 'ngModel',
+    link: function (scope, element, attr, ngModel) {
+
+      //trigger the popup on 'click' because 'focus'
+      //is also triggered after the item selection
+      if ($.inArray(scope.options.field, ['program']) == -1) {
+	      element.bind('click', function () {
+	        var viewValue = ngModel.$viewValue;
+
+	        //restore to null value so that the typeahead can detect a change
+	        if (ngModel.$viewValue == ' ') {
+	          ngModel.$setViewValue(null);
+	        }
+
+	        //force trigger the popup
+	        ngModel.$setViewValue(' ');
+
+	        //set the actual value in case there was already a value in the input
+	        ngModel.$setViewValue(viewValue || ' ');
+	      });
+    	}
+      //compare function that treats the empty space as a match
+      scope.emptyOrMatch = function (actual, expected) {
+        if (expected == ' ') {
+          return true;
+        }
+        return actual.indexOf(expected) > -1;
+      };
+    }
+  };
+});

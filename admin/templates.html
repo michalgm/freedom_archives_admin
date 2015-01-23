@@ -94,7 +94,7 @@
 					</span>
 					<div class='media-body'>
 						<span class='pull-right text-right'>ID: {{item.id}}<span ng-if='item.CALL_NUMBER'><br/>Call #: {{item.CALL_NUMBER || item.CALL_NO}}</span></span>
-						<h4 class='list-group-item-heading'>{{item.label  || item.COLLECTION_NAME || 'Untitled' | truncate:100}}</h4>
+						<h4 class='list-group-item-heading'>{{((isDoc ? item.label : item.COLLECTION_NAME) || 'Untitled') | truncate:100}}</h4>
 						<p ng-if='isDoc'><i>Collection:{{item.COLLECTION_NAME}}</i></p>
 						<p style='max-height: 150px; overflow: hidden;' ng-bind-html='item.DESCRIPTION || " "'></p>
 					</div>
@@ -209,7 +209,7 @@
 		<div class="container-fluid">
       <div class="navbar-header">
       	<ol class="breadcrumb h2">
-	      	<li ng-repeat="breadcrumb in breadcrumbs.get() track by breadcrumb.path" ng-class="{ active: $last }"><a ng-if="!$last" ng-href="#{{ breadcrumb.path }}" ng-bind="breadcrumb.label"></a><span ng-if="$last" ng-bind="title || breadcrumb.label"></span>&nbsp;</li>
+	      	<li ng-repeat="breadcrumb in breadcrumbs.get() track by breadcrumb.path" ng-class="{ active: $last }"><a ng-if="!$last" ng-href="#{{ breadcrumb.path }}" ng-bind="breadcrumb.label"></a><span ng-if="$last" ng-bind="(title || breadcrumb.label) | truncate:50"></span>&nbsp;</li>
 	      </ol>
       </div>
       <div class="navbar-right">
@@ -645,7 +645,7 @@
 				<span collection-chooser model='$parent.model'></span>
 			</div>
 			<div ng-switch-when='chooser'>
-				<input type="text" ng-blur='checkValue(this)' ng-model="$parent.model" typeahead-on-select='addItem()' autocomplete="off" typeahead-editable="{{options.editable}}" typeahead="item for item in fetchList(options.field, $viewValue, options.limit)" class="form-control" placeholder='Choose a {{label}}{{options.editable ? "": " from list"}}' />
+				<input typeahead-focus type="text" ng-blur='checkValue(this)' ng-model="$parent.model" typeahead-on-select='addItem()' autocomplete="off" typeahead-editable="{{options.editable}}" typeahead="item for item in fetchList(options.field, $viewValue)" class="form-control" placeholder='Choose a {{label}}{{options.editable ? "": " from list"}}' />
 			</div>
 			<div ng-switch-when='select'>
 				<select ng-model='$parent.model' ng-options='item.id as item.label for item in options | orderBy:"label"'/>
@@ -667,7 +667,9 @@
 <script type="text/ng-template" id="callNumber.html">
 	<div class='call-number'>
 		<div class='col-xs-8'>
-			<select class='form-control' ng-model='callNumber' ng-options='item[0] as item[0]+" - "+item[1] for item in subjects'> </select>
+			<select class='form-control' ng-model='callNumber' ng-options='item[0] as item[0]+" - "+item[1] for item in subjects'>
+				<option value=""></option>
+			</select>
 		</div>
 		<div class='col-xs-4'>
 			<input class='form-control' type='text' ng-model='desc'/>

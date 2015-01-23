@@ -166,12 +166,16 @@ if ($action) {
 		case 'fetchList':
 			$field = dbEscape($request['field']);
 			$value = dbEscape($request['value']);
-			$limit = dbEscape($request['limit']);
+			$value = $value == " " ? "" : $value;
+			$limit = "";
 			$offset = 0;
 			if (isset($request['offset'])) { 
 				$offset = dbEscape($request['offset']);
 			}
-			$query = "select item from LIST_ITEMS where type = '$field' and item like('%$value%') collate utf8_unicode_ci order by if(item like('$value%') collate utf8_unicode_ci, 0, 1), ucase(item) limit $offset, $limit";
+			if (isset($request['limit']) && $value != "") {
+				$limit = " limit $offset, ".dbEscape($request['limit']);
+			}
+			$query = "select item from LIST_ITEMS where type = '$field' and item like('%$value%') collate utf8_unicode_ci order by if(item like('$value%') collate utf8_unicode_ci, 0, 1), ucase(item) $limit";
 
 			$data = array(
 				'items'=> fetchCol("$query"),
