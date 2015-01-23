@@ -310,7 +310,7 @@ app.directive('collectionSelect', function($location) {
 app.directive('documentSelect', function($location, $requests) {
 	return {
 		restrict: 'A',
-		template:'<input type="text" ng-model="filter" autocomplete="off" typeahead-editable="false" typeahead-on-select="selectDocument($item)" typeahead="doc.label for doc in fetchDocuments($viewValue)" class="form-control" placeholder="Find Record by Title, Call #, or ID" />',
+		template:'<input type="text" ng-model="filter" typeahead-append-to-body="true" autocomplete="off" typeahead-editable="false" typeahead-on-select="selectDocument($item)" typeahead="doc.label for doc in fetchDocuments($viewValue)" class="form-control" placeholder="Find Record by Title, Call #, or ID" />',
 		scope: true,
 		link: function(scope,element, attribs) {
 			scope.filter = '';
