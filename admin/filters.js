@@ -23,7 +23,7 @@ app.filter('toArray', function () {
 
 app.filter('ucf', function() {
   return function(word) {
-    return word.substring(0,1).toUpperCase() + word.slice(1);
+    return word.substring(0,1).toUpperCase() + word.slice(1).replace('_', ' ');
   }
 });
 

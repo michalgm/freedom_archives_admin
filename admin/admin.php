@@ -428,6 +428,7 @@ if ($action) {
 function fetchItems($type, $request) {
 	global $query;
 	$where = array();
+	$order = array();
 	$idfield = 'DOCID';
 	$isDoc = 1;
 
@@ -460,8 +461,15 @@ function fetchItems($type, $request) {
 		} else {
 			if ($isDoc) {
 				$where[] = "(I.TITLE $like or I.KEYWORDS $like collate utf8_unicode_ci or I.CALL_NUMBER $like or I.DESCRIPTION $like collate utf8_unicode_ci or I.DOCID = '$filter')";
+				$order[] = "I.TITLE like _utf8 '$filter%'";
+				$order[] = "I.DESCRIPTION like _utf8 '$filter%'";
+				$order[] = "I.CALL_NUMBER like _utf8 '$filter%'";
+
 			} else {
-				$where[] = "(I.COLLECTION_NAME $like or I.CALL_NO $like or I.COLLECTION_ID = '$filter')";
+				$where[] = "(I.COLLECTION_NAME $like or I.CALL_NO $like or I.DESCRIPTION $like collate utf8_unicode_ci or I.COLLECTION_ID = '$filter')";
+				$order[] = "I.COLLECTION_NAME like _utf8 '$filter%'";
+				$order[] = "I.DESCRIPTION like _utf8 '$filter%'";
+				$order[] = "I.CALL_NO like _utf8 '$filter%'";
 			}
 		}
 	}
@@ -475,9 +483,10 @@ function fetchItems($type, $request) {
 			if ($filter_type && $filter_value) {
 				if (in_array($filter_type, array('keyword', 'author', 'subject', 'producer'))) {
 					$filters.= " JOIN LIST_ITEMS_LOOKUP $filter_count on $filter_count.id = I.$idfield and IS_DOC = $isDoc and $filter_count.type = '$filter_type' and $filter_count.item = '$filter_value' ";
-				} else if (in_array($filter_type, array('location', 'organization'))) {
+				} else if (in_array($filter_type, array('location', 'organization', 'description', 'title', 'collection_name'))) {
 					$filter_value = str_replace(" ", '%', $filter_value);
 					$where[] = "I.$filter_type like _utf8 '%$filter_value%'";
+					$order[] = "I.$filter_type like _utf8 '$filter_value%'";
 				} else {
 					$where[] = "I.$filter_type = '$filter_value'";
 				}
@@ -487,17 +496,18 @@ function fetchItems($type, $request) {
 	}
 
 	$wherestring = count($where) ? " WHERE ".implode(' AND ', $where)." " : "";
+	$orderstring = count($order) ? " IF(".implode(', 0, 1), IF(', $order).", 0, 1), " : "";
 
 	$query = "";
 	$data = array();
 	$select = "";
 	$limit = "";
 	if ($isDoc) {
-		$query = "from DOCUMENTS I $filters left JOIN COLLECTIONS C using(COLLECTION_ID) $wherestring order by I.TITLE";
+		$query = "from DOCUMENTS I $filters left JOIN COLLECTIONS C using(COLLECTION_ID) $wherestring order by $orderstring I.TITLE";
 		$data = fetchRow("Select count(*) as count, sum(if(URL is not null and URL != '', 1, 0)) as digitized $query", true);
 		$select = " I.DOCID as id, I.TITLE as label, I.DESCRIPTION, I.THUMBNAIL, C.COLLECTION_NAME, I.AUTHORS, I.CALL_NUMBER ";
 	} else {
-		$query = " from COLLECTIONS I $filters $wherestring order by COLLECTION_NAME";
+		$query = " from COLLECTIONS I $filters $wherestring order by $orderstring COLLECTION_NAME";
 		$data = fetchRow("Select count(*) as count $query", true);
 		$select = " COLLECTION_ID as id, I.* ";
 	}
@@ -509,7 +519,7 @@ function fetchItems($type, $request) {
 	}
 
 	$query = "select $select $query $limit";
-	$results = array_values(dbLookupArray($query));
+	$results = fetchRows($query);
 	if ($isDoc) {
 		$data['docs'] = $results;
 	} else { 

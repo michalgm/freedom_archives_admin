@@ -192,13 +192,16 @@ app.directive('itemSearch', function($requests, $search, $sce) {
 			scope.isDoc = false;
 			scope.static = {
 				'location': true,
-				'organization': true
+				'organization': true,
+				'description': true,
+				'title': true,
+				'collection_name': true,
 			};
 
 			var action = '';
 			if (scope.itemType == 'document') {
 				action =  'fetchDocuments';
-				scope.filters = ['author', 'format', 'generation', 'keyword', 'location', 'organization', 'producer', 'program', 'quality', 'subject'];
+				scope.filters = ['author', 'description', 'format', 'generation', 'keyword', 'location', 'organization', 'producer', 'program', 'quality', 'subject', 'title'];
 				scope.isDoc = true;
 				if (scope.embedded) {
 					scope.options = $search.colRecordOpts;
@@ -207,7 +210,7 @@ app.directive('itemSearch', function($requests, $search, $sce) {
 
 			} else {
 				action = 'fetchCollections';
-				scope.filters = ['keyword', 'organization', 'subject'];
+				scope.filters = ['collection_name', 'description', 'keyword', 'organization', 'subject'];
 				scope.isDoc = false;
 				scope.options = $search.collectionOpts;
 			}
