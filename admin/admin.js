@@ -644,24 +644,27 @@ app.service('$requests', function($http, $messages, $upload) {
 	}
 });
 
-app.service('$data', function($requests, $rootScope, $messages) {
+app.service('$data', function($requests, $rootScope, $messages, $filter) {
 	var $data = this;
-	$data.collections = {};
+	$data.collections = [];
 	$data.action_access = {};
+  $data.collection_index = {};
 
 	$data.updateData = function(noclear) {
 		if (! noclear) { 
 			$messages.clearMessages();
 		}
-		return $requests.fetch('fetch_data').then(function(results) {
-			$data.collections = results.collections;
+		return $requests.fetch('fetchData').then(function(results) {
+			$data.collection_index = results.collections;
+      $data.collections = $filter('toArray')(results.collections);
 			$data.action_access = results.action_access;
 		});
 	}
 
 	$data.clearData = function() { 
-		$data.collections = {};
-		$data.action_access = {};
+		$data.collections = [];
+    $data.action_access = {};
+		$data.collection_index = {};
 	}	
 		
 	//$data.updateData();	

@@ -18,7 +18,7 @@ $action = isset($request['action']) && $request['action'] ? $request['action'] :
 $action_access = array(
 	'login'=>'all',
 	'logout'=>'all',
-	'fetch_data'=>'all',
+	'fetchData'=>'all',
 	'fetchDocuments'=>'all',
 	'fetchCollections'=>'all',
 	'deleteCollection'=>'all',
@@ -93,9 +93,9 @@ if ($action) {
 			setResponse(1, 'Logged Out');
 			break;
 
-		case 'fetch_data':
+		case 'fetchData':
 			$query = "select C.COLLECTION_ID as id, C.COLLECTION_NAME as label, C.IS_HIDDEN as hidden, count(D.DOCID) as count from COLLECTIONS C left join DOCUMENTS D using (COLLECTION_ID) group by COLLECTION_ID order by COLLECTION_NAME";
-			$data['collections'] = array_values(dbLookupArray($query));
+			$data['collections'] = dbLookupArray($query);
 			$data['action_access'] = $action_access;
 			break;
 

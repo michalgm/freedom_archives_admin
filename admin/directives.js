@@ -168,7 +168,7 @@ app.directive('featuredDocs', function($requests) {
 	}
 });
 		
-app.directive('itemSearch', function($requests, $search, $sce) {
+app.directive('itemSearch', function($requests, $search, $sce, $data) {
 	return {
 		restrict: 'A',
 		templateUrl:'itemSearch.html',
@@ -185,6 +185,7 @@ app.directive('itemSearch', function($requests, $search, $sce) {
 		},
 		link: function(scope,element, attribs) {
 			
+			scope.data = $data;
 			scope.options = {};
 			scope.items = [];
 			scope.selected = null;
@@ -245,7 +246,7 @@ app.directive('itemSearch', function($requests, $search, $sce) {
 						scope.items = results.docs;
 						scope.options.digitized = results.digitized || 0;
 					} else {
-						scope.items = results.collections;					
+						scope.items = results.collections;
 					}
 					if (results.count != scope.options.count) {
 						scope.options.count = results.count;
