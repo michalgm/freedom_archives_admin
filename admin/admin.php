@@ -462,15 +462,13 @@ function fetchItems($type, $request) {
 			if ($isDoc) {
 				$where[] = "(I.TITLE $like or I.KEYWORDS $like collate utf8_unicode_ci or I.CALL_NUMBER $like or I.DESCRIPTION $like collate utf8_unicode_ci or I.DOCID = '$filter')";
 				$order[] = "I.TITLE like _utf8 '$filter%'";
-				$order[] = "I.DESCRIPTION like _utf8 '$filter%'";
-				$order[] = "I.CALL_NUMBER like _utf8 '$filter%'";
-
 			} else {
-				$where[] = "(I.COLLECTION_NAME $like or I.CALL_NO $like or I.DESCRIPTION $like collate utf8_unicode_ci or I.COLLECTION_ID = '$filter')";
+				$where[] = "(I.COLLECTION_NAME $like or I.CALL_NUMBER $like or I.DESCRIPTION $like collate utf8_unicode_ci or I.COLLECTION_ID = '$filter')";
 				$order[] = "I.COLLECTION_NAME like _utf8 '$filter%'";
-				$order[] = "I.DESCRIPTION like _utf8 '$filter%'";
-				$order[] = "I.CALL_NO like _utf8 '$filter%'";
 			}
+			$order[] = "I.DESCRIPTION like _utf8 '$filter%'";
+			$order[] = "I.CALL_NUMBER like _utf8 '$filter%'";
+
 		}
 	}
 
@@ -583,6 +581,13 @@ function saveItem($type, $id, $data, $noLog=false) {
 		unset($data['_producers']);
 		unset($data['_related']);
 	}
+
+	if (preg_match("/^([A-z\/]+)(.*)$/", $data['CALL_NUMBER'], $matches)) {
+		if ($matches[1] && $matches[2]) {
+			$data['CALL_NUMBER'] = trim($matches[1])." ".trim($matches[2]);
+		}
+	}
+
 	$action = $id === 'new' ? 'create' : 'update';
 	$date = date('Y-m-d H:i:s');
 

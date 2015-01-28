@@ -95,7 +95,7 @@
 					<div class='media-body'>
 						<div class='pull-right text-right'>
 							ID: {{item.id}}
-							<div ng-if='item.CALL_NUMBER || item.CALL_NO'>Call #: {{item.CALL_NUMBER || item.CALL_NO}}</div>
+							<div ng-if='item.CALL_NUMBER'>Call #: {{item.CALL_NUMBER}}</div>
 							<div ng-if='! isDoc'>Records: {{data.collection_index[item.id].count}}</div>
 						</div>
 						<h4 class='list-group-item-heading'>{{((isDoc ? item.label : item.COLLECTION_NAME) || 'Untitled') | truncate:100}}</h4>
@@ -234,7 +234,7 @@
 					<div form-group model='collection.PARENT_ID' label='Parent Collection' input-type='collectionChooser'></div>
 					<div form-group model='collection.IS_HIDDEN' label='Hidden' input-type='checkbox'></div>
 					<div form-group model='collection.NEEDS_REVIEW' label='Needs Review' input-type='checkbox'></div>
-					<div form-group model='collection.CALL_NO' label='Call Number' input-type='callNumber'></div>
+					<div form-group model='collection.CALL_NUMBER' label='Call Number' input-type='callNumber'></div>
 					<div form-group model='collection.ORGANIZATION' label='Organization/ Publisher'></div>
 					<div form-group model='collection.DATE_RANGE' label='Date Range'></div>
 					<div form-group model='collection.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'collection', id:id}"></div>
