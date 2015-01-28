@@ -190,7 +190,7 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 	$scope.buttons = [{text:'Delete', action:$scope.deleteDocument, class:'btn-danger'}, {text:'Save', action:$scope.saveDocument, class:'btn-primary'}];
 });
 
-app.controller('collectionEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location) {
+app.controller('collectionEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location, $download) {
 	$scope.collection = {
 		_featured_docs: [],
 		_subcollections: []
@@ -226,7 +226,7 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 	
 	$scope.exportCollection = function() { 
 		$requests.fetch('exportCollection', {collection_id:$scope.id}).then(function(results) { 
-			downloadFile(results.filename+'.csv', 'text/csv', results.file);
+			$download.downloadFile(results.filename+'.csv', 'text/csv', results.file);
 		});
 	}
 	
@@ -319,7 +319,7 @@ app.controller('siteFeaturedDocs', function($scope, $requests, $messages) {
 app.controller('adminIndex', function($scope) {
 });
 
-app.controller('siteUtils', function($scope, $routeParams, $requests, $messages, $q, $data) {
+app.controller('siteUtils', function($scope, $routeParams, $requests, $messages, $q, $data, $download) {
 	$scope.util = $routeParams.util;
 	$scope.title = '';
 
@@ -328,7 +328,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			$scope.title = 'Backup Database';
 			$scope.backupDatabase = function() {
 				$requests.write('backupDatabase').then(function(results) { 
-					downloadFile('freedom_archives_export.sql', 'text/plain', results);
+					$download.downloadFile('freedom_archives_export.sql', 'text/plain', results);
 				});
 			}
 			break;
@@ -339,7 +339,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			$scope.title = 'Export Collections';
 			$scope.exportCollection = function() { 
 				$requests.fetch('exportCollection').then(function(results) { 
-					downloadFile(results.filename+'.csv', 'text/csv', results.file);
+					$download.downloadFile(results.filename+'.csv', 'text/csv', results.file);
 				});
 			}
 			break;
@@ -851,17 +851,21 @@ app.config(function($httpProvider) {
 	});
 });
 
-//This is ugly (should not be in global namespace), but I'm getting lazy...
-var downloadFile = function(filename, mimetype, data) { 
-	var blob = new Blob([data], {type: mimetype});
-	var hiddenElement = document.createElement('a');
-	hiddenElement.href = URL.createObjectURL(blob);
-	hiddenElement.target = '_blank';
-	hiddenElement.download = filename;
-	hiddenElement.click();
-	$(hiddenElement).remove();
-	$('.processing-spinner').remove(); 		
-}
+app.service('$download', function($timeout) {
+  this.downloadFile = function(filename, mimetype, data) { 
+    var blob = new Blob([data], {type: mimetype});
+  	var hiddenElement = document.createElement('a');
+  	hiddenElement.href = URL.createObjectURL(blob);
+  	hiddenElement.target = '_blank';
+  	hiddenElement.download = filename;
+    $timeout(function() {
+      $('body').append(hiddenElement);
+      hiddenElement.click();
+      $(hiddenElement).remove();
+      $('.processing-spinner').remove();      
+    });
+  }
+});
 
 // angular.module("template/typeahead/typeahead-popup.html").run(["$templateCache", function($templateCache) {
 //   $templateCache.put("template/typeahead/typeahead-popup.html",

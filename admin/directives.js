@@ -168,7 +168,7 @@ app.directive('featuredDocs', function($requests) {
 	}
 });
 		
-app.directive('itemSearch', function($requests, $search, $sce, $data) {
+app.directive('itemSearch', function($requests, $search, $sce, $data, $download) {
 	return {
 		restrict: 'A',
 		templateUrl:'itemSearch.html',
@@ -280,7 +280,7 @@ app.directive('itemSearch', function($requests, $search, $sce, $data) {
 				delete params.limit;
 				delete params.page;
 				$requests.fetch('exportRecordsSearch', params).then(function(results) { 
-					downloadFile(results.filename+'.csv', 'text/csv', results.file);
+					$download.downloadFile(results.filename+'.csv', 'text/csv', results.file);
 				});
 			}
 
