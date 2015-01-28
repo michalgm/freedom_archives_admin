@@ -93,7 +93,7 @@
 						<img class="media-object" style='width: 75px' ng-src='../{{item.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
 					</span>
 					<div class='media-body'>
-						<span class='pull-right text-right'>ID: {{item.id}}<span ng-if='item.CALL_NUMBER'><br/>Call #: {{item.CALL_NUMBER || item.CALL_NO}}</span></span>
+						<span class='pull-right text-right'>ID: {{item.id}}<span ng-if='item.CALL_NUMBER || item.CALL_NO'><br/>Call #: {{item.CALL_NUMBER || item.CALL_NO}}</span></span>
 						<h4 class='list-group-item-heading'>{{((isDoc ? item.label : item.COLLECTION_NAME) || 'Untitled') | truncate:100}}</h4>
 						<p ng-if='isDoc'><i>Collection:{{item.COLLECTION_NAME}}</i></p>
 						<p style='max-height: 150px; overflow: hidden;' ng-bind-html='item.DESCRIPTION || " "'></p>
