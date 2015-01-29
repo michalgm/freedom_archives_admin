@@ -319,7 +319,7 @@ app.controller('siteFeaturedDocs', function($scope, $requests, $messages) {
 app.controller('adminIndex', function($scope) {
 });
 
-app.controller('siteUtils', function($scope, $routeParams, $requests, $messages, $q, $data, $download) {
+app.controller('siteUtils', function($scope, $routeParams, $requests, $messages, $q, $data, $download, $timeout) {
 	$scope.util = $routeParams.util;
 	$scope.title = '';
 
@@ -479,7 +479,6 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			$scope.date = '';
       $scope.only_reviewed = true;
 			$scope.lastUpdate = '';
-			$scope.saving = { status: false };
       $scope.fetchLog = function() {
 				$requests.fetch('fetchAuditLog', {'date': $scope.date, 'only_reviewed': $scope.only_reviewed}).then(function(results) {
 					//var date = new Date(results.date*1000);
@@ -494,7 +493,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 
       $scope.reviewItem= function(item) {
         var save = {
-          needs_review: item.NEEDS_REVIEW == 1 ? 0 : 1,
+          NEEDS_REVIEW: item.NEEDS_REVIEW == 1 ? 0 : 1,
         }
         var action = item.type == 'document' ? 'saveDocument' : 'saveCollection';
 
@@ -512,15 +511,18 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 
     case 'publish':
       $scope.title = 'Publish or Restore Live Site';
-      $scope.restoring = false;
       $scope.backups = {};
 
-      $scope.restoreBackup = function(id) {
-        $requests.fetch('restoreBackup', {id: id}).then(function(results) {
-          $messages.addMessage(id+' restored', 'success');
-          $scope.restoring = false;
-          $scope.fetchBackups();
-        });
+      $scope.restoreBackup = function(backup) {
+        if(window.confirm("Are you sure you want to restore "+backup.id+" from "+backup.date+" to the live site?")) { 
+          $requests.fetch('restoreBackup', {id: backup.id}).then(function(results) {
+            $messages.addMessage(backup.id+' restored', 'success');
+            $scope.restoring = false;
+            $scope.fetchBackups();
+          });
+        } else {
+          $timeout(function() {$scope.restoring = false; });
+        }
       }
       
       $scope.fetchBackups = function() {
@@ -538,7 +540,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
       $scope.fetchBackups();
       $scope.buttons = [{text:'Publish Changes to Live Site', action:$scope.pushChanges, class:'btn-primary'}];
       break;
-      
+
 		case 'findDuplicates':
 			$scope.title = 'Find Duplicate Documents';
 			$scope.duplicates = {};
@@ -559,7 +561,6 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
       $scope.users = {};
       $scope.edit = {};
       $scope.pw = {};
-      $scope.saving = { status: false};
 
       $scope.editUser = function(user) {
         $scope.edit = angular.copy(user);
@@ -575,11 +576,11 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
       $scope.saveUser = function() {
         var user = angular.copy($scope.edit);
         if ($scope.pw.pw1 && $scope.pw.pw1 != $scope.pw.pw2) { 
-          $scope.saving.status = false;
+          $scope.saving = false;
           return;
         }
         if (user.user_id == 'new' && ! $scope.pw.pw1) {
-          $scope.saving.status = false;
+          $scope.saving = false;
           $messages.error("Password cannot be blank");
           return;
         }
@@ -598,8 +599,10 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
         if(window.confirm("Are you sure you want to delete '"+user.username+"'?")) { 
           $requests.write('deleteUser', {id: user.user_id}).then(function(response) {
             delete $scope.users[user.user_id];
-            $scope.saving.status = false;
+            $scope.saving = false;
           })
+        } else {
+          $timeout(function() {$scope.saving.status = false;});
         }
       }
 

@@ -614,10 +614,12 @@ function saveItem($type, $id, $data, $noLog=false) {
 		unset($data['_producers']);
 		unset($data['_related']);
 	}
-
-	if (preg_match("/^([A-z\/]+)(.*)$/", $data['CALL_NUMBER'], $matches)) {
-		if ($matches[1] && $matches[2]) {
-			$data['CALL_NUMBER'] = trim($matches[1])." ".trim($matches[2]);
+	
+	if (isset($data['CALL_NUMBER'])) {
+		if (preg_match("/^([A-z\/]+)(.*)$/", $data['CALL_NUMBER'], $matches)) {
+			if ($matches[1] && $matches[2]) {
+				$data['CALL_NUMBER'] = trim($matches[1])." ".trim($matches[2]);
+			}
 		}
 	}
 

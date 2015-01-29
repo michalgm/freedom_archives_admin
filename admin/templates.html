@@ -452,7 +452,7 @@
 						<div class='row vertical-align'>
 							<div class='col-xs-4'>{{backup.id | ucf}}</div>
 							<div class='col-xs-4'>{{backup.date}}</div>
-							<div class='col-xs-4' ng-if='backup.id != "LIVE"'><button action-button='restoring' class='btn btn-primary' ng-click='restoreBackup(backup.id)'>Restore Backup</button></div>
+							<div class='col-xs-4' ng-if='backup.id != "LIVE"'><button action-button='restoring' class='btn btn-primary' ng-click='restoreBackup(backup)'>Restore Backup</button></div>
 						</div>
 					</li>
 				</div>

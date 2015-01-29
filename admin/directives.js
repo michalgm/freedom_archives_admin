@@ -78,20 +78,16 @@ app.directive('actionButton', function() {
 			actionButton:'='
 		},
 		link: function(scope,element, attribs) {
-			angular.element(element).on('click', function(e) {
-				scope.$apply(function() {
-					scope.actionButton.status = true;
-					attribs.$set('disabled', true);
-					element.prepend("<span class='processing-spinner glyphicon glyphicon-refresh spin'></span> ");
-				});
-			});
+			element.bind('click', function(e) {
+				attribs.$set('disabled', true);
+				element.prepend("<span class='processing-spinner glyphicon glyphicon-refresh spin'></span> ");
+			})
 
 			scope.$watch('actionButton', function(n, o) {
-				if (! scope.actionButton.status) {
-					attribs.$set('disabled', false);
-					element.find('.processing-spinner').remove();
-				}
-			}, true)
+				attribs.$set('disabled', null);
+				$(element).find('.processing-spinner').remove();
+			});
+
 		}
 	}
 });
