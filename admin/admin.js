@@ -798,6 +798,7 @@ app.service('$search', function($rootScope) {
       IS_HIDDEN : 0,
       page: 1,
       count: 0,
+      collection : '',
       filters: []
     };
   }

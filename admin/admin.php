@@ -466,10 +466,6 @@ function fetchItems($type, $request) {
 	$isDoc = 1;
 
 	if ($type == 'document') {		
-		if (isset($request['collection']) && $request['collection']) { 
-			$cid = dbEscape($request['collection']);
-			$where[] = "I.COLLECTION_ID in (select COLLECTION_ID from COLLECTIONS where COLLECTION_ID = $cid or PARENT_ID = $cid) ";
-		}
 		if(! $request['nonDigitized']) { 
 			$where[] = " URL is not null and URL != '' ";
 		}
@@ -478,6 +474,10 @@ function fetchItems($type, $request) {
 		$isDoc = 0;
 	}
 
+	if (isset($request['collection']) && $request['collection']) { 
+		$cid = dbEscape($request['collection']);
+		$where[] = "I.".($isDoc? "COLLECTION_ID" : "PARENT_ID")." in (select COLLECTION_ID from COLLECTIONS where COLLECTION_ID = $cid or PARENT_ID = $cid) ";
+	}
 
 	if(isset($request['IS_HIDDEN']) && $request['IS_HIDDEN']) { 
 		$where[] = " I.IS_HIDDEN = 1 ";
@@ -514,7 +514,7 @@ function fetchItems($type, $request) {
 			if ($filter_type && $filter_value) {
 				if (in_array($filter_type, array('keyword', 'author', 'subject', 'producer'))) {
 					$filters.= " JOIN LIST_ITEMS_LOOKUP $filter_count on $filter_count.id = I.$idfield and IS_DOC = $isDoc and $filter_count.type = '$filter_type' and $filter_count.item = '$filter_value' ";
-				} else if (in_array($filter_type, array('location', 'organization', 'description', 'title', 'collection_name'))) {
+				} else if (in_array($filter_type, array('location', 'organization', 'description', 'title', 'collection_name', 'date_range'))) {
 					$filter_value = str_replace(" ", '%', $filter_value);
 					$where[] = "I.$filter_type like _utf8 '%$filter_value%'";
 					$order[] = "I.$filter_type like _utf8 '$filter_value%'";

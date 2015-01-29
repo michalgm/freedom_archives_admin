@@ -53,7 +53,7 @@
 					<label class="control-label">Text</label>
 					<input type='text' class='form-control' placeholder='Search by text' ng-model='options.filter' autofocus/>
 				</div>
-				<div ng-hide='limitCollectionId || ! isDoc' class='form-group'>
+				<div ng-hide='limitCollectionId' class='form-group'>
 					<label class="control-label">Collection</label>
 					<span collection-chooser select-collection='selectCollection(collection)' model='options.selected'></span>
 				</div>

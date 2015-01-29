@@ -198,6 +198,7 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 				'description': true,
 				'title': true,
 				'collection_name': true,
+				'date_range': true,
 			};
 
 			var action = '';
@@ -212,7 +213,7 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 
 			} else {
 				action = 'fetchCollections';
-				scope.filters = ['collection_name', 'description', 'keyword', 'organization', 'subject'];
+				scope.filters = ['collection_name', 'date_range', 'description', 'keyword', 'organization', 'subject'];
 				scope.isDoc = false;
 				scope.options = $search.collectionOpts;
 			}
