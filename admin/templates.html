@@ -439,7 +439,25 @@
 				</table>	
 			</div>
 		</div>
-
+		<div ng-switch-when='publish'>
+			<div class='panel panel-default'>
+				<div class='panel-heading bold'>
+					<div class='row'>
+						<div class='col-xs-4'>Name</div>
+						<div class='col-xs-4'>Date Copied from Admin</div>
+					</div>
+				</div>
+				<div class='list-group'>
+					<li class='list-group-item' ng-repeat='backup in backups |toArray | orderBy:"date": true'>
+						<div class='row vertical-align'>
+							<div class='col-xs-4'>{{backup.id | ucf}}</div>
+							<div class='col-xs-4'>{{backup.date}}</div>
+							<div class='col-xs-4' ng-if='backup.id != "LIVE"'><button action-button='restoring' class='btn btn-primary' ng-click='restoreBackup(backup.id)'>Restore Backup</button></div>
+						</div>
+					</li>
+				</div>
+			</div>
+		</div>
 		<div ng-switch-when='findDuplicates'>
 			<p>This tool locates all documents that share the same title, volume number, and description</p>
 			<div class="list-group">

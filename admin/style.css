@@ -225,3 +225,4 @@ form.form-inline .form-group .input-group input, .input-group-addon, .input-grou
 
 .dropdown-menu { max-height: 200px; overflow: auto; }
 
+td { vertical-align: middle !important; }

@@ -42,6 +42,8 @@ $action_access = array(
 	'findDuplicates'=>'all',
 	'fetchAuditLog'=>'Administrator',
 	'pushChanges'=>'Administrator',
+	'fetchBackups'=>'Administrator',
+	'restoreBackup'=>'Administrator',
 	'fetchList'=>'all',
 	'fetchUsers'=>'Administrator',
 	'saveUser'=>'Administrator',
@@ -349,14 +351,45 @@ if ($action) {
 			break;
 
 		case 'pushChanges':
+			$tables = fetchCol("show tables");
 			foreach (array('DOCUMENTS', 'COLLECTIONS', 'LIST_ITEMS_LOOKUP', 'FEATURED_DOCS') as $table) {
 				$where = ($table == 'DOCUMENTS' || $table == 'COLLECTIONS') ? " where IS_HIDDEN = 0 and NEEDS_REVIEW = 0 " : "";
-				dbwrite("drop table IF EXISTS $table"."_LIVE");
+				dbwrite("drop table IF EXISTS $table"."_BACKUP_3");
+				if (in_array($table."_BACKUP_2", $tables)) {
+					dbwrite("rename table $table"."_BACKUP_2 to $table"."_BACKUP_3");
+				}
+				if (in_array($table."_BACKUP_1", $tables)) {
+					dbwrite("rename table $table"."_BACKUP_1 to $table"."_BACKUP_2");
+				}
+				if (in_array($table."_LIVE", $tables)) {
+					dbwrite("rename table $table"."_LIVE to $table"."_BACKUP_1");
+				}
 				dbwrite("create table $table"."_LIVE like $table");
 				dbwrite("insert into $table"."_LIVE select * from $table $where");
 			}
+			dbwrite("update backups a join backups b on a.id = 'backup_3' and b.id = 'backup_2' set a.date = b.date");
+			dbwrite("update backups a join backups b on a.id = 'backup_2' and b.id = 'backup_1' set a.date = b.date");
+			dbwrite("update backups a join backups b on a.id = 'backup_1' and b.id = 'live' set a.date = b.date");
+			dbwrite("update backups set date = NOW() where id='LIVE'");
+
 			$data = 1;
 			updateLog('', array(), 'push');
+			break;
+
+		case 'fetchBackups':
+			$data = dbLookupArray("select * from backups order by date desc");
+			break;
+
+		case 'restoreBackup':
+			$id = dbEscape($request['id']);
+			foreach (array('DOCUMENTS', 'COLLECTIONS', 'LIST_ITEMS_LOOKUP', 'FEATURED_DOCS') as $table) {
+				dbwrite("drop table $table"."_LIVE");
+				dbwrite("create table $table"."_LIVE like $table"."_$id");
+				dbwrite("insert into $table"."_LIVE select * from $table"."_$id");
+			}
+			dbwrite("update backups a join backups b on a.id = 'live' and b.id = '$id' set a.date = b.date");
+
+			$data = 1;
 			break;
 
 		case 'fetchUsers':
@@ -1082,7 +1115,8 @@ function updateLog($type, $item, $action, $description="") {
 		'action' => $action,
 		'type' => $type,
 		'user'=> $_SESSION['username'],
-		'needs_review'=>$item['NEEDS_REVIEW']	);
+		'needs_review'=>isset($item['NEEDS_REVIEW']) ? $item['NEEDS_REVIEW'] : ""
+	);
 	if ($type == 'collection') {
 		$data['id'] = $item['COLLECTION_ID'];
 		$data['description'] = $item['COLLECTION_NAME'];

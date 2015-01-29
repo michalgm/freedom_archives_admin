@@ -504,19 +504,41 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
         });
       }
 
-			$scope.pushChanges = function() {
-				$requests.fetch('pushChanges').then(function(results) {
-					$messages.addMessage('Live site updated', 'success');
-					$scope.fetchLog();
-				})
-			}
       $scope.$watch('only_reviewed', function() {
         $scope.fetchLog();
       })
 			$scope.fetchLog();
-			$scope.buttons = [{text:'Push Changes to Live Site', action:$scope.pushChanges, class:'btn-primary'}];
-
 			break;
+
+    case 'publish':
+      $scope.title = 'Publish or Restore Live Site';
+      $scope.restoring = false;
+      $scope.backups = {};
+
+      $scope.restoreBackup = function(id) {
+        $requests.fetch('restoreBackup', {id: id}).then(function(results) {
+          $messages.addMessage(id+' restored', 'success');
+          $scope.restoring = false;
+          $scope.fetchBackups();
+        });
+      }
+      
+      $scope.fetchBackups = function() {
+        $requests.fetch('fetchBackups').then(function(results) {
+          $scope.backups = results;
+        });
+      }
+      
+      $scope.pushChanges = function() {
+        $requests.fetch('pushChanges').then(function(results) {
+          $messages.addMessage('Live site updated', 'success');
+          $scope.fetchBackups();
+        })
+      }
+      $scope.fetchBackups();
+      $scope.buttons = [{text:'Publish Changes to Live Site', action:$scope.pushChanges, class:'btn-primary'}];
+      break;
+      
 		case 'findDuplicates':
 			$scope.title = 'Find Duplicate Documents';
 			$scope.duplicates = {};
