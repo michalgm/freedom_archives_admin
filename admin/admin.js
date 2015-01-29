@@ -702,7 +702,8 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 
 	$rootScope.username = ''
 	AuthenticationService.username = '';
-	AuthenticationService.user_type = '';
+  AuthenticationService.user_type = '';
+	AuthenticationService.name = '';
 	AuthenticationService.badLogin = 0;
 	AuthenticationService.error = 0;
 
@@ -726,7 +727,8 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 				AuthenticationService.error = error.data.statusString;
 			}
 			$rootScope.username = AuthenticationService.username = '';
-			AuthenticationService.user_type = '';
+      AuthenticationService.user_type = '';
+			AuthenticationService.name = '';
 			$data.clearData();
 		});
 	};
@@ -755,7 +757,8 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 	var setLogin = function(data) {
 		if (angular.isDefined(data.username)) { 
 			$rootScope.username = AuthenticationService.username = data.username;
-			AuthenticationService.user_type = data.user_type;
+      AuthenticationService.user_type = data.user_type;
+			AuthenticationService.name = data.name;
 			return true;
 		}
 	}

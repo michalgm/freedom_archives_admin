@@ -34,7 +34,7 @@ app.directive('logout', function(AuthenticationService) {
 	}
 });
 
-app.directive('navLink', function($data, AuthenticationService) {
+app.directive('navLink', function($data, AuthenticationService, $location) {
 	return {
 		restrict: 'A',
 		scope: {
@@ -43,9 +43,14 @@ app.directive('navLink', function($data, AuthenticationService) {
 		},
 		transclude:true,
 		replace:true,
-		template:"<li ng-class='{disabled:!allowed}'><a ng-href='{{ allowed ? \"#/\"+action : \"\"}}' ng-disabled='action_access[action]' ng-transclude></a></li>",
+		template:"<li ng-class='{disabled:!allowed, active: action == checkPath()}'><a ng-href='{{ allowed ? \"#/\"+action : \"\"}}' ng-disabled='action_access[action]' ng-transclude></a></li>",
 		link: function(scope, element, attribs) { 
 			scope.allowed = ! scope.restricted || AuthenticationService.user_type == scope.restricted;
+			scope.checkPath = function() {
+				var path = $location.path().replace(/^\//, ""); //([^\/]*).*$/, "$1");
+				console.log(path);
+				return path;
+			}
 		}
 	}
 });

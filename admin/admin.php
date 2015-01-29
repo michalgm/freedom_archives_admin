@@ -1096,17 +1096,31 @@ function arrayToCSV($array) {
 function checkLogin() {
 	global $action;
 	session_start();
-	$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
-	$username = isset($_SESSION['username']) ? $_SESSION['username'] : null;
-	$user_type = isset($_SESSION['user_type']) ? $_SESSION['user_type'] : null;
+
+	// $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+	// $username = isset($_SESSION['username']) ? $_SESSION['username'] : null;
+	// $user_type = isset($_SESSION['user_type']) ? $_SESSION['user_type'] : null;
+	// $name = isset($_SESSION['name']) ? $_SESSION['name'] : null;
 	if ($action == 'login' || $action == 'logout') { 
 		$_SESSION['user_id'] = '';
 		$_SESSION['username'] = '';
 		$_SESSION['user_type'] = '';
-	} else if ($action == 'check_login') { 
-		setResponse(1, 'Success', array('user_id'=>$user_id, 'username'=>$username, 'user_type'=>$user_type ));
-	} else if (! $username) { 
+		$_SESSION['name'] = '';
+	} else if (! isset($_SESSION['username'])) { 
 		setResponse(401, 'Not Authorized');
+	} else if ($action == 'check_login') { 
+		$userinfo = array(
+			'user_id'=>null,
+			'username'=>null,
+			'user_type'=>null,
+			'name'=>null,
+		);
+		foreach(array_keys($userinfo) as $key) {
+			if (isset($_SESSION[$key])) {
+				$userinfo[$key] = $_SESSION[$key];
+			}
+		}
+		setResponse(1, 'Success', $userinfo);
 	}
 }
 
