@@ -131,7 +131,7 @@
 			</div>
 
 			<div class='row'>
-				<div form-group model='document.URL' label='URL'></div>
+				<div form-group model='document.URL' input-type='url' label='URL'></div>
 				<div form-group model='document.thumbnail_url' label='Thumbnail' input-type='image' options="{type:'document', id:id}"></div>
 			</div>
 			<div class='row' form-group model='document._authors' label='Authors' input-type='tagger' options="{type:'author', editable: true}"></div>
@@ -680,6 +680,14 @@
 			</div>
 			<div ng-switch-when='callNumber'>
 				<div call-number model='$parent.model'/>
+			</div>
+			<div ng-switch-when='url'>
+				<input type='text' class='form-control' ng-model='$parent.model'/>
+				<div ng-if='$parent.model'>
+					<a class='btn btn-primary btn-block' href='{{$parent.model}}' target='_blank'>
+						<span class="glyphicon glyphicon-link"></span> Open URL
+					</a>
+				</div>
 			</div>
 			<input ng-switch-default='text' type='{{type}}' class='form-control' ng-model='$parent.model' />
 		</div>
