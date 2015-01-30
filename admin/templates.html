@@ -680,7 +680,7 @@
 		<label class='col-xs-{{label_width}} control-label'>{{label}}</label>
 		<div class='col-xs-{{field_width}}' ng-switch='type'>
 			<textarea ng-switch-when='textarea' type='text' rows='6' class='form-control' ng-model='$parent.model' />
-			<div ng-switch-when='richtext' text-angular ta-toolbar="[['bold','italics', 'underline'], ['justifyLeft','justifyCenter','justifyRight'], ['insertImage', 'insertLink', 'unlink'],['redo', 'undo', 'clear', 'html']]" ng-model='$parent.model'></div>
+			<div ng-switch-when='richtext' text-angular ta-toolbar="[['bold','italics', 'underline'], ['justifyLeft','justifyCenter','justifyRight'], ['indent', 'outdent'], ['ol', 'ul'], ['insertImage', 'insertLink'], ['redo', 'undo', 'clear', 'html']]" ng-model='$parent.model'></div>
 			<div class='checkbox' ng-switch-when='checkbox'>
 				<input type='checkbox' ng-true-value='1' ng-false-value='0' ng-model='$parent.model'/>
 			</div>	
