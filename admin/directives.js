@@ -48,7 +48,6 @@ app.directive('navLink', function($data, AuthenticationService, $location) {
 			scope.allowed = ! scope.restricted || AuthenticationService.user_type == scope.restricted;
 			scope.checkPath = function() {
 				var path = $location.path().replace(/^\//, ""); //([^\/]*).*$/, "$1");
-				console.log(path);
 				return path;
 			}
 		}
@@ -181,11 +180,10 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 			embedded: '=',
 			page:'=?',
 			count: '=?',
-			itemLimit: '=?',
 			itemType: '@itemSearch'
 		},
 		link: function(scope,element, attribs) {
-			
+			scope.search = $search;
 			scope.data = $data;
 			scope.options = {};
 			scope.items = [];
@@ -202,61 +200,34 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 			};
 
 			var action = '';
+			var searchType = '';
 			if (scope.itemType == 'document') {
 				action =  'fetchDocuments';
 				scope.filters = ['author', 'description', 'format', 'generation', 'keyword', 'location', 'organization', 'producer', 'program', 'quality', 'subject', 'title'];
 				scope.isDoc = true;
 				if (scope.embedded) {
-					scope.options = $search.colRecordOpts;
+					searchType = 'colRecordOpts';
+				} else {
+					searchType = 'recordOpts';
 				}
-				scope.options = $search.recordOpts;
-
 			} else {
 				action = 'fetchCollections';
 				scope.filters = ['collection_name', 'date_range', 'description', 'keyword', 'organization', 'subject'];
 				scope.isDoc = false;
-				scope.options = $search.collectionOpts;
+				searchType = 'collectionOpts';
 			}
 
-			var buildSearch = function() {
-				if (scope.limitCollectionId) { 
-					scope.options.collection = scope.limitCollectionId;
-				}
-				var params = {
-					filter:scope.options.filter,
-					collection:scope.options.collection, 
-					page:scope.options.page,
-					limit:scope.itemLimit,
-					nonDigitized:scope.options.nonDigitized,
-					IS_HIDDEN: scope.options.IS_HIDDEN,
-					NEEDS_REVIEW: scope.options.NEEDS_REVIEW,
-					'filter_types[]': [],
-					'filter_values[]': [],
-				};
-				$.each(scope.options.filters, function(i, filter) {
-					params['filter_types[]'].push(filter.type);
-					params['filter_values[]'].push(filter.value);
-				});
+			scope.options = $search[searchType];
+      if (scope.limitCollectionId) { 
+	      $search[searchType].collection = scope.limitCollectionId;
+      }
 
-				return params;
-			}
 
-			scope.fetchItems = function() { 
-				var params = buildSearch();
-				$requests.fetch(action, params).then(function(results) { 
-					if (scope.itemType == 'document') {
-						scope.items = results.docs;
-						scope.options.digitized = results.digitized || 0;
-					} else {
-						scope.items = results.collections;
-					}
-					if (results.count != scope.options.count) {
-						scope.options.count = results.count;
-						scope.options.page = 1;
-					}
-				});
-			}
-
+      scope.fetchItems = function() {
+      	$search.fetchItems(searchType).then(function(res){
+      		scope.items = res;
+      	})
+      }
 			scope.selectCollection = function(collection) { 
 				if (collection) { 
 					scope.options.collection = collection.id;
@@ -278,7 +249,7 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 			}
 
 			scope.exportItems = function() { 
-				var params = buildSearch();
+				var params = $search.buildSearch(searchType);
 				delete params.limit;
 				delete params.page;
 				$requests.fetch('exportRecordsSearch', params).then(function(results) { 

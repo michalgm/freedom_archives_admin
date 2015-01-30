@@ -34,14 +34,14 @@
 <script type="text/ng-template" id="documents.html">
 	<div header buttons='buttons'></div>
 	<div content class='content-body'>
-		<div item-search='document' item-limit='10' non-digitized-default='1' select-action='selectDoc'></div>
+		<div item-search='document' non-digitized-default='1' select-action='selectDoc'></div>
 	</div>
 </script>
 
 <script type="text/ng-template" id="collections.html">
 	<div header buttons='buttons'></div>
 	<div content class='content-body'>
-		<div item-search='collection' item-limit='10' select-action='selectCollection'></div>
+		<div item-search='collection' select-action='selectCollection'></div>
 	</div>
 </script>
 
@@ -87,7 +87,7 @@
 			</div>
 		</form>
 		<div class='list-group scroll-body'>
-			<a href='javascript:void(0);' class='list-group-item' ng-click='selectAction(item)' ng-repeat='item in items | toArray | orderBy:"label"'>
+			<a href='javascript:void(0);' class='list-group-item' ng-click='selectAction(item)' ng-repeat='item in items'>
 				<div class='media'>
 					<span class='pull-left'>
 						<img class="media-object" style='width: 75px' ng-src='../{{item.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
@@ -111,7 +111,7 @@
 					<span ng-if='isDoc' class='count label label-primary'>{{options.count}} records / {{options.digitized}} digitized</span>
 					<span ng-if='!isDoc' class='count label label-primary'>{{options.count}} collections</span>
 				</div>
-				<div class='col-xs-6 text-center'><pagination previous-text="&lsaquo;" next-text="&rsaquo;" ng-class='{"pagination-sm": embedded}' items-per-page='itemLimit' total-items="options.count" boundary-links="true" max-size='5' ng-model="options.page"></pagination></div>
+				<div class='col-xs-6 text-center'><pagination previous-text="&lsaquo;" next-text="&rsaquo;" ng-class='{"pagination-sm": embedded}' items-per-page='options.itemLimit' total-items="options.count" boundary-links="true" max-size='5' ng-model="options.page"></pagination></div>
 			</div>
 		</div>
 	</div>
@@ -200,10 +200,21 @@
 		</form>
 	</div>
 	<div id='footer' class='well'>
-		<div class='row'>
-			<span class='col-xs-4'>Document ID: {{id}}</span>
+		<div class='row vertical-align'>
+			<span class='col-xs-1'>
+				<button ng-if='search.recordOpts.count' class='btn btn-info' ng-class="{disabled: search.neighbors.records.prev == null}" ng-click='location.path("/documents/"+search.neighbors.records.prev)'>
+					<span class="glyphicon glyphicon-arrow-left"></span> Prev
+				</button>
+			</span>
+			<span class='col-xs-3'>Document ID: {{id}}</span>
 			<span class='col-xs-4 text-center'>Created: {{document.DATE_CREATED}} by {{document.CREATOR}}</span>
-			<span class='col-xs-4 text-right'>Modified: {{document.DATE_MODIFIED}} by {{document.CONTRIBUTOR}}</span>
+			<span class='col-xs-3 text-right'>Modified: {{document.DATE_MODIFIED}} by {{document.CONTRIBUTOR}}</span>
+			<span class='col-xs-1'>
+				<button ng-if='search.recordOpts.count' class='btn btn-info' ng-class="{disabled: search.neighbors.records.next == null}" ng-click='location.path("/documents/"+search.neighbors.records.next)'>
+					Next <span class="glyphicon glyphicon-arrow-right"></span>
+				</button>
+			</span>
+
 		</div>
 	</div>
 </script>
@@ -246,7 +257,7 @@
 				</form>
 			</tab>
 			<tab ng-if="id != 0" heading='Featured Records'>
-				<div featured-docs documents='collection._featured_docs' limit-collection-id='{{collection.COLLECTION_ID}}'/>
+				<div featured-docs documents='collection._featured_docs' limit-collection-id='{{id}}'/>
 			</tab>
 			<tab ng-if="1" heading='Subcollections'>
 				<div class='row'>
@@ -274,9 +285,19 @@
 	</div>
 	<div id='footer' class='well'>
 		<div class='row'>
-			<span class='col-xs-4'>Collection ID: {{id}}</span>
+			<span class='col-xs-1'>
+				<button ng-if='search.collectionOpts.count' class='btn btn-info' ng-class="{disabled: search.neighbors.collections.prev == null}" ng-click='location.path("/collections/"+search.neighbors.collections.prev)'>
+					<span class="glyphicon glyphicon-arrow-left"></span> Prev
+				</button>
+			</span>
+			<span class='col-xs-3'>Collection ID: {{id}}</span>
 			<span class='col-xs-4 text-center'>Created: {{collection.DATE_CREATED}} by {{collection.CREATOR}}</span>
-			<span class='col-xs-4 text-right'>Modified: {{collection.DATE_MODIFIED}} by {{collection.CONTRIBUTOR}}</span>
+			<span class='col-xs-3 text-right'>Modified: {{collection.DATE_MODIFIED}} by {{collection.CONTRIBUTOR}}</span>
+			<span class='col-xs-1'>
+				<button ng-if='search.collectionOpts.count' class='btn btn-info' ng-class="{disabled: search.neighbors.collections.next == null}" ng-click='location.path("/collections/"+search.neighbors.collections.next)'>
+					Next <span class="glyphicon glyphicon-arrow-right"></span>
+				</button>
+			</span>
 		</div>
 	</div>
 </script>
@@ -307,7 +328,7 @@
 		</div>
 		<div class='col-xs-6'>
 			<h3>Add a Record</h3>
-			<div item-search='document' item-limit='5' embedded=1 select-action='addFeaturedDoc' limit-collection-id='{{limitCollectionId}}'></div>
+			<div item-search='document' embedded=1 select-action='addFeaturedDoc' limit-collection-id='{{limitCollectionId}}'></div>
 		</div>
 	</div>
 </script>

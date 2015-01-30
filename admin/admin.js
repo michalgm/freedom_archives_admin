@@ -78,8 +78,10 @@ app.controller('collections', function($scope, $data, $requests, $location) {
 	}
 });
 
-app.controller('documentEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location) {
-	$scope.data = $data;
+app.controller('documentEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location, $search) {
+  $scope.data = $data;
+	$scope.search = $search;
+  $scope.location = $location;
 	$scope.document = {
 		'_authors': [],
 		'_keywords': [],
@@ -90,6 +92,8 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
   $scope.related_filter= '';
 
 	$scope.id = $routeParams.id;
+  $scope.search.updateNeighbors('recordOpts', $scope.id);
+
 	$scope.loadDocument = function() {
 		return $requests.fetch('fetchDocument', {id:$routeParams.id}).then(function(results) { 
 			$scope.document = results;
@@ -190,14 +194,18 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 	$scope.buttons = [{text:'Delete', action:$scope.deleteDocument, class:'btn-danger'}, {text:'Save', action:$scope.saveDocument, class:'btn-primary'}];
 });
 
-app.controller('collectionEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location, $download) {
+app.controller('collectionEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location, $download, $search) {
 	$scope.collection = {
 		_featured_docs: [],
 		_subcollections: []
 	};
+
+  $scope.search = $search;
 	$scope.data = $data;
+  $scope.location = $location;
 	$scope.id = $routeParams.id == 'top' ? 0 : $routeParams.id;
   var orig_col = angular.copy($scope.collection);
+  $scope.search.updateNeighbors('collectionOpts', $scope.id);
 
 	$scope.loadCollection = function() {
 		return $requests.fetch('fetchCollection', {id: $scope.id}).then(function(results) { 
@@ -379,7 +387,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			break;
 		case 'updateThumbnails':
 			$scope.title = 'Update Thumbnails';
-			$scope.options  = {
+			$service[type]  = {
 				force:0,
 				collection:'',
 			}
@@ -394,7 +402,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 				$scope.success = 0;
 				$scope.failed = 0;
 
-				$requests.fetch('getThumbnailDocs', {collection:$scope.options.collection, force:$scope.options.force}).then(function(results) { 
+				$requests.fetch('getThumbnailDocs', {collection:$service[type].collection, force:$service[type].force}).then(function(results) { 
 					if(results.length) { 
 						$scope.total = results.length;
 				
@@ -764,11 +772,126 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 	}
 });
 
-app.service('$search', function($rootScope) {
+app.service('$search', function($rootScope, $requests) {
   var service = this;
+
+  service.buildSearch = function(type) {
+    var params = {
+      filter:service[type].filter,
+      collection:service[type].collection, 
+      page:service[type].page,
+      limit:service[type].itemLimit,
+      nonDigitized:service[type].nonDigitized,
+      IS_HIDDEN: service[type].IS_HIDDEN,
+      NEEDS_REVIEW: service[type].NEEDS_REVIEW,
+      'filter_types[]': [],
+      'filter_values[]': [],
+    };
+    $.each(service[type].filters, function(i, filter) {
+      params['filter_types[]'].push(filter.type);
+      params['filter_values[]'].push(filter.value);
+    });
+
+    return params;
+  }
+
+  service.updateNeighbors = function(type, id) {
+    if (type == 'colRecordOpts') { return; }
+    var options = service[type]; // == 'recordOpt' ? service.recordOpts : service.collectionOpts;
+    var items = type == 'recordOpts' ? service.records : service.collections;
+    var neighbors = type == 'recordOpts' ? service.neighbors.records : service.neighbors.collections;
+    neighbors.next = null;
+    neighbors.prev = null;
+
+    var index;
+
+    $.each(items, function(i, item){
+      if (item.id == id) {
+        index = i;
+        return false;
+      }
+    })
+    if (index == null) {      
+      if (neighbors.resultNum != null) {
+        if(neighbors.resultNum >= options.page* options.itemLimit) {
+          options.page++;
+        } else {
+          options.page--;
+        }
+        service.fetchItems(type).then(function() {
+          service.updateNeighbors(type, id);
+        })
+      }
+    } else {
+      neighbors.resultNum = (options.page-1)*options.itemLimit + index+1;
+
+      if (index == 0 && options.page != 1) {
+        var params = service.buildSearch(type);
+        params.page--;
+        service.fetchItems(type, params, true).then(function(res) {
+          neighbors.prev = res[options.itemLimit-1].id;
+        })
+      } else{
+        neighbors.prev = index == 0 ? null : items[index -1].id;   
+      }
+
+      if (index == options.itemLimit-1 && neighbors.resultNum < options.count) {
+        var params = service.buildSearch(type);
+        params.page++;
+        
+        service.fetchItems(type, params, true).then(function(res) {
+          neighbors.next = res[0].id;
+        })
+      } else {
+        neighbors.next = neighbors.resultNum >= options.count ? null : items[index +1].id;   
+      }
+    }
+  }
+
+  service.fetchItems = function(type, params, nosave) { 
+    if (!params) {
+      var params = service.buildSearch(type);
+    }
+    var action = type == 'collectionOpts' ? 'fetchCollections' : 'fetchDocuments';
+    return $requests.fetch(action, params).then(function(results) { 
+      var items = {};
+
+      if (type == 'collectionOpts') {
+          items = results.collections;
+      } else {
+          items = results.docs;
+      }
+      if (! nosave) {
+        if (type != 'collectionOpts') {
+          service.records = results.docs;
+          service[type].digitized = results.digitized || 0;
+        } else {
+          service.collections = results.collections;
+        }
+        if (results.count != service[type].count) {
+          service[type].count = results.count;
+          service[type].page = 1;
+        }
+      }
+      return items;
+    });
+  }
 
   service.reset = function() {
     service.records = [];
+    service.neighbors = {
+      collections: {
+        prev: null,
+        next: null,
+        resultNum: null
+      },
+      records: {
+        prev: null,
+        next: null,
+        resultNum: null
+      }
+
+    }
     service.collections = [];
     service.recordOpts = {
       filter : '',
@@ -779,7 +902,8 @@ app.service('$search', function($rootScope) {
       page: 1,
       count: 0,
       digitized: 0,
-      filters: []
+      filters: [],
+      itemLimit: 10
     };
     service.colRecordOpts = {
       filter : '',
@@ -790,7 +914,8 @@ app.service('$search', function($rootScope) {
       page: 1,
       count: 0,
       digitized: 0,
-      filters: []
+      filters: [],
+      itemLimit: 10
     };
     service.collectionOpts = {
       filter : '',
@@ -799,7 +924,8 @@ app.service('$search', function($rootScope) {
       page: 1,
       count: 0,
       collection : '',
-      filters: []
+      filters: [],
+      itemLimit: 10
     };
   }
 
