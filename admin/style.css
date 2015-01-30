@@ -184,7 +184,7 @@ div[ng-view].ng-leave {
 
 .panel { margin-bottom: 0px; }
 
-form.form-inline .input-group { display: inline-block; vertical-align: middle; }
+/*form.form-inline .input-group { display: inline-block; vertical-align: middle; }*/
 
 /*form.form-inline .form-group .input-group input, .input-group-addon, .input-group-btn { width: initial; }*/
 
@@ -224,3 +224,5 @@ form.form-inline .input-group { display: inline-block; vertical-align: middle; }
 .dropdown-menu { max-height: 200px; overflow: auto; }
 
 td { vertical-align: middle !important; }
+
+.logout { padding: 5px 10px; border-radius: 5px; }

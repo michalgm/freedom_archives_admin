@@ -26,8 +26,8 @@
 </script>
 
 <script type="text/ng-template" id="logout.html">
-	<div>
-		<span class="glyphicon glyphicon-user"></span> {{auth.name}} <a href='' ng-click='logout()'>Log out</a>
+	<div class='bg-info logout'>
+		<span class="glyphicon glyphicon-user"></span> {{auth.name}} <a class='pull-right' href='' ng-click='logout()'>Log out</a>
 	</div>
 </script>
 
@@ -394,9 +394,11 @@
 									<label class='control-label'>Filter</label>
 									<input type='text' ng-change='fetchList(label)' class='form-control' placeholder='Filter list' ng-model='list.filter' autofocus/>
 								</div>
-								<div class='form-group col-xs-4'>
-									<label class='control-label'>Add new item</label>
-										<div class='input-group'>
+								<div class='form-group col-xs-4 vertical-align' style='display: flex !important;'>
+										<div class='col-xs-4 text-right'>
+											<label class='control-label'>Add new item</label>
+										</div>
+										<div class='input-group col-xs-8'>
 											<input type="text" class="form-control" ng-model='list.new'>
 											<span class="input-group-btn">
 												<button class="btn btn-primary" ng-click='editItem(label, "", "add", list.new)'>Add</button>
@@ -794,11 +796,13 @@
 				<div call-number model='$parent.model'/>
 			</div>
 			<div ng-switch-when='url'>
-				<input type='text' class='form-control' ng-model='$parent.model'/>
-				<div ng-if='$parent.model'>
-					<a class='btn btn-primary btn-block' href='{{$parent.model}}' target='_blank'>
-						<span class="glyphicon glyphicon-link"></span> Open URL
-					</a>
+				<div class='input-group col-xs-12'>
+					<input type='text' class='form-control' ng-model='$parent.model'/>
+					<div class='input-group-btn' ng-if='$parent.model'>
+						<a class='btn btn-primary' href='{{$parent.model}}' target='_blank'>
+							<span class="glyphicon glyphicon-link"></span> Open
+						</a>
+					</div>
 				</div>
 			</div>
 			<input ng-switch-default='text' type='{{type}}' class='form-control' ng-model='$parent.model' />
