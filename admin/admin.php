@@ -99,6 +99,7 @@ if ($action) {
 			$query = "select C.COLLECTION_ID as id, C.COLLECTION_NAME as label, C.IS_HIDDEN as hidden, count(D.DOCID) as count from COLLECTIONS C left join DOCUMENTS D using (COLLECTION_ID) group by COLLECTION_ID order by COLLECTION_NAME";
 			$data['collections'] = dbLookupArray($query);
 			$data['action_access'] = $action_access;
+			$data['users'] = dbLookupArray("select username, concat(lastname, ', ', firstname) as name from USERS order by username");
 			break;
 
 		case 'fetchDocuments':
@@ -334,16 +335,21 @@ if ($action) {
 
 		case 'fetchAuditLog':
 			$lastUpdate = fetchValue("select unix_timestamp(max(timestamp)) from audit_log where action='push'");
-			$date = $request['date'] ? dbEscape($request['date']) : $lastUpdate;
+			$date = '';
+			if ($request['time_limit'] == 'last_update') {
+				$date = "'$lastUpdate'";
+			} else {
+				$date = "unix_timestamp(DATE_SUB(NOW(), INTERVAL ".dbEscape($request['time_amount'])." ". dbEscape($request['time_period'])."))";
+			}
 			$needs_review = $request['only_reviewed'] =='true' ? " and NEEDS_REVIEW = 1 " : "";
 			// $log = fetchRows("select *, unix_timestamp(timestamp) as time from audit_log where unix_timestamp(timestamp) > '$date' and action != 'push'"); // limit ".(($page-1)*$limit).",$limit");
 			$query = "
 				select * from (
 				select DOCID as id, TITLE as description, 'document' as type, CONTRIBUTOR as user, IF(DATE_MODIFIED = DATE_CREATED, 'create', 'update') as action, 
-					NEEDS_REVIEW, unix_timestamp(DATE_MODIFIED) as time from DOCUMENTS where unix_timestamp(DATE_MODIFIED) > '$date' $needs_review
+					NEEDS_REVIEW, collection_id, unix_timestamp(DATE_MODIFIED) as time from DOCUMENTS where unix_timestamp(DATE_MODIFIED) > $date $needs_review
 				union 
 					select COLLECTION_ID as id, COLLECTION_NAME as description, 'collection' as type, CONTRIBUTOR as user, IF(DATE_MODIFIED = DATE_CREATED, 'create', 'update') as action, 
-						NEEDS_REVIEW, unix_timestamp(DATE_MODIFIED) as time from COLLECTIONS where unix_timestamp(DATE_MODIFIED) > '$date' $needs_review
+						NEEDS_REVIEW, parent_id as collection_id, unix_timestamp(DATE_MODIFIED) as time from COLLECTIONS where unix_timestamp(DATE_MODIFIED) > $date $needs_review
 				) a order by time desc
 				"; // limit ".(($page-1)*$limit).",$limit");
 			$log = fetchRows($query);

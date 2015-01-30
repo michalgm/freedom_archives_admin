@@ -122,8 +122,11 @@ app.directive('collectionChooser', function($requests, $data, $timeout) {
 			}
 			
 			scope.checkBlank = function(value) {
-				if (value == '' && scope.callback) { 
-					scope.callback();
+				if (value == '') {
+					scope.model = null;
+					if (scope.callback) { 
+						scope.callback();
+					}
 				}
 			}
 

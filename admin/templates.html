@@ -456,15 +456,70 @@
 		<div ng-switch-when='reviewChanges'>
 			<p>Below is a list of all changes to the database since the last time the data was pushed to the live search site. Review the changes, and when you are satisfied, click the 'Push to Live Site' button.</p>
 			<div class='row vertical-align'>
-				<p class='col-xs-6'>The live site was last updated on <b>{{lastUpdate *1000| date:"MM/dd/yyyy 'at' h:mma"}}</b></p>
-				<div class="checkbox col-xs-6">
-					<label>
-						<input type="checkbox" ng-model='$parent.only_reviewed' value="">
-						Only show changes needing review
-					</label>
+				<div class='col-xs-4'>
+					<div class='radio'>
+						<label>
+							<input type='radio' value='last_update' ng-model='$parent.time_limit' ng-change='fetchLog()'/>
+							Show changes since last site update (<b>{{lastUpdate *1000| date:"MM/dd/yyyy 'at' h:mma"}}</b>)
+						</label>
+					</div>
+					<div class='radio form-inline'>
+						<label>
+							<input type='radio' value='time_amount' ng-model='$parent.time_limit' ng-change='fetchLog()'/>
+							Show changes made in the last	
+						</label>
+						<select class='form-control' ng-model='$parent.time_amount' ng-options='n for n in [] | range:1:30'  ng-change='fetchLog()'>
+							<option>1</option>
+							<option>2</option>
+						</select>
+						<select class='form-control' ng-model='$parent.time_period' ng-change='fetchLog()'>
+							<option value='day'>Days</option>
+							<option value='week'>Weeks</option>
+							<option value='month'>Months</option>
+							<option value='year'>Years</option>
+						</select>
+					</div>
+					<div class="checkbox">
+						<label>
+							<input type="checkbox" ng-model='$parent.only_reviewed' value="" ng-change='fetchLog()'>
+							Only show changes needing review
+						</label>
+					</div>
+				</div>
+				<div class="col-xs-8 form-inline">
+					<div class='form-group'>
+						<label>Title</label>
+						<input class='form-control' ng-model='$parent.title_filter' ng-change='filter()'/>
+					</div>
+					<div class='form-group'>
+						<label>Collection</label>
+						<span collection-chooser select-collection='filter()' model='$parent.collection_filter'/>
+					</div>
+					<div class='form-group'>
+						<label>User</label>
+						<select class='form-control' ng-model='$parent.user_filter' ng-change='filter()'>
+							<option value='All'>All</option>
+							<option value='{{user.username}}' ng-repeat='user in data.users|toArray|orderBy:"name"'>{{user.name}}</option>
+						</select>
+					</div>
+					<div class='form-group'>
+						<label>Type</label>
+						<select class='form-control' ng-model='$parent.type_filter' ng-change='filter()'>
+							<option>All</option>
+							<option value='document'>Document</option>
+							<option value='collection'>Collection</option>
+						</select>
+					</div>
+					<div class='form-group'>
+						<label>Action</label>
+						<select class='form-control' ng-model='$parent.action_filter' ng-change='filter()'>
+							<option>All</option>
+							<option value='create'>Create</option>
+							<option value='update'>Update</option>
+						</select>
+					</div>
 				</div>
 			</div>
-			<!--<p>Show changes since <input type='date' ng-model='date'/> at <input type='time' ng-model='date'/> <input ng-model='date'/></p>-->
 			<div style='overflow: auto'>
 				<table class='table table-condensed table-bordered'>
 					<thead>
@@ -476,11 +531,11 @@
 						<th>Reviewed</th>
 					</thead>
 					<tbody>
-						<tr ng-repeat='item in log | slice:(pagination.offset-1)*pagination.limit:pagination.limit'>
+						<tr ng-repeat='item in filtered_log | slice:(pagination.offset-1)*pagination.limit:pagination.limit'>
 							<td><a target='_new' href='#/{{item.type}}s/{{item.id}}'>{{item.description}}</a></td>
 							<td>{{item.type|ucf}}</td>
 							<td>{{item.action|ucf}}</td>
-							<td>{{item.user|ucf}}</td>
+							<td>{{data.users[item.user].name}}</td>
 							<td>{{item.time*1000| date:"MM/dd/yyyy 'at' hh:mm a"}}</td>
 							<td>
 									<button ng-click='reviewItem(item)' action-button='saving' type="button" style='min-width: 70%' ng-show='item.NEEDS_REVIEW == 0 || item.NEEDS_REVIEW == ""' class="btn btn-sm btn-success">Mark as Needs Review</button>

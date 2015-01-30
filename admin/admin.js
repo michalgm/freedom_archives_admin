@@ -343,7 +343,7 @@ app.controller('siteFeaturedDocs', function($scope, $requests, $messages) {
 app.controller('adminIndex', function($scope) {
 });
 
-app.controller('siteUtils', function($scope, $routeParams, $requests, $messages, $q, $data, $download, $timeout) {
+app.controller('siteUtils', function($scope, $routeParams, $requests, $messages, $q, $data, $download, $timeout, $filter) {
 	$scope.util = $routeParams.util;
 	$scope.title = '';
 
@@ -493,27 +493,56 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			break;
 		case 'reviewChanges':
 			$scope.title = 'Review Changes';
+      $scope.data = $data;
+
 			$scope.log = [];
+      $scope.filtered_log = [];
+
 			$scope.pagination = {
 				limit: 10,
 				offset: 1,
 				count:0,
         page: 1
 			}
-			$scope.date = '';
       $scope.only_reviewed = true;
 			$scope.lastUpdate = '';
+      $scope.time_amount = 10;
+      $scope.time_period = 'day';
+      $scope.time_limit = 'last_update';
+      $scope.user_filter = $scope.type_filter = $scope.action_filter = 'All';
+      $scope.title_filter = '';
+      $scope.collection_filter = '';
+
       $scope.fetchLog = function() {
-				$requests.fetch('fetchAuditLog', {'date': $scope.date, 'only_reviewed': $scope.only_reviewed}).then(function(results) {
-					//var date = new Date(results.date*1000);
-					// $scope.date = date.getFullYear()+'-'+date.getMonth()+'-'+date.getDate();
-					//$scope.date = date;
-					//console.log($scope.date);
+				$requests.fetch('fetchAuditLog', {
+          'only_reviewed': $scope.only_reviewed,
+          'time_period': $scope.time_period,
+          'time_limit': $scope.time_limit,
+          'time_amount': $scope.time_amount,
+          }).then(function(results) {
 					$scope.log = results.log;
 					$scope.lastUpdate = results.lastUpdate;
-					$scope.pagination.count = $scope.log.length+1;
+          $scope.filter();
 				})
 			}
+
+      $scope.filter = function() {
+        $timeout(function() {
+          var log = $scope.log;
+          if ($scope.title_filter != '') {
+            log = $filter('filter')(log, {description:$scope.title_filter});
+          }
+          log = $filter('filter')(log, {
+            action:$scope.action_filter != 'All' ? $scope.action_filter : undefined,
+            user:$scope.user_filter != 'All' ? $scope.user_filter : undefined,
+            type:$scope.type_filter != 'All' ? $scope.type_filter : undefined,
+            collection_id:$scope.collection_filter != '' ? $scope.collection_filter : undefined,
+          }, true);
+          $scope.filtered_log = log;
+          $scope.pagination.count = $scope.filtered_log.length+1;
+          $scope.pagination.page = 1;
+        });
+      }
 
       $scope.reviewItem= function(item) {
         var save = {
@@ -527,9 +556,6 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
         });
       }
 
-      $scope.$watch('only_reviewed', function() {
-        $scope.fetchLog();
-      })
 			$scope.fetchLog();
 			break;
 
@@ -698,6 +724,7 @@ app.service('$data', function($requests, $rootScope, $messages, $filter) {
 	$data.collections = [];
 	$data.action_access = {};
   $data.collection_index = {};
+  $data.users = [];
 
 	$data.updateData = function(noclear) {
 		if (! noclear) { 
@@ -707,11 +734,13 @@ app.service('$data', function($requests, $rootScope, $messages, $filter) {
 			$data.collection_index = results.collections;
       $data.collections = $filter('toArray')(results.collections);
 			$data.action_access = results.action_access;
+      $data.users = results.users;
 		});
 	}
 
 	$data.clearData = function() { 
-		$data.collections = [];
+    $data.collections = [];
+		$data.users = [];
     $data.action_access = {};
 		$data.collection_index = {};
 	}	
