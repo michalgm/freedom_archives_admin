@@ -197,7 +197,9 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 app.controller('collectionEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location, $download, $search) {
 	$scope.collection = {
 		_featured_docs: [],
-		_subcollections: []
+    _subcollections: [],
+    _removeDocs: [],
+		_addDocs: []
 	};
 
   $scope.search = $search;
@@ -207,10 +209,24 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
   var orig_col = angular.copy($scope.collection);
   $scope.search.updateNeighbors('collectionOpts', $scope.id);
 
+  $scope.removeDoc = function(index) {
+    $scope.collection['_removeDocs'].push($scope.documents[index].id);
+    $scope.documents.splice(index, 1);  
+  }
+
+  $scope.addDoc = function(doc) {
+    $scope.collection['_addDocs'].push(doc.id);
+    $scope.documents.push(doc);  
+  }
+
 	$scope.loadCollection = function() {
 		return $requests.fetch('fetchCollection', {id: $scope.id}).then(function(results) { 
 			$scope.collection = results;
       orig_col = angular.copy($scope.collection);
+      
+      $requests.fetch('fetchDocuments', {'filter_types[]':['COLLECTION_ID'], 'filter_values[]': [$scope.id], nonDigitized: 1}).then(function(results) {
+        $scope.documents = results.docs;
+      })
 		});
 	}
 	

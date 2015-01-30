@@ -577,6 +577,8 @@ function fetchItem($type, $id) {
 	if ($type == 'collection') { 
 		$data['_featured_docs'] = array_values(dbLookupArray("select F.DOCID, F.DOC_ORDER, F.DESCRIPTION, D.TITLE, D.THUMBNAIL from FEATURED_DOCS F join DOCUMENTS D using(DOCID) where F.COLLECTION_ID = $id order by F.DOC_ORDER"));
 		$data['_subcollections'] = array_values(dbLookupArray("select COLLECTION_ID, PARENT_ID, COLLECTION_NAME, IS_HIDDEN from COLLECTIONS where PARENT_ID = $id and COLLECTION_ID != $id order by DISPLAY_ORDER, COLLECTION_NAME"));
+		$data['_removeDocs'] = array();
+		$data['_addDocs'] = array();
 	}
 	if ($type == 'document') { 
 		$data['_authors'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='author' order by `order`");
@@ -597,15 +599,21 @@ function saveItem($type, $id, $data, $noLog=false) {
 		'_subjects'=> isset($data['_subjects']) ? $data['_subjects'] : null,
 	);
 	$related = array();
+	$removeDocs = array();
+	$addDocs = array();
 	unset($data['_keywords']);
 	unset($data['_subjects']);
 
 	if ($type == 'collection') { 
 		$tags['_featured_docs'] = isset($data['_featured_docs']) ? $data['_featured_docs'] : null;
 		$tags['_subcollections'] = isset($data['_subcollections']) ? $data['_subcollections'] : null;
+		$removeDocs = isset($data['_removeDocs']) ? $data['_removeDocs'] : array();
+		$addDocs = isset($data['_addDocs']) ? $data['_addDocs'] : array();
 		unset($data['_featured_docs']);
 		unset($data['_subcollections']);
 		unset($data['count']);
+		unset($data['_removeDocs']);
+		unset($data['_addDocs']);
 	} elseif ($type == 'document') { 
 		$tags['_authors'] = isset($data['_authors']) ? $data['_authors'] : null;
 		$tags['_producers']= isset($data['_producers']) ? $data['_producers'] : null;
@@ -654,6 +662,13 @@ function saveItem($type, $id, $data, $noLog=false) {
 		}
 		if ($tags['_subcollections'] !== null) {
 			updateSubcollections($id, $tags['_subcollections']);
+		}
+		if (isset($removeDocs[0])) {
+			dbwrite("update DOCUMENTS set COLLECTION_ID = '' where DOCID in (".arrayToInString($removeDocs).")");
+		}
+
+		if (isset($addDocs[0])) {
+			dbwrite("update DOCUMENTS set COLLECTION_ID = '$id' where DOCID in (".arrayToInString($addDocs).")");
 		}
 	}
 	if ($type == 'document') {

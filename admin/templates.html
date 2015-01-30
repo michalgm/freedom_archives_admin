@@ -281,6 +281,37 @@
 					</div>
 				</div>
 			</tab>
+			<tab ng-if='1' heading='Add/Remove Records'>
+				<div id='featuredDocs' class='row'>
+					<div class='col-xs-6' autoheight>
+						<h3 class='scroll-header'>Records</h3>
+						<div class="list-group scroll-body" ng-model='documents'>
+							<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='doc in documents | orderBy:"label"'>
+								<div class='media'>
+									<span class='pull-left'>
+										<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
+									</span>
+									<div class='media-body'>
+										<div class='pull-right text-right'>
+											<button ng-click='location.path("/documents/"+doc.id)' class='btn btn-default'><span class="glyphicon glyphicon-pencil"></span> View</button> 
+											<button ng-click='removeDoc($index)' class='btn btn-default'><span class="glyphicon glyphicon-remove"></span> Remove</button> 
+											<div>ID: {{doc.id}}</div>
+											<div ng-if='doc.CALL_NUMBER'>Call #: {{doc.CALL_NUMBER}}</div>
+										</div>
+										<h4 class='list-group-item-heading'>{{(doc.label || 'Untitled') | truncate:100}}</h4>
+										<p><i><span ng-if='!isDoc'>Parent </span>Collection: {{doc.COLLECTION_NAME}}</i></p>
+										<p style='max-height: 150px; overflow: hidden;' ng-bind-html='doc.DESCRIPTION || " "'></p>
+									</div>
+								</div>
+							</a>
+						</div>
+					</div>
+					<div class='col-xs-6'>
+						<h3>Add a Record</h3>
+						<div item-search='document' embedded=1 select-action='addDoc' limit-collection-id='0'></div>
+					</div>
+				</div>
+			</tab>
 		</tabset>
 	</div>
 	<div id='footer' class='well'>
