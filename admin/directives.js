@@ -266,7 +266,7 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 	}
 });
 
-app.directive('collectionSelect', function($location) {
+app.directive('collectionSelect', function($location, $search) {
 	return {
 		restrict: 'A',
 		template:'<span collection-chooser select-collection="selectCollection(collection)" clear="1"/>',
@@ -274,6 +274,7 @@ app.directive('collectionSelect', function($location) {
 		link: function(scope,element, attribs) {
 			scope.selectCollection = function(collection) { 
 				if (collection) { 
+					$search.resetSearch('collectionOpts');
 					$location.path('/collections/'+collection.id);
 				}
 			}
@@ -281,7 +282,7 @@ app.directive('collectionSelect', function($location) {
 	}
 });
 
-app.directive('documentSelect', function($location, $requests) {
+app.directive('documentSelect', function($location, $requests, $search) {
 	return {
 		restrict: 'A',
 		template:'<input type="text" ng-model="filter" typeahead-append-to-body="true" autocomplete="off" typeahead-editable="false" typeahead-on-select="selectDocument($item)" typeahead="doc.label for doc in fetchDocuments($viewValue)" class="form-control" placeholder="Find Record by Title, Call #, or ID" />',
@@ -291,6 +292,7 @@ app.directive('documentSelect', function($location, $requests) {
 
 			scope.selectDocument= function(document) { 
 				if (document) { 
+					$search.resetSearch('recordOpts');
 					$location.path('/documents/'+document.id);
 					scope.filter = '';
 				}
@@ -306,7 +308,7 @@ app.directive('documentSelect', function($location, $requests) {
 	}
 });
 
-app.directive('formGroup', function($requests) {
+app.directive('formGroup', function($requests, $location) {
 	return {
 		restrict: 'A',
 		scope: {
@@ -317,6 +319,7 @@ app.directive('formGroup', function($requests) {
 		},
 		templateUrl: 'formGroup.html',
 		link: function(scope, element) {
+			scope.location = $location;
 			scope.type = scope.inputType || 'text';
 			scope.label_width = 2;
 			scope.field_width = 10;

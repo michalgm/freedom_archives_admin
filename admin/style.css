@@ -186,7 +186,7 @@ div[ng-view].ng-leave {
 
 form.form-inline .input-group { display: inline-block; vertical-align: middle; }
 
-form.form-inline .form-group .input-group input, .input-group-addon, .input-group-btn { width: initial; }
+/*form.form-inline .form-group .input-group input, .input-group-addon, .input-group-btn { width: initial; }*/
 
 #related_header, #related { 
   padding: 0px 15px;

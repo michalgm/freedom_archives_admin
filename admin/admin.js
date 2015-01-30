@@ -223,7 +223,7 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 		return $requests.fetch('fetchCollection', {id: $scope.id}).then(function(results) { 
 			$scope.collection = results;
       orig_col = angular.copy($scope.collection);
-      
+
       $requests.fetch('fetchDocuments', {'filter_types[]':['COLLECTION_ID'], 'filter_values[]': [$scope.id], nonDigitized: 1}).then(function(results) {
         $scope.documents = results.docs;
       })
@@ -812,31 +812,34 @@ app.service('$search', function($rootScope, $requests) {
   }
 
   service.updateNeighbors = function(type, id) {
-    if (type == 'colRecordOpts') { return; }
+    if (type == 'colRecordOpts' || id == 'new') { return; }
     var options = service[type]; // == 'recordOpt' ? service.recordOpts : service.collectionOpts;
     var items = type == 'recordOpts' ? service.records : service.collections;
     var neighbors = type == 'recordOpts' ? service.neighbors.records : service.neighbors.collections;
     neighbors.next = null;
     neighbors.prev = null;
 
-    var index;
-
-    $.each(items, function(i, item){
-      if (item.id == id) {
-        index = i;
-        return false;
-      }
-    })
-    if (index == null) {      
+    var index = $.inArray(id, items);
+    if (index < 0) {
       if (neighbors.resultNum != null) {
         if(neighbors.resultNum >= options.page* options.itemLimit) {
           options.page++;
         } else {
           options.page--;
         }
-        service.fetchItems(type).then(function() {
-          service.updateNeighbors(type, id);
-        })
+        if (options.page > 0) {
+          service.fetchItems(type).then(function(res) {
+            items = type == 'recordOpts' ? service.records : service.collections;
+            index = $.inArray(id, items);
+            if ( index < 0) {
+              console.log('give up!');
+            } else {      
+              service.updateNeighbors(type, id);
+            }
+          });
+        } else {
+          service.resetSearch(type);
+        }
       }
     } else {
       neighbors.resultNum = (options.page-1)*options.itemLimit + index+1;
@@ -848,7 +851,7 @@ app.service('$search', function($rootScope, $requests) {
           neighbors.prev = res[options.itemLimit-1].id;
         })
       } else{
-        neighbors.prev = index == 0 ? null : items[index -1].id;   
+        neighbors.prev = index == 0 ? null : items[index -1];   
       }
 
       if (index == options.itemLimit-1 && neighbors.resultNum < options.count) {
@@ -859,7 +862,7 @@ app.service('$search', function($rootScope, $requests) {
           neighbors.next = res[0].id;
         })
       } else {
-        neighbors.next = neighbors.resultNum >= options.count ? null : items[index +1].id;   
+        neighbors.next = neighbors.resultNum >= options.count ? null : items[index +1];   
       }
     }
   }
@@ -878,23 +881,40 @@ app.service('$search', function($rootScope, $requests) {
           items = results.docs;
       }
       if (! nosave) {
+        var ids = $.map(items, function(i) { return i.id; })
         if (type != 'collectionOpts') {
-          service.records = results.docs;
+          service.records = ids;//service.records.concat(ids);
           service[type].digitized = results.digitized || 0;
         } else {
-          service.collections = results.collections;
+          service.collections = ids; //service.collections.concat(ids);
         }
         if (results.count != service[type].count) {
+          service.resetSearch(type)
           service[type].count = results.count;
-          service[type].page = 1;
         }
       }
       return items;
     });
   }
 
+  service.resetSearch = function(type) {
+    service[type].count = 0;
+    service[type].page = 1;
+    var clearType = type=='recordOpts' ? 'records' : (type == 'collectionOpts' ? 'collections' : null);
+    if (clearType) {
+      service[clearType] = [];
+      service.neighbors[clearType] = {
+        prev: null,
+        next: null,
+        resultNum: null
+      }
+    }
+  }
+
   service.reset = function() {
     service.records = [];
+    service.collections = [];
+
     service.neighbors = {
       collections: {
         prev: null,
@@ -906,9 +926,7 @@ app.service('$search', function($rootScope, $requests) {
         next: null,
         resultNum: null
       }
-
-    }
-    service.collections = [];
+    };
     service.recordOpts = {
       filter : '',
       nonDigitized: 0,

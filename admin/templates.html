@@ -716,7 +716,12 @@
 				<input type='checkbox' ng-true-value='1' ng-false-value='0' ng-model='$parent.model'/>
 			</div>	
 			<div id='col' ng-switch-when='collectionChooser'>
-				<span collection-chooser model='$parent.model'></span>
+				<div class='input-group col-xs-12'>
+					<span class='input-group-btn'>
+						<button class='btn btn-default' ng-click='location.path("/collections/"+$parent.model)'><span class="glyphicon glyphicon-pencil"></span> View</button>
+					</span>
+					<span collection-chooser model='$parent.model'></span>
+				</div>
 			</div>
 			<div ng-switch-when='chooser'>
 				<input typeahead-focus type="text" ng-blur='checkValue(this)' ng-model="$parent.model" typeahead-on-select='addItem()' autocomplete="off" typeahead-editable="{{options.editable}}" typeahead="item for item in fetchList(options.field, $viewValue)" class="form-control" placeholder='Choose a {{label}}{{options.editable ? "": " from list"}}' />
