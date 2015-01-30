@@ -406,27 +406,38 @@
 									</div>
 								</div>
 							</form>
+							<div class='bold' style='margin-top: 10px'>
+								<div class='col-xs-4'>Item</div>
+								<div class='col-xs-2 text-center'>Record Count</div>
+								<div class='col-xs-2 text-center'>Collection Count</div>
+							</div>
 						</div>
 						<ul class='list-group scroll-body'>
-							<li class='list-group-item' ng-init='edit=0; new_item = item;' ng-repeat='item in list.items'>
+							<li class='list-group-item' ng-init='edit=0; new_item = item.item;' ng-repeat='item in list.items'>
 								<div class='row'>
-									<div class='col-xs-6'>	
-										<span ng-hide='edit'>{{item}}</span>
+									<div class='col-xs-4'>	
+										<span ng-hide='edit'>{{item.item}}</span>
 										<form class='form-inline col-xs-6' ng-show='edit'>
 										<div class='form-group'>
 											<div class='input-group'>
 												<input class='form-control' ng-model='new_item'>
 												<span class="input-group-btn">
-													<button class="btn btn-primary" ng-click='editItem(label, item, "edit", new_item)'>Save</button>
+													<button class="btn btn-primary" ng-click='editItem(label, item.item, "edit", new_item)'>Save</button>
 												</span>
 											</div>
 										</div>
 										</form>
 									</div>
-									<div class='col-xs-6'>
+									<div class='col-xs-2 text-center'>
+										{{item.record_count}}
+									</div>
+									<div class='col-xs-2 text-center'>
+										{{item.collection_count}}
+									</div>
+									<div class='col-xs-4'>
 										<div class='pull-right btn-group'>	
 											<button  class='btn btn-default btn-sm' ng-click='edit = !edit'>{{edit ? 'Cancel' : 'Edit'}}</button>
-											<button class='btn btn-danger btn-sm' ng-click='editItem(label, item, "delete")'>Delete</button>
+											<button class='btn btn-danger btn-sm' ng-click='editItem(label, item.item, "delete")'>Delete</button>
 										</div>
 									</div>
 								</div>

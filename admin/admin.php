@@ -178,10 +178,10 @@ if ($action) {
 			if (isset($request['limit'])) {
 				$limit = " limit $offset, ".dbEscape($request['limit']);
 			}
-			$query = "select item from LIST_ITEMS where type = '$field' and item like('%$value%') collate utf8_unicode_ci order by if(item like('$value%') collate utf8_unicode_ci, 0, 1), ucase(item) $limit";
+			$query = "select a.item, sum(if(is_doc, 1, 0)) as record_count, sum(if(is_doc, 1, 0)) as collection_count from LIST_ITEMS a left join LIST_ITEMS_LOOKUP b using(item) where a.type = '$field' and a.item like('%$value%') collate utf8_unicode_ci  group by item order by if(a.item like('$value%') collate utf8_unicode_ci, 0, 1), ucase(a.item) $limit";
 
 			$data = array(
-				'items'=> fetchCol("$query"),
+				'items'=> fetchRows("$query"),
 				'count' => fetchValue("select count(*) from LIST_ITEMS where type = '$field' and item like('%$value%') collate utf8_unicode_ci")
 			);
 			break;
@@ -728,14 +728,14 @@ function parseLookups($type, $data) {
 			$data['_producers'] = preg_split("/ ?(,| and |\&|\/) ?/i", $data['PRODUCERS']);
 		}
 		if (isset($data['AUTHORS'])) {
-			$data['_authors'] = preg_split("/, ?/", $data['AUTHORS']);
+			$data['_authors'] = preg_split("/[,;] ?/", $data['AUTHORS']);
 		}
 	}
 	if (isset($data['KEYWORDS'])) {
-		$data['_keywords'] = preg_split("/, ?/", $data['KEYWORDS']);
+		$data['_keywords'] = preg_split("/[,;] ?/", $data['KEYWORDS']);
 	}
 	if (isset($data['SUBJECTS'])) {
-		$data['_subjects'] = preg_split("/, ?/", $data['SUBJECTS']);
+		$data['_subjects'] = preg_split("/[,;] ?/", $data['SUBJECTS']);
 	}
 	return $data;
 }
