@@ -403,7 +403,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			break;
 		case 'updateThumbnails':
 			$scope.title = 'Update Thumbnails';
-			$service[type]  = {
+			$scope.options  = {
 				force:0,
 				collection:'',
 			}
@@ -418,7 +418,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 				$scope.success = 0;
 				$scope.failed = 0;
 
-				$requests.fetch('getThumbnailDocs', {collection:$service[type].collection, force:$service[type].force}).then(function(results) { 
+				$requests.fetch('getThumbnailDocs', {collection:$scope.options.collection, force:$scope.options.force}).then(function(results) { 
 					if(results.length) { 
 						$scope.total = results.length;
 				
