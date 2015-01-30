@@ -138,7 +138,7 @@ if ($action) {
 		case 'exportCollection':
 			$filename = 'All Collections';
 			$where = isset($request['collection_id']) ? " and c.collection_id = ".dbEscape($request['collection_id']). " " : "";
-			$docs = fetchRows("Select d.docid as 'Document Id', Call_Number, c.collection_name as Folder, Title, Authors, 
+			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors, 
 				publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, 
 				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
 				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where c.collection_id != 20 $where group by docid");
@@ -154,7 +154,7 @@ if ($action) {
 			$searchdocs = fetchItems('document', $request);
 			$ids = arrayToInString(array_map(function($doc) { return $doc['id']; }, $searchdocs['docs']));
 
-			$docs = fetchRows("Select d.docid as 'Document Id', Call_Number, c.collection_name as Folder, Title, Authors, 
+			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors, 
 				publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, 
 				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
 				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where c.collection_id != 20 and d.docid in ($ids) group by docid");
