@@ -18,6 +18,7 @@ function dbconnect() {
 		}
 		$db->set_charset('utf8');
 		$db->autocommit('false');
+		query("SET SESSION sql_mode='NO_AUTO_VALUE_ON_ZERO'");
 		//$db->query("SET NAMES 'utf8'");
 	}
 	return $db;
