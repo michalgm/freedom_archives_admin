@@ -821,6 +821,10 @@ app.service('$search', function($rootScope, $requests) {
   var service = this;
 
   service.buildSearch = function(type) {
+    if (! service[type]) {
+      service[type] = angular.copy(service.recordOpts);
+      service.resetSearch(type);
+    }
     var params = {
       filter:service[type].filter,
       collection:service[type].collection, 
@@ -927,6 +931,9 @@ app.service('$search', function($rootScope, $requests) {
   }
 
   service.resetSearch = function(type) {
+    if (! service[type]) {
+      service[type] = angular.copy(service.recordOpts);
+    }
     service[type].count = 0;
     service[type].page = 1;
     var clearType = type=='recordOpts' ? 'records' : (type == 'collectionOpts' ? 'collections' : null);

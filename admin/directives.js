@@ -183,7 +183,8 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 			embedded: '=',
 			page:'=?',
 			count: '=?',
-			itemType: '@itemSearch'
+			itemType: '@itemSearch',
+			searchType: '@?'
 		},
 		link: function(scope,element, attribs) {
 			scope.search = $search;
@@ -201,14 +202,16 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 				'collection_name': true,
 				'date_range': true,
 			};
-
 			var action = '';
 			var searchType = '';
 			if (scope.itemType == 'document') {
 				action =  'fetchDocuments';
 				scope.filters = ['author', 'description', 'format', 'generation', 'keyword', 'location', 'organization', 'producer', 'program', 'quality', 'subject', 'title'];
 				scope.isDoc = true;
-				if (scope.embedded) {
+				if ( scope.searchType) {
+					searchType = scope.searchType;
+					$search.resetSearch(searchType);
+				} else if (scope.embedded) {
 					searchType = 'colRecordOpts';
 				} else {
 					searchType = 'recordOpts';
@@ -219,18 +222,17 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 				scope.isDoc = false;
 				searchType = 'collectionOpts';
 			}
-
 			scope.options = $search[searchType];
       if (scope.limitCollectionId) { 
-	      $search[searchType].collection = scope.limitCollectionId;
+	      scope.options.collection = scope.limitCollectionId;
       }
-
 
       scope.fetchItems = function() {
       	$search.fetchItems(searchType).then(function(res){
       		scope.items = res;
       	})
       }
+
 			scope.selectCollection = function(collection) { 
 				if (collection) { 
 					scope.options.collection = collection.id;

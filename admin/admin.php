@@ -480,7 +480,7 @@ function fetchItems($type, $request) {
 		$isDoc = 0;
 	}
 
-	if (isset($request['collection']) && $request['collection']) { 
+	if (isset($request['collection']) && $request['collection'] != '') { 
 		$cid = dbEscape($request['collection']);
 		$where[] = "I.".($isDoc? "COLLECTION_ID" : "PARENT_ID")." in (select COLLECTION_ID from COLLECTIONS where COLLECTION_ID = $cid or PARENT_ID = $cid) ";
 	}
@@ -491,7 +491,7 @@ function fetchItems($type, $request) {
 	if(isset($request['NEEDS_REVIEW']) && $request['NEEDS_REVIEW']) { 
 		$where[] = " I.NEEDS_REVIEW = 1 ";
 	}
-	if (isset($request['filter']) && $request['filter']) { 
+	if (isset($request['filter']) && $request['filter'] != '') { 
 		$filter = dbEscape($request['filter']);
 		$filter = str_replace(" ", '%', $filter);
 		$like = "like _utf8 '%$filter%'";
@@ -517,7 +517,7 @@ function fetchItems($type, $request) {
 		foreach ($request['filter_types'] as $filter_type) {
 			$filter_value = dbEscape(array_shift($request['filter_values']));
 			$filter_type = dbEscape($filter_type);
-			if ($filter_type && $filter_value) {
+			if ($filter_type != '' && $filter_value != '') {
 				if (in_array($filter_type, array('keyword', 'author', 'subject', 'producer'))) {
 					$filters.= " JOIN LIST_ITEMS_LOOKUP $filter_count on $filter_count.id = I.$idfield and IS_DOC = $isDoc and $filter_count.type = '$filter_type' and $filter_count.item = '$filter_value' ";
 				} else if (in_array($filter_type, array('location', 'organization', 'description', 'title', 'collection_name', 'date_range'))) {
