@@ -51,14 +51,7 @@ class Page {
 				$query['where'] .= "and MATCH(DOCUMENTS_LIVE.TITLE, DOCUMENTS_LIVE.DESCRIPTION, DOCUMENTS_LIVE.SUBJECTS, DOCUMENTS_LIVE.KEYWORDS, DOCUMENTS_LIVE.AUTHORS) AGAINST('$search_terms_string' IN BOOLEAN MODE) ";
 				$query['order'] .= " order by relevance desc";
 			}
-			// if ($param == 'subject' || $param == 'author') {
-			// 	$lookup_table = strtoupper($param).'_LOOKUP';
-			// 	$query['from'] .= " join LIST_ITEMS_LOOKUP_LIVE $lookup_table on DOCUMENTS_LIVE.DOCID = $lookup_table.ID and $lookup_table.TYPE = '$param' and $lookup_table.IS_DOC = 1 ";
-			// 	$data = dbLookupArray("select $lookup_table.item as value, count(*) as count $query[from] $query[where] group by $lookup_table.item order by count(*) desc, value");
-			// } else {
 
-			// 	$field = $this->filterparams[$param]['field'];
-			// 	$display = $this->filterparams[$param]['display']
 			foreach(array_keys($this->filterparams) as $field) { 
 				if ($this->params[$field]) { 
 					if ($field == 'subject' || $field == 'author' || $field == 'keyword') {
