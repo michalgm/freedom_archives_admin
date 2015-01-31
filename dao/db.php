@@ -248,14 +248,17 @@ function dbLookupSingle($query) {
 }
 
 function dbQuery($query) {
-	$res = query($query);
+  $res = query($query);
 	return $res;	
 }
 
 function query($query) {
 	global $db;
 	if (! $db) { $db = dbconnect(); }
-	$res = $db->query($query) or trigger_error(('Query failed: '.$db->error."\n\t<br/>$query\n"));
+	// $starttime = microtime(true);
+  $res = $db->query($query) or trigger_error(('Query failed: '.$db->error."\n\t<br/>$query\n"));
+  // $endtime = microtime(true);
+  // file_put_contents("query.log", ($endtime - $starttime)."|".(str_replace("\n", " ", $query))."\n",  FILE_APPEND | LOCK_EX);
 	return $res;
 }
 
