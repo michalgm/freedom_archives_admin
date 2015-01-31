@@ -232,7 +232,7 @@ if ($action) {
 					if ($doc['is_doc']) {
 						dbwrite("update DOCUMENTS set $dbfield = '".dbEscape(implode(", ", $list))."' where docid = $doc[id]");
 					} else {
-						dbwrite("update COLLECTIONS set $dbfield = '".dbEscape(implode(", ", $list))."' where collection_id = $doc[id]");
+						dbwrite("update COLLECTIONS set $dbfield = '".dbEscape(implode(", ", $list))."' where collection_id = '$doc[id]'");
 					}
 				}
 			}
@@ -250,7 +250,7 @@ if ($action) {
 
 		case 'getThumbnailDocs': 
 			$where = $request['force'] ? "" : " and (thumbnail = '' or thumbnail is null) ";
-			if ($request['collection']) { $where .= " and collection_id = ".$request['collection']; }
+			if ($request['collection']) { $where .= " and collection_id = '".$request['collection']."'"; }
 			$query = "select docid, title from DOCUMENTS where url is not null and url != '' $where";# and docid=5675");
 			$data = array_values(dbLookupArray($query));
 			break;
@@ -482,7 +482,7 @@ function fetchItems($type, $request) {
 
 	if (isset($request['collection']) && $request['collection'] != '') { 
 		$cid = dbEscape($request['collection']);
-		$where[] = "I.".($isDoc? "COLLECTION_ID" : "PARENT_ID")." in (select COLLECTION_ID from COLLECTIONS where COLLECTION_ID = $cid or PARENT_ID = $cid) ";
+		$where[] = "I.".($isDoc? "COLLECTION_ID" : "PARENT_ID")." in (select COLLECTION_ID from COLLECTIONS where COLLECTION_ID = '$cid' or PARENT_ID = '$cid') ";
 	}
 
 	if(isset($request['IS_HIDDEN']) && $request['IS_HIDDEN']) { 
@@ -572,7 +572,7 @@ function fetchItem($type, $id) {
 	$is_doc = $type == 'document' ? 1 : 0;
 	$query = "";
 	if (! $is_doc) { 
-		$query = "select C.*, count(D.DOCID) as count from COLLECTIONS C left join DOCUMENTS D using (COLLECTION_ID) where COLLECTION_ID = $id";
+		$query = "select C.*, count(D.DOCID) as count from COLLECTIONS C left join DOCUMENTS D using (COLLECTION_ID) where COLLECTION_ID = '$id'";
 	} else { 
 		$query = "select D.* from DOCUMENTS D where DOCID = $id";
 	}
@@ -581,8 +581,8 @@ function fetchItem($type, $id) {
 	$data['_subjects'] = fetchCol("select item from LIST_ITEMS_LOOKUP where id = $id and type = 'subject' and is_doc=$is_doc order by `order`");
 
 	if ($type == 'collection') { 
-		$data['_featured_docs'] = array_values(dbLookupArray("select F.DOCID, F.DOC_ORDER, F.DESCRIPTION, D.TITLE, D.THUMBNAIL from FEATURED_DOCS F join DOCUMENTS D using(DOCID) where F.COLLECTION_ID = $id order by F.DOC_ORDER"));
-		$data['_subcollections'] = array_values(dbLookupArray("select COLLECTION_ID, PARENT_ID, COLLECTION_NAME, IS_HIDDEN from COLLECTIONS where PARENT_ID = $id and COLLECTION_ID != $id order by DISPLAY_ORDER, COLLECTION_NAME"));
+		$data['_featured_docs'] = array_values(dbLookupArray("select F.DOCID, F.DOC_ORDER, F.DESCRIPTION, D.TITLE, D.THUMBNAIL from FEATURED_DOCS F join DOCUMENTS D using(DOCID) where F.COLLECTION_ID = '$id' order by F.DOC_ORDER"));
+		$data['_subcollections'] = array_values(dbLookupArray("select COLLECTION_ID, PARENT_ID, COLLECTION_NAME, IS_HIDDEN from COLLECTIONS where PARENT_ID = '$id' and COLLECTION_ID != '$id' order by DISPLAY_ORDER, COLLECTION_NAME"));
 		$data['_removeDocs'] = array();
 		$data['_addDocs'] = array();
 	}
@@ -771,30 +771,30 @@ function updateTags($id, $type, $data) {
 			if ($is_doc) {
 				dbwrite("update DOCUMENTS set $db_field = '".dbEscape(implode(", ", $trimmed_list))."' where docid = $id");
 			} else {
-				dbwrite("update COLLECTIONS set $db_field = '".dbEscape(implode(", ", $trimmed_list))."' where collection_id = $id");
+				dbwrite("update COLLECTIONS set $db_field = '".dbEscape(implode(", ", $trimmed_list))."' where collection_id = '$id'");
 			}
 		}	
 	}
 }
 
 function updateFeatured($id, $data) { 
-	dbwrite("delete from FEATURED_DOCS where COLLECTION_ID = $id");
+	dbwrite("delete from FEATURED_DOCS where COLLECTION_ID = '$id'");
 	$x=0;
 	foreach($data as $doc) { 
 		unset($doc['TITLE']);
 		unset($doc['THUMBNAIL']);
 		$doc['DOC_ORDER'] = $x;
-		dbInsert("insert into FEATURED_DOCS set ".arrayToUpdateString($doc).", COLLECTION_ID = $id");
+		dbInsert("insert into FEATURED_DOCS set ".arrayToUpdateString($doc).", COLLECTION_ID = '$id'");
 		$x++;
 	}
 }
 
 function updateSubcollections($id, $data) { 
-	dbwrite("update COLLECTIONS set PARENT_ID = NULL, DISPLAY_ORDER = 1000 where PARENT_ID = $id");
+	dbwrite("update COLLECTIONS set PARENT_ID = NULL, DISPLAY_ORDER = 1000 where PARENT_ID = '$id'");
 
 	$x = 0;
 	foreach($data as $col) { 
-		dbwrite("update COLLECTIONS set PARENT_ID = $id, DISPLAY_ORDER = $x where COLLECTION_ID = $col[COLLECTION_ID]");
+		dbwrite("update COLLECTIONS set PARENT_ID = '$id', DISPLAY_ORDER = $x where COLLECTION_ID = '$col[COLLECTION_ID]'");
 		$x++;
 	}
 }

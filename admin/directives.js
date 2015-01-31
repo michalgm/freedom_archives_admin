@@ -223,7 +223,7 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 				searchType = 'collectionOpts';
 			}
 			scope.options = $search[searchType];
-      if (scope.limitCollectionId) { 
+      if (scope.limitCollectionId && scope.limitCollectionId != 'new') { 
 	      scope.options.collection = scope.limitCollectionId;
       }
 
