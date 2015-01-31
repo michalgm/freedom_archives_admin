@@ -38,9 +38,9 @@ $(window).load(function() {
 	});
 	if ($('#wordcloud')) { 
 		var x = 0;
-		while($('#wordcloud').height() > 200 && x < 40) { 
+		while($('#wordcloud').height() > 300 && x < 40) { 
 			var size = parseFloat($('#wordcloud').css('font-size'));
-			size *=(1-x/10);
+			size *=(1-x/14);
 			$('#wordcloud').css('font-size', size+'px');
 			size = parseFloat($('#wordcloud').css('font-size'));
 			//$('#wordcloud').css('line-height', ((size*=.98)*3)+'px');

@@ -23,7 +23,7 @@
   \************************************************************/
 
 #wordcloud { 
-	font-size: 4px; 
+	font-size: 10px; 
 	line-height: 1em;
 	text-align: center;
 }
@@ -35,35 +35,35 @@
   }
   .size9 {
   	color: #000;
-  	font-size: 500%;
+  	font-size: 300%;
   }
   .size8 {
   	color: #111;
-  	font-size: 450%;
+  	font-size: 275%;
   }
   .size7 {
   	color: #222;
-  	font-size: 400%;
+  	font-size: 250%;
   }
   .size6 {
   	color: #333;
-  	font-size: 350%;
+  	font-size: 225%;
   }
   .size5 {
   	color: #444;
-  	font-size: 300%;
+  	font-size: 200%;
   }
   .size4 {
   	color: #555;
-  	font-size: 250%;
+  	font-size: 175%;
   }
   .size3 {
   	color: #666;
-  	font-size: 200%;
+  	font-size: 150%;
   }
   .size2 {
   	color: #777;
-  	font-size: 150%;
+  	font-size: 125%;
   }
   .size1 {
   	color: #888;
