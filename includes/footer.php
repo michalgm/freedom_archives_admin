@@ -1,7 +1,7 @@
 <?php DbClose($db); ?>
 			</div>
 			<div id='footer'>
-				<a id='donate_link' href="https://co.clickandpledge.com/sp/d1/default.aspx?wid=33005"><img width="210" height="34" title="Online donation system by ClickandPledge" style="border:1px solid #efefef" alt="Online donation system by ClickandPledge" src="http://images.clickandpledge.com/flair/buttons/210x34/CP_EN_OR_S_001.gif" /></a>
+				<a id='donate_link' target='_blank' href="https://co.clickandpledge.com/Default.aspx?WID=33005"><img width="210" height="34" title="Online donation system by ClickandPledge"style="border:1px solid #efefef" alt="Online donation system by ClickandPledge"src="https://s3.amazonaws.com/clickandpledge/Images/flair/buttons/210x34/CP_EN_OR_S_001.gif" /></a>
 				<p id="contact">
 					<a href='http://freedomarchives.org'><img src='images/logo_no_title.gif' alt='The Freedom Archives' /></a>
 					<b>The Freedom Archives</b><br/>
