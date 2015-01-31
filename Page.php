@@ -11,24 +11,13 @@ class Page {
 	public $collections_limit = 0;
 	public $filterparams = array(
 			'collection_id'=>array('field'=>'collection_id', 'display'=>'Collection'),
-			'media'=>array('field'=>'if(DOCUMENTS_LIVE.url like "%vimeo%", 
-				"Video", 
-				if(lower(substring_index(DOCUMENTS_LIVE.URL, ".", -1)) in ("pdf", "mp3"),
-					lower(substring_index(DOCUMENTS_LIVE.URL, ".", -1)), 
-					if(lower(substring_index(DOCUMENTS_LIVE.URL, ".", -1)) in ("jpg", "jpeg"),
-						"Image", 
-						if(DOCUMENTS_LIVE.URL != "", 
-							"Webpage", 
-							""
-						)
-					)
-				)
-			)', 'display'=>'Media Type'),
+			'media'=>array('field'=>'MEDIA', 'display'=>'Media Type'),
 			'format'=>array('field'=>'FORMAT', 'display'=>'Source Format'),
 			'year'=>array('field'=>'YEAR', 'display'=>'Year'),
 			'title'=>array('field'=>'TITLE', 'display'=>'Title'),
-			'subject'=>array('field'=>'SUBJECT', 'display'=>'Subject'),
-			'author'=>array('field'=>'author', 'display'=>'Author'),
+			'subject'=>array('field'=>'SUBJECTS', 'display'=>'Subject'),
+			'author'=>array('field'=>'AUTHORS', 'display'=>'Author'),
+			'keyword'=>array('field'=>'KEYWORDS', 'display'=>'Keyword'),
 		);
 
 	function __construct() {
@@ -58,14 +47,27 @@ class Page {
 				include "includes/search/search.php";
 				$search_terms_string = getSearchQueryString($DB_SEARCH_TERMS);
 				$natural_language_terms = preg_replace("/\+|-\w*|\band\b|\bnot\b( \w+)?|\bor\b/i", "", $DB_SEARCH_TERMS);
-				$query['select'] .=	", MATCH(`TITLE`, DOCUMENTS_LIVE.DESCRIPTION, DOCUMENTS_LIVE.SUBJECTS, `AUTHORS`, `DOC_TEXT`, DOCUMENTS_LIVE.KEYWORDS, `FILE_EXTENSION`) AGAINST('$natural_language_terms' IN NATURAL LANGUAGE MODE) as relevance ";
-				$query['where'] .= "and MATCH(TITLE, DOCUMENTS_LIVE.KEYWORDS, DOCUMENTS_LIVE.DESCRIPTION, AUTHORS) AGAINST('$search_terms_string' IN BOOLEAN MODE) ";
+				$query['select'] .=	", MATCH(DOCUMENTS_LIVE.TITLE, DOCUMENTS_LIVE.DESCRIPTION, DOCUMENTS_LIVE.SUBJECTS, DOCUMENTS_LIVE.KEYWORDS, DOCUMENTS_LIVE.AUTHORS) AGAINST('$natural_language_terms' IN NATURAL LANGUAGE MODE) as relevance ";
+				$query['where'] .= "and MATCH(DOCUMENTS_LIVE.TITLE, DOCUMENTS_LIVE.DESCRIPTION, DOCUMENTS_LIVE.SUBJECTS, DOCUMENTS_LIVE.KEYWORDS, DOCUMENTS_LIVE.AUTHORS) AGAINST('$search_terms_string' IN BOOLEAN MODE) ";
 				$query['order'] .= " order by relevance desc";
 			}
+			// if ($param == 'subject' || $param == 'author') {
+			// 	$lookup_table = strtoupper($param).'_LOOKUP';
+			// 	$query['from'] .= " join LIST_ITEMS_LOOKUP_LIVE $lookup_table on DOCUMENTS_LIVE.DOCID = $lookup_table.ID and $lookup_table.TYPE = '$param' and $lookup_table.IS_DOC = 1 ";
+			// 	$data = dbLookupArray("select $lookup_table.item as value, count(*) as count $query[from] $query[where] group by $lookup_table.item order by count(*) desc, value");
+			// } else {
 
+			// 	$field = $this->filterparams[$param]['field'];
+			// 	$display = $this->filterparams[$param]['display']
 			foreach(array_keys($this->filterparams) as $field) { 
 				if ($this->params[$field]) { 
-					$dbfield  = $this->filterparams[$field]['field'];
+					if ($field == 'subject' || $field == 'author' || $field == 'keyword') {
+						$lookup_table = strtoupper($field).'_LOOKUP';
+						$query['from'] .= " join LIST_ITEMS_LOOKUP_LIVE $lookup_table on DOCUMENTS_LIVE.DOCID = $lookup_table.ID and $lookup_table.TYPE = '$field' and $lookup_table.IS_DOC = 1 ";
+						$dbfield = "$lookup_table".".item";
+					} else {
+						$dbfield  = "DOCUMENTS_LIVE.".$this->filterparams[$field]['field'];
+					}
 					$dbvalue = dbEscape($this->params[$field]);
 					$value = $this->params[$field] == 'None' ? "($dbfield is null or $dbfield = '')" : "$dbfield = \"$dbvalue\"";
 					if ($field == 'collection_id' && $dbvalue) { 
@@ -75,10 +77,11 @@ class Page {
 					}
 				}
 			}
-			if (! $this->params['no_digital']) { $query['where'] .= " and URL is not NULL and URL != '' "; }
+			if (! $this->params['no_digital']) { $query['where'] .= " and URL != '' "; }
 
 			$query['limit'] = "limit ".($this->params['page'] ? (($this->params['page'] -1) * $this->docLimit).", $this->docLimit" : $this->docLimit);
 			$query['querystring'] = "$query[select] $query[from] $query[where] $query[order] $query[limit]";
+			// print $query['querystring'];
 			$this->query = $query;
 		}
 		return $this->query;
@@ -97,7 +100,7 @@ class Page {
 	function getNoDigitalDocCount() {
 		if(! $this->docNoDigitalCount) { 
 			$query = $this->getQuery();	
-			$no_digi_where = str_replace(" and URL is not NULL and URL != '' ", " and (URL is NULL or URL = '') ", $query['where']);
+			$no_digi_where = str_replace(" and URL != '' ", " and URL = '' ", $query['where']);
 			$no_digi_count = "select count(*) as count $query[from] $no_digi_where";
 			$no_digi_res = dbLookupSingle($no_digi_count); 
 			$this->docNoDigitalCount = $no_digi_res['count'];	
@@ -284,15 +287,18 @@ class Page {
 			$field = $this->filterparams[$param]['field'];
 			$display = $this->filterparams[$param]['display'];
 			$data = array();
-			if ($param == 'subject' || $param == 'author') {
-				$lookup_table = strtoupper($param).'_LOOKUP';
-				$query['from'] .= " join LIST_ITEMS_LOOKUP $lookup_table on DOCUMENTS_LIVE.DOCID = $lookup_table.ID and $lookup_table.TYPE = '$param' and $lookup_table.IS_DOC = 1 ";
-				$data = dbLookupArray("select $lookup_table.item as value, count(*) as count $query[from] $query[where] group by $lookup_table.item order by count(*) desc, value");
+			if ($param == 'subject' || $param == 'author' || $param == 'keyword') {
+				$lookup_table = strtoupper($param).'_FILTER_LOOKUP';
+				$from = $query['from'] ." join LIST_ITEMS_LOOKUP_LIVE $lookup_table on DOCUMENTS_LIVE.DOCID = $lookup_table.ID and $lookup_table.TYPE = '$param' and $lookup_table.IS_DOC = 1 ";
+				$data = dbLookupArray("select $lookup_table.item as value, count(*) as count $from $query[where] group by $lookup_table.item order by count(*) desc, value");
 			} else {
-				$data = dbLookupArray("select $field as value, count(*) as count $query[from] $query[where] group by if($field is null, '', $field) order by count(*) desc, value");
+				$data = dbLookupArray("select DOCUMENTS_LIVE.$field as value, count(*) as count $query[from] $query[where] group by if($field is null, '', $field) order by count(*) desc, value");
 			}
 			$filter_components .= "<h5>$display</h5>
 				<ul class='filter_cat $param'>";
+			if (isset($this->params[$param]) && $this->params[$param] != '') {
+				$filter_components .= "<li><a href='".html_encode(preg_replace("/&?$param=[^&]+/", "", $targetpage))."'>&laquo; All {$display}s</a></li>";
+			}
 			$x = 0;
 			foreach ($data as $item) { 
 				if ($item['value'] == "") { $item['value'] =  'None'; }
@@ -300,7 +306,7 @@ class Page {
 				$x++;
 				$style = $x > 5 ? "style='display: none;' class='hidden' " : "";
 				if(isset($this->params[$param]) && $this->params[$param] == $item['value']) { 
-					$filter_components .= "\n<li><a href='".html_encode(preg_replace("/&?$param=[^&]+/", "", $targetpage))."'>&laquo; All {$display}s</a></li><li $style>$value_display</li>";
+					$filter_components .= "\n<li $style>$value_display</li>";
 				} else { 
 					$filter_components .= "\n<li $style><a href='".html_encode("$targetpage&$param=").urlencode($item['value'])."'>$value_display ($item[count])</a></li>";
 				}
@@ -321,13 +327,14 @@ class Page {
 		include_once "includes/tag-cloud/classes/tagcloud.php";
 		$kw_limit = 30;
 		$query = $this->getQuery();
-		$keywords = dbLookupArray("SELECT item KEYWORD, count(*) as count $query[from] join LIST_ITEMS_LOOKUP_LIVE on DOCID = id ".$query['where']." and IS_DOC = 1 group by lower(KEYWORD) order by counT(*) desc limit $kw_limit");
+		$keywords = dbLookupArray("SELECT KWS.item KEYWORD, count(*) as count $query[from] join LIST_ITEMS_LOOKUP_LIVE KWS on DOCID = KWS.id  and KWS.IS_DOC = 1  and KWS.type='keyword' ".$query['where']." group by lower(KEYWORD) order by counT(*) desc limit $kw_limit");
 		if (! $keywords) { return ""; }
-		$link= preg_replace("/s=[^&]*&?/", "", $this->getTargetPage());
+		$link= $this->getTargetPage();
+		// $link= preg_replace("/s=[^&]*&?/", "", $this->getTargetPage());
 		$cloud = new tagcloud();
 		foreach ($keywords as $kw) { 
 			$tag = $kw['KEYWORD'];
-			$url = $link."&amp;s=".urlencode($this->params['s']." AND \"$tag\"");
+			$url = $link."&amp;keyword=$tag";
 			$cloud->addTag(array('tag'=>$tag, 'size'=>$kw['count'], 'url'=>$url));
 		}
 		$cloud->setOrder('tag','ASC');
