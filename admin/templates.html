@@ -65,9 +65,7 @@
 				<div class="checkbox form-group" ng-show='! embedded'>
 					<label>
 						<input type="checkbox" ng-model='options.NEEDS_REVIEW' ng-true-value="1" ng-false-value="0"> Needs Review
-					</label>
-				</div>
-				<div class="checkbox form-group" ng-show='! embedded'>
+					</label><br/>
 					<label>
 						<input type="checkbox" ng-model='options.IS_HIDDEN' ng-true-value="1" ng-false-value="0"> Hidden
 					</label>
@@ -107,11 +105,11 @@
 		</div>
 		<div class='panel-footer scroll-footer'>
 			<div class='row vertical-align'>
-				<div class='col-xs-3 text-left'>
+				<div ng-if='!embedded' class='col-xs-3 text-left'>
 					<span ng-if='isDoc' class='count label label-primary'>{{options.count}} records / {{options.digitized}} digitized</span>
 					<span ng-if='!isDoc' class='count label label-primary'>{{options.count}} collections</span>
 				</div>
-				<div class='col-xs-6 text-center'><pagination previous-text="&lsaquo;" next-text="&rsaquo;" ng-class='{"pagination-sm": embedded}' items-per-page='options.itemLimit' total-items="options.count" boundary-links="true" max-size='5' ng-model="options.page"></pagination></div>
+				<div ng-style='{margin: embedded? "auto" : ""}'  ng-class='{"col-xs-6": !embedded, "col-xs-12": embedded}' class='text-center'><pagination previous-text="&lsaquo;" next-text="&rsaquo;" ng-class='{"pagination-sm": embedded}' items-per-page='options.itemLimit' total-items="options.count" boundary-links="true" max-size='5' ng-model="options.page"></pagination></div>
 			</div>
 		</div>
 	</div>
@@ -206,15 +204,14 @@
 					<span class="glyphicon glyphicon-arrow-left"></span> Prev
 				</button>
 			</span>
-			<span class='col-xs-3'>Document ID: {{id}}</span>
-			<span class='col-xs-4 text-center'>Created: {{document.DATE_CREATED}} by {{document.CREATOR}}</span>
-			<span class='col-xs-3 text-right'>Modified: {{document.DATE_MODIFIED}} by {{document.CONTRIBUTOR}}</span>
+			<span class='col-xs-3 text-center'>Document ID: <br/> {{id}}</span>
+			<span class='col-xs-4 text-center'>Created by {{document.CREATOR}} <br/> {{document.DATE_CREATED}}</span>
+			<span class='col-xs-3 text-center'>Modified by {{document.CONTRIBUTOR}} <br/> {{document.DATE_MODIFIED}}</span>
 			<span class='col-xs-1'>
 				<button ng-if='search.recordOpts.count' class='btn btn-info' ng-class="{disabled: search.neighbors.records.next == null}" ng-click='location.path("/documents/"+search.neighbors.records.next)'>
 					Next <span class="glyphicon glyphicon-arrow-right"></span>
 				</button>
 			</span>
-
 		</div>
 	</div>
 </script>
@@ -319,9 +316,9 @@
 					<span class="glyphicon glyphicon-arrow-left"></span> Prev
 				</button>
 			</span>
-			<span class='col-xs-3'>Collection ID: {{id}}</span>
-			<span class='col-xs-4 text-center'>Created: {{collection.DATE_CREATED}} by {{collection.CREATOR}}</span>
-			<span class='col-xs-3 text-right'>Modified: {{collection.DATE_MODIFIED}} by {{collection.CONTRIBUTOR}}</span>
+			<span class='col-xs-3 text-center'>Collection ID: <br/> {{id}}</span>
+			<span class='col-xs-4 text-center'>Created by {{collection.CREATOR}} <br/> {{collection.DATE_CREATED}}</span>
+			<span class='col-xs-3 text-center'>Modified by {{collection.CONTRIBUTOR}} <br/> {{collection.DATE_MODIFIED}}</span>
 			<span class='col-xs-1'>
 				<button ng-if='search.collectionOpts.count' class='btn btn-info' ng-class="{disabled: search.neighbors.collections.next == null}" ng-click='location.path("/collections/"+search.neighbors.collections.next)'>
 					Next <span class="glyphicon glyphicon-arrow-right"></span>
@@ -393,11 +390,11 @@
 									<label class='control-label'>Filter</label>
 									<input type='text' ng-change='fetchList(label)' class='form-control' placeholder='Filter list' ng-model='list.filter' autofocus/>
 								</div>
-								<div class='form-group col-xs-4 vertical-align' style='display: flex !important;'>
-										<div class='col-xs-4 text-right'>
+								<div class='form-group col-xs-8 vertical-align' style='display: flex !important;'>
+										<div class='col-xs-6 text-right'>
 											<label class='control-label'>Add new item</label>
 										</div>
-										<div class='input-group col-xs-8'>
+										<div class='input-group col-xs-6'>
 											<input type="text" class="form-control" ng-model='list.new'>
 											<span class="input-group-btn">
 												<button class="btn btn-primary" ng-click='editItem(label, "", "add", list.new)'>Add</button>
@@ -472,33 +469,39 @@
 					<div class='radio'>
 						<label>
 							<input type='radio' value='last_update' ng-model='$parent.time_limit' ng-change='fetchLog()'/>
-							Show changes since last site update (<b>{{lastUpdate *1000| date:"MM/dd/yyyy 'at' h:mma"}}</b>)
+							Changes since last site update <span class='text-nowrap'>(<b>{{lastUpdate *1000| date:"MM/dd/yyyy 'at' h:mma"}}</b>)</span>
 						</label>
 					</div>
+				</div>
+				<div class='col-xs-5'>
 					<div class='radio form-inline'>
 						<label>
 							<input type='radio' value='time_amount' ng-model='$parent.time_limit' ng-change='fetchLog()'/>
-							Show changes made in the last	
+							Changes made in the last	
 						</label>
-						<select class='form-control' ng-model='$parent.time_amount' ng-options='n for n in [] | range:1:30'  ng-change='fetchLog()'>
+						<select class='form-control input-sm' ng-model='$parent.time_amount' ng-options='n for n in [] | range:1:30'  ng-change='fetchLog()'>
 							<option>1</option>
 							<option>2</option>
 						</select>
-						<select class='form-control' ng-model='$parent.time_period' ng-change='fetchLog()'>
+						<select class='form-control input-sm' ng-model='$parent.time_period' ng-change='fetchLog()'>
 							<option value='day'>Days</option>
 							<option value='week'>Weeks</option>
 							<option value='month'>Months</option>
 							<option value='year'>Years</option>
 						</select>
 					</div>
+				</div>
+				<div class='col-xs-3'>
 					<div class="checkbox">
 						<label>
 							<input type="checkbox" ng-model='$parent.only_reviewed' value="" ng-change='fetchLog()'>
-							Only show changes needing review
+							Only changes needing review
 						</label>
 					</div>
 				</div>
-				<div class="col-xs-8 form-inline">
+			</div>
+			<div class='row vertical-align'>
+				<div class="center-block form-inline">
 					<div class='form-group'>
 						<label>Title</label>
 						<input class='form-control' ng-model='$parent.title_filter' ng-change='filter()'/>
