@@ -264,7 +264,6 @@ if ($action) {
 				$itemData = fetchItem($item['type'], $item['id']);
 				$itemData = parseLookups($item['type'], $itemData);
 				saveItem($item['type'], $item['id'], $itemData, true);
-				// updateLookups(dbEscape($item['id']), $item['type']);
 			}
 			$data = count($request['data']['items']);
 			break;
@@ -627,6 +626,34 @@ function saveItem($type, $id, $data, $noLog=false) {
 		unset($data['_authors']);
 		unset($data['_producers']);
 		unset($data['_related']);
+		if (isset($data['URL'])) {
+			$mediaTypes = array(
+				'mp3'=>'Audio',
+				'mp4'=>'Audio',
+				'wav'=>'Audio',
+				'jpg'=>'Image',
+				'png'=>'Image',
+				'jpeg'=>'Image',
+				'tiff'=>'Image',
+				'bmp'=>'Image',
+				'pdf'=>'PDF',
+			);
+			$media_type = '';
+			$url = strtolower($data['URL']);
+			if ($url != '') {
+				if (stristr($url, 'vimeo')) { 
+					$ext = 'Video'; 
+				} else {
+					$ext = strtolower(pathinfo($url, PATHINFO_EXTENSION));
+					if (isset($mediaTypes[$ext])) {
+						$media_type = $mediaTypes[$ext];
+					} else {
+						$media_type = 'Webpage';
+					}
+				}
+			}
+			$data['MEDIA'] = $media_type;
+		}
 	}
 	
 	if (isset($data['CALL_NUMBER'])) {
