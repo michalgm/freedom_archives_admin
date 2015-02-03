@@ -236,7 +236,7 @@
 	<div header title='{{id == "new" ? "New Collection" : (collection.COLLECTION_NAME || "Untitled Collection")}}' extra-header="extra_header" buttons='buttons'></div>
 	<div content class='content-body'>
 		<tabset>
-			<tab ng-if="id != 0" heading="Edit Collection">
+			<tab ng-if="id != 0 && id != 1000" heading="Edit Collection">
 				<form class="form-horizontal" id='collectionEdit'>
 					<div form-group model='collection.COLLECTION_NAME' label='Collection Name'></div>
 					<div form-group model='collection.PARENT_ID' label='Parent Collection' input-type='collectionChooser'></div>
@@ -253,7 +253,7 @@
 					<div class='row' form-group model='collection.INTERNAL_NOTES' label='Internal Notes' input-type='textarea'></div>
 				</form>
 			</tab>
-			<tab ng-if="id != 0" heading='Featured Records'>
+			<tab ng-if="id != 0 && id != 1000" heading='Featured Records'>
 				<div featured-docs documents='collection._featured_docs' limit-collection-id='{{id}}'/>
 			</tab>
 			<tab ng-if="1" heading='Subcollections'>

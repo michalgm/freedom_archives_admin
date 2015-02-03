@@ -627,6 +627,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 		$tags['_subcollections'] = isset($data['_subcollections']) ? $data['_subcollections'] : null;
 		$removeDocs = isset($data['_removeDocs']) ? $data['_removeDocs'] : array();
 		$addDocs = isset($data['_addDocs']) ? $data['_addDocs'] : array();
+		if (array_key_exists('PARENT_ID', $data) && ($data['PARENT_ID'] === null || $data['PARENT_ID'] == '')) {$data['PARENT_ID'] = 1000; }
 		unset($data['_featured_docs']);
 		unset($data['_subcollections']);
 		unset($data['count']);
@@ -636,6 +637,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 		$tags['_authors'] = isset($data['_authors']) ? $data['_authors'] : null;
 		$tags['_producers']= isset($data['_producers']) ? $data['_producers'] : null;
 		$relatedDocs = isset($data['_related']) ? $data['_related'] : array();
+		if (array_key_exists('COLLECTION_ID', $data) && ($data['COLLECTION_ID'] === null || $data['COLLECTION_ID'] == '')) {$data['COLLECTION_ID'] = 1000; }
 		unset($data['_authors']);
 		unset($data['_producers']);
 		unset($data['_related']);
@@ -711,7 +713,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 			updateSubcollections($id, $tags['_subcollections']);
 		}
 		if (isset($removeDocs[0])) {
-			dbwrite("update DOCUMENTS set COLLECTION_ID = '' where DOCID in (".arrayToInString($removeDocs).")");
+			dbwrite("update DOCUMENTS set COLLECTION_ID = 1000 where DOCID in (".arrayToInString($removeDocs).")");
 		}
 
 		if (isset($addDocs[0])) {
@@ -856,7 +858,7 @@ function updateFeatured($id, $data) {
 }
 
 function updateSubcollections($id, $data) { 
-	dbwrite("update COLLECTIONS set PARENT_ID = NULL, DISPLAY_ORDER = 1000 where PARENT_ID = '$id'");
+	dbwrite("update COLLECTIONS set PARENT_ID = 1000, DISPLAY_ORDER = 1000 where PARENT_ID = '$id'");
 
 	$x = 0;
 	foreach($data as $col) { 
