@@ -138,11 +138,13 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 
   $scope.selectRelated = function(doc) {
     $scope.document['_related'].push({
-      TO_ID: doc.id,
+      DOCID: $scope.document.DOCID,
       TITLE: doc.label,
       DESCRIPTION: doc.DESCRIPTION,
-      FROM_ID: $scope.document.DOCID,
-      TRACK_NUMBER: $scope.document['_related'].length+1
+      DOCID_OTHER: doc.id,
+      TITLE_OTHER: $scope.document.TITLE,
+      DESCRIPTION_OTHER: $scope.document.DESCRIPTION,
+      TRACK_NUMBER: $filter('filter')($scope.document['_related'], {delete: "!1"}).length+1
     })
     $scope.related_filter= '';
   }
@@ -154,7 +156,7 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
   }
 
   $scope.deleteRelated = function(index) {
-    $scope.document['_related'].splice(index, 1);
+    $scope.document['_related'][index].delete = 1;
   }
 
 	var checkChanged = function() {

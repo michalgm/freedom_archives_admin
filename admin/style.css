@@ -225,6 +225,8 @@ div[ng-view].ng-leave {
 
 td { vertical-align: middle !important; }
 
-.logout { padding: 5px 10px; border-radius: 5px; font-size: .8em;}
+.logout { padding: 5px 10px; position: absolute; top: 0px; left: 0px; right: 0px; font-size: .8em; margin-bottom: 10px;}
       
 .text-nowrap {white-space: nowrap;}
+
+.related-records: {margin-bottom: 20px; }

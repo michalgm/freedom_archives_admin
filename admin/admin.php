@@ -494,19 +494,23 @@ function fetchItems($type, $request) {
 		$filter = dbEscape($request['filter']);
 		$filter = str_replace(" ", '%', $filter);
 		$like = "like _utf8 '%$filter%'";
-		if (isset($request['titleOnly']) && $request['titleOnly'] && 0)  {
+		if (isset($request['titleOnly']) && $request['titleOnly'])  {
 			$where[] = "(I.TITLE $like or I.CALL_NUMBER $like or I.DOCID = '$filter')";
+			$order[] = "I.TITLE like _utf8 '$filter%'";
+			$order[] = "I.CALL_NUMBER like _utf8 '$filter%'";
+			$order[] = "I.DOCID like '$filter%'";
 		} else {
 			if ($isDoc) {
 				$where[] = "(I.TITLE $like or I.KEYWORDS $like collate utf8_unicode_ci or I.CALL_NUMBER $like or I.DESCRIPTION $like collate utf8_unicode_ci or I.DOCID = '$filter')";
 				$order[] = "I.TITLE like _utf8 '$filter%'";
+				$order[] = "I.DOCID like '$filter%'";
 			} else {
 				$where[] = "(I.COLLECTION_NAME $like or I.CALL_NUMBER $like or I.DESCRIPTION $like collate utf8_unicode_ci or I.COLLECTION_ID = '$filter')";
 				$order[] = "I.COLLECTION_NAME like _utf8 '$filter%'";
+				$order[] = "I.COLLECTION_ID like '$filter%'";
 			}
 			$order[] = "I.DESCRIPTION like _utf8 '$filter%'";
 			$order[] = "I.CALL_NUMBER like _utf8 '$filter%'";
-
 		}
 	}
 
@@ -588,7 +592,16 @@ function fetchItem($type, $id) {
 	if ($type == 'document') { 
 		$data['_authors'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='author' order by `order`");
 		$data['_producers'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='producer' order by `order`");
-		$data['_related'] = array_values(dbLookupArray("select TO_ID, TRACK_NUMBER, R.TITLE, R.DESCRIPTION, CALL_NUMBER, FORMAT from RELATED_RECORDS R join DOCUMENTS D on DOCID=TO_ID where FROM_ID = $id order by TRACK_NUMBER"));
+		$data['_related'] = array_values(dbLookupArray("select ID,
+			IF(DOCID_1 = $id, DOCID_1, DOCID_2) as DOCID,
+			IF(DOCID_1 = $id, DOCID_2, DOCID_1) as DOCID_OTHER,
+			IF(DOCID_1 = $id, TITLE_1, TITLE_2) as TITLE,
+			IF(DOCID_1 = $id, DESCRIPTION_1, DESCRIPTION_2) as DESCRIPTION,
+			IF(DOCID_1 = $id, TRACK_NUMBER_1, TRACK_NUMBER_2) as TRACK_NUMBER,
+			IF(DOCID_1 = $id, TRACK_NUMBER_2, TRACK_NUMBER_1) as TRACK_NUMBER_OTHER,
+			CALL_NUMBER, FORMAT
+			from RELATED_RECORDS R JOIN DOCUMENTS D ON DOCID = IF(DOCID_1 = $id, DOCID_2, DOCID_1) where DOCID_1 = $id or DOCID_2 = $id order by TRACK_NUMBER"
+		));
 	}
 	return $data;
 }
@@ -603,7 +616,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 		'_keywords'=> isset($data['_keywords']) ? $data['_keywords'] : null,
 		'_subjects'=> isset($data['_subjects']) ? $data['_subjects'] : null,
 	);
-	$related = array();
+	$relatedDocs = array();
 	$removeDocs = array();
 	$addDocs = array();
 	unset($data['_keywords']);
@@ -622,7 +635,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 	} elseif ($type == 'document') { 
 		$tags['_authors'] = isset($data['_authors']) ? $data['_authors'] : null;
 		$tags['_producers']= isset($data['_producers']) ? $data['_producers'] : null;
-		$related = isset($data['_related']) ? $data['_related'] : array();
+		$relatedDocs = isset($data['_related']) ? $data['_related'] : array();
 		unset($data['_authors']);
 		unset($data['_producers']);
 		unset($data['_related']);
@@ -682,6 +695,7 @@ function saveItem($type, $id, $data, $noLog=false) {
  	}
 
  	if ($id === 'new') {
+ 		unset($data[$idfield]);
 		$query = "insert into $table set ".arrayToUpdateString($data);
 		$id = dbInsert($query);
  	} else {
@@ -713,20 +727,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 				dbwrite("insert ignore into LIST_ITEMS set item='".dbEscape($data[strtoupper($field)])."', type='$field'");
 			}
 		}
-
-		dbwrite("delete from RELATED_RECORDS where to_id = $id or from_id = $id");
-		foreach($related as $relatedDoc) {
-			$relatedDoc['FROM_ID'] = $id;
-			saveRelated($relatedDoc);
-
-			$other_related = array(
-				'FROM_ID'=>$relatedDoc['TO_ID'],
-				'TO_ID'=>$id,
-				'TITLE'=>$data['TITLE'],
-				'DESCRIPTION'=>$data['DESCRIPTION']
-			);
-			saveRelated($other_related);
-		}
+		saveRelated($relatedDocs);
 	}
 
 	updateTags($id, $type, $tags);
@@ -737,16 +738,54 @@ function saveItem($type, $id, $data, $noLog=false) {
 	return $item;
 }
 
-function saveRelated($related) {
-	unset($related['CALL_NUMBER']);
-	unset($related['FORMAT']);
-	$related['TRACK_NUMBER'] = fetchValue("select track_number from RELATED_RECORDS where FROM_ID = ".dbEscape($related['FROM_ID'])." and TO_ID = ".dbEscape($related['TO_ID']));
-	if ($related['TRACK_NUMBER'] == null) {
-		$related['TRACK_NUMBER'] = fetchValue("select max(track_number)+1 from RELATED_RECORDS where FROM_ID = ".dbEscape($related['FROM_ID']));
+function saveRelated($relatedDocs) {
+	foreach($relatedDocs as $related) {
+		$relatedDoc = array();
+
+		if (isset($related['delete']) && $related['delete']) {
+			if(isset($related['ID'])) {
+				dbwrite("delete from RELATED_RECORDS where ID = ".dbEscape($related['ID']));
+			}
+			continue;
+		} else {
+			$current = $related['DOCID'] <= $related['DOCID_OTHER'] ? 1 : 2;
+			$other = $current == 1 ? 2 : 1;
+
+			if (isset($related["ID"])) {
+				$relatedDoc['ID'] = dbEscape($related['ID']);
+			}
+			foreach(array('DOCID', 'TITLE', 'DESCRIPTION', 'TRACK_NUMBER') as $field) {
+				$relatedDoc[$field."_$current"] = $related[$field];
+				if (isset($related[$field."_OTHER"])) {
+					$relatedDoc[$field."_$other"] = $related[$field."_OTHER"];
+				} else if ($related['DOCID'] == $related['DOCID_OTHER'] && $field != 'DOCID') {
+					$relatedDoc[$field."_$other"] = $relatedDoc[$field."_$current"];
+				}
+			}
+			
+			if (! isset($relatedDoc['ID'])) {
+				$exists_query = "select id, TRACK_NUMBER_$other, TITLE_$other, DESCRIPTION_$other from RELATED_RECORDS where DOCID_$current = '".dbEscape($relatedDoc['DOCID_'.$current])."' and TRACK_NUMBER_"."$current = '".dbEscape($relatedDoc['TRACK_NUMBER_'.$current])."'";
+				$exists = fetchRow($exists_query, true);
+				if ($exists) { 
+					$relatedDoc['ID'] = $exists['id']; 
+					if ($exists["TRACK_NUMBER_$other"] != 0) {
+						$relatedDoc["TRACK_NUMBER_$other"] = $exists["TRACK_NUMBER_$other"]; 
+					}
+				}
+			}
+
+			if (! isset($relatedDoc["TRACK_NUMBER_$other"])) {
+				$relatedDoc["TRACK_NUMBER_$other"] = fetchValue("select max(IF(DOCID_1 >= DOCID_2, TRACK_NUMBER_1, TRACK_NUMBER_2)) + 1 from RELATED_RECORDS where DOCID_1 = '".dbEscape($relatedDoc['DOCID_'.$other])."' or DOCID_2 = '".dbEscape($relatedDoc['DOCID_'.$other])."'"); // $exists["TITLE_$other"];
+				if (! $relatedDoc["TRACK_NUMBER_$other"]) { $relatedDoc["TRACK_NUMBER_$other"] = 1; }
+			}
+			if (isset($relatedDoc['ID'])) {
+				$query = "update RELATED_RECORDS set ".arrayToUpdateString($relatedDoc) ." where id = ".$relatedDoc['ID'];
+			} else {
+				$query = "insert into RELATED_RECORDS set ".arrayToUpdateString($relatedDoc);
+			}
+			dbInsert($query);	
+		}
 	}
-	$related['TRACK_NUMBER'] = $related['TRACK_NUMBER'] ? $related['TRACK_NUMBER'] : 1;
-	$query = "insert into RELATED_RECORDS set ".arrayToUpdateString($related) ." on duplicate key update ".arrayToUpdateString($related);
-	dbInsert($query);	
 }
 
 function parseLookups($type, $data) {
@@ -974,14 +1013,13 @@ function filemakerImport($data_encoded) {
 	$data = base64_decode($data_encoded);
 	if ($data === false) { trigger_error("Invalid data encoding", E_USER_ERROR); } 
 	$reader = FMXMLReader::read($data);
-	// print_r($reader->metadata); 
-	// exit();
-
-	$file = array();
-	// session_write_close();
 	$count = 0;
+
 	print "#STATUS#";
 	while($row=$reader->nextRow()) {
+		$file = array();
+		// if (! in_array($row['id'][0], array(1780, 5516))) { continue; }
+		// if (! in_array($row['id'][0], array(5304, 5744, 5745, 5746, 5747, 5748, 5749, 5750))) { continue; }
 		// if ($count >= 1) { continue; }
 		$file['DOCID'] = $row['id'][0];
 		$file['CALL_NUMBER'] = $row['Call_Number'][0];
@@ -1019,26 +1057,54 @@ function filemakerImport($data_encoded) {
 		}
 		$file = parseLookups('document', $file);
 		$id = isset($file['DOCID']) ? $file['DOCID'] : 'new';
-		$index = 0;
-		if (isset($row['Insert Tracks::id'])) {
-		  foreach($row['Insert Tracks::id'] as $to_id) {
-		    $related_doc = array(
-		      'TO_ID'=>$to_id,
-		      'TITLE'=>$row['Insert Tracks::Track Title'][$index],
-		      'DESCRIPTION'=>$row['Insert Tracks::Track Description'][$index],
-		    );
-		    $file['_related'][] = $related_doc;
-		    $index++;
-		  }
-		}
 		$file = saveItem('document', $id, $file, true);
 		$count++;
 		print $count;
 		flush();
-		//file_put_contents('progress.html', )
 	}
-	dbwrite("update RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.title = b.title where a.title = ''");
-	dbwrite("update RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.description = b.description where a.description = ''");
+	//Now we loop through the whole thing again to save relatec records
+	$reader = FMXMLReader::read($data);
+	$count = 0;
+	while($row=$reader->nextRow()) {
+		$file = array();
+		$id = $row['id'][0];
+		// if (! in_array($row['id'][0], array(1780, 5516))) { continue; }
+		$file['DOCID'] = $id;
+		$file['TITLE'] = $row['Title'][0];
+		$file['DESCRIPTION'] = $row['Description'][0];
+		if (isset($row['Insert Tracks::Original Source'])) {
+			$index =0;
+		  foreach($row['Insert Tracks::Original Source'] as $to_call_number) {
+		  	$related_doc = array();
+		  	$other_id = "";
+		  	if ($to_call_number) {
+			  	$other_id = fetchValue("select DOCID from DOCUMENTS where CALL_NUMBER = '$to_call_number' and CALL_NUMBER != ''");
+			  }
+			  $other_id = $other_id ? $other_id : $id;
+		    $related_doc['DOCID'] = $id;
+		    $related_doc['DOCID_OTHER'] = $other_id;
+		    $related_doc['TITLE'] = $row['Insert Tracks::Track Title'][$index];
+		    $related_doc['DESCRIPTION'] = $row['Insert Tracks::Track Description'][$index];
+		    $related_doc['TRACK_NUMBER'] = $index+1;
+
+		    $file['_related'][] = $related_doc;
+		    $index++;
+		  }
+		}
+		// file_put_contents("fm.txt", print_r($file, true),   FILE_APPEND | LOCK_EX);
+		// file_put_contents("fm.txt", print_r($row, true),   FILE_APPEND | LOCK_EX);
+
+		$file = saveItem('document', $id, $file, true);
+
+		$count++;
+		print $count;
+		flush();
+	}
+	dbwrite("update RELATED_RECORDS a join DOCUMENTS b on DOCID_1 = docid set a.title_1 = b.title  and a.description_1 = b.description where a.title_1 = ''");
+	dbwrite("update RELATED_RECORDS a join DOCUMENTS b on DOCID_2 = docid set a.title_2 = b.title  and a.description_2 = b.description where a.title_2 = ''");
+
+	// dbwrite("update RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.title = b.title where a.title = ''");
+	// dbwrite("update RELATED_RECORDS a join DOCUMENTS b on to_id = docid set a.description = b.description where a.description = ''");
 	print "#ENDSTATUS#";
 
 	// session_start();

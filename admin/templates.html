@@ -78,7 +78,7 @@
 					<div class='panel-body bg-info'>
 						<button ng-click='options.filters.splice($index, 1)' class='btn btn-danger btn-xs' tooltip='Remove filter'><span class="glyphicon glyphicon-remove"></span></button>
 						<select class='form-control' ng-model='filter.type' ng-options="item as item|ucf for item in filters"/>
-						<input ng-if='! static[filter.type]' ng-model-options="{allowInvalid: false}" ng-show='filter.type' type="text" ng-model="filter.value" autocomplete="off" typeahead-editable="false" typeahead="item for item in fetchList(filter.type, $viewValue, 10)" class="form-control" placeholder='{{filter.type ? "Choose a "+filter.type:""}}' />
+						<input ng-if='! static[filter.type]' ng-model-options="{allowInvalid: false}" ng-show='filter.type' type="text" ng-model="filter.value" autocomplete="off" typeahead-editable="false" typeahead="item.item for item in fetchList(filter.type, $viewValue, 10)" class="form-control" placeholder='{{filter.type ? "Choose a "+filter.type:""}}' />
 						<input ng-if='static[filter.type] || ! filter.type' class='form-control' type="text" ng-model="filter.value" ng-disabled='! filter.type' placeholder='{{ filter.type ? "Search on " +filter.type : "Select a field"}}' />
 					</div>
 				</div>
@@ -161,36 +161,36 @@
 			<div class='row'>
 				<label class='col-xs-2 control-label'>Related Records</label>
 				<div class='col-xs-10'>
-					<div class='list-group' id='related_header'>
-						<div class='row list-group-item  vertical-align'>
+					<div class='panel panel-default related-records'>
+						<div class='panel-heading vertical-align'>
 							<span class='col-xs-1'><b>Number</b></span>
 							<span class='col-xs-3'><b>Title</b></span>
 							<span class='col-xs-2'><b>Description</b></span>
 							<span class='col-xs-3'>
-								<input class='form-control' type="text" ng-model="related_filter" autocomplete="off" typeahead-editable="false" typeahead-on-select="selectRelated($item)" typeahead="doc.label for doc in fetchRelated($viewValue)" class="form-control" placeholder="Add Related Record by Title, Call #, or ID" />
+								<input class='form-control' type="text" ng-model="related_filter" typeahead-append-to-body='true' autocomplete="off" typeahead-editable="false" typeahead-on-select="selectRelated($item)" typeahead="doc.label for doc in fetchRelated($viewValue)" class="form-control" placeholder="Add Related Record by Title, Call #, or ID" />
 							</span>
 							<span class='col-xs-2 bold'>Call Number/Format</span>
 						</div>
-					</div>
-					<div class='list-group' id='related'>
-						<div class='row list-group-item  vertical-align' ng-repeat='related in document._related'>
-							<span class='col-xs-1'>
-								<button class='btn btn-danger btn-xs' title='Remove Relationship' ng-click='deleteRelated($index)'><span class="glyphicon glyphicon-remove"></span></button>
-								{{related.TRACK_NUMBER}}
-							</span>
-							<span class='col-xs-3'>
-								<textarea class='form-control' ng-model='related.TITLE'/>
-							</span>
-							<span class='col-xs-5'>
-								<textarea class='form-control' ng-model='related.DESCRIPTION'/>
-							</span>
-							<span class='col-xs-2'>
-								{{related.CALL_NUMBER}}<br/>
-								{{related.FORMAT}}
-							</span>
-							<span class='col-xs-1'>
-								<button class='btn btn-primary pull-right' ng-click='viewRelated(related.TO_ID)'>View</button>
-							</span>
+						<div class='list-group'>
+							<div class='list-group-item vertical-align' ng-repeat='related in document._related | filter:{delete: "!1"}'>
+								<span class='col-xs-1'>
+									<button class='btn btn-danger btn-xs' title='Remove Relationship' ng-click='related.delete = 1'><span class="glyphicon glyphicon-remove"></span></button>
+									{{$index+1}}
+								</span>
+								<span class='col-xs-3'>
+									<textarea class='form-control' ng-model='related.TITLE'/>
+								</span>
+								<span class='col-xs-5'>
+									<textarea class='form-control' ng-model='related.DESCRIPTION'/>
+								</span>
+								<span class='col-xs-2'>
+									{{related.CALL_NUMBER}}<br/>
+									{{related.FORMAT}}
+								</span>
+								<span class='col-xs-1'>
+									<button ng-if="related.DOCID_OTHER != related.DOCID" class='btn btn-primary pull-right' ng-click='viewRelated(related.DOCID_OTHER)'>View</button>
+								</span>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -773,7 +773,7 @@
 </script>
 
 <script type="text/ng-template" id="collectionChooser.html">
-	<input id='colchoose' type="text" ng-change='checkBlank(this.value)' typeahead-append-to-body='true' ng-model="value" typeahead-on-select='selectCollection()' autocomplete="off" typeahead-editable="false" typeahead="collection as collection.label for collection in data.collections | filter:$viewValue | limitTo:8" class="form-control" placeholder="Find Collection by Name or ID"/>
+	<input id='colchoose' type="text" ng-change='checkBlank(this.value)' typeahead-append-to-body='true' ng-model="value" typeahead-on-select='selectCollection()' autocomplete="off" typeahead-editable="false" typeahead="collection as collection.label for collection in data.collections | filter:$viewValue | limitTo:8" class="form-control" placeholder="Find by Name or ID"/>
 </script>
 
 <script type="text/ng-template" id="formGroup.html">
