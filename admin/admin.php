@@ -501,7 +501,7 @@ function fetchItems($type, $request) {
 			$order[] = "I.DOCID like '$filter%'";
 		} else {
 			if ($isDoc) {
-				$where[] = "(I.TITLE $like or I.KEYWORDS $like collate utf8_unicode_ci or I.CALL_NUMBER $like or I.DESCRIPTION $like collate utf8_unicode_ci or I.DOCID = '$filter')";
+				$where[] = "(I.TITLE $like or I.KEYWORDS $like collate utf8_unicode_ci or I.PRODUCERS $like collate utf8_unicode_ci or I.CALL_NUMBER $like or I.DESCRIPTION $like collate utf8_unicode_ci or I.DOCID = '$filter')";
 				$order[] = "I.TITLE like _utf8 '$filter%'";
 				$order[] = "I.DOCID like '$filter%'";
 			} else {

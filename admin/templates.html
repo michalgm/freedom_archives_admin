@@ -51,7 +51,7 @@
 			<div>
 				<div class='form-group'>
 					<label class="control-label">Text</label>
-					<input type='text' class='form-control' placeholder='Search by text' ng-model='options.filter' autofocus/>
+					<input tooltip='Search by {{isDoc ? "Title, Description, Keywords, Producers," : "Name," }} Description, Call Number, or ID' type='text' class='form-control' placeholder='Search by text' ng-model='options.filter' autofocus/>
 				</div>
 				<div ng-hide='limitCollectionId' class='form-group'>
 					<label class="control-label">Collection</label>
@@ -281,7 +281,7 @@
 			<tab ng-if='1' heading='Add/Remove Records'>
 				<div id='featuredDocs' class='row'>
 					<div class='col-xs-6' autoheight>
-						<h3 class='scroll-header'>Records</h3>
+						<h3 class='scroll-header'>Records <small>{{documents.length}} Records in Collection</small></h3>
 						<div class="list-group scroll-body" ng-model='documents'>
 							<div class='list-group-item' ng-repeat='doc in documents | orderBy:"label"'>
 								<div class='media'>
