@@ -183,9 +183,10 @@ class Page {
 			$endlinks = 1;
 			
 			$total_pages = $this->getDocCount();
-			$no_digi_count = "";
-			if(! $this->params['no_digital']) { 
-				$no_digi_count = "<br/><span class='no_digital_doc_count'>Hiding ".$this->getNoDigitalDocCount()." non-digitized documents (<a class='no_digital_link' href='".$this->getNoDigitalLink()."'>show</a>)</span>";
+			$digital_count = $this->getNoDigitalDocCount();
+			$no_digital_link = "";
+			if(! $this->params['no_digital'] && $digital_count) { 
+				$no_digital_link = "<br/><span class='no_digital_doc_count'>Hiding ".$this->getNoDigitalDocCount()." non-digitized documents (<a class='no_digital_link' href='".$this->getNoDigitalLink()."'>show</a>)</span>";
 			} 
 			$targetpage = html_encode($this->getTargetPage());
 			preg_replace("/&amp;page=\d+/", "", $targetpage);
@@ -245,7 +246,7 @@ class Page {
 					$pagination .= "<span class=\"disabled\">Next&raquo;</span>";
 				}	
 			}
-			$pagination .= "$no_digi_count</div>\n";
+			$pagination .= "$no_digital_link</div>\n";
 			$this->pagination = $pagination;
 		}
 		return $this->pagination;
@@ -288,7 +289,12 @@ class Page {
 			if ($param == 'subject' || $param == 'author' || $param == 'keyword') {
 				$lookup_table = strtoupper($param).'_FILTER_LOOKUP';
 				$from = $query['from'] ." join LIST_ITEMS_LOOKUP_LIVE $lookup_table on DOCUMENTS_LIVE.DOCID = $lookup_table.ID and $lookup_table.TYPE = '$param' and $lookup_table.IS_DOC = 1 ";
-				$data = dbLookupArray("select $lookup_table.item as value, count(*) as count $from $query[where] group by $lookup_table.item order by count(*) desc, value");
+				$extraOrder = "";
+				$params = $this->params[$param];
+				if ($params) {
+					$extraOrder = "if(value in (".arrayToInString($params)."), 0, 1), ";
+				}
+				$data = dbLookupArray("select $lookup_table.item as value, count(*) as count $from $query[where] group by $lookup_table.item order by count(*) desc, $extraOrder value");
 			} else {
 				$data = dbLookupArray("select DOCUMENTS_LIVE.$field as value, count(*) as count $query[from] $query[where] group by if($field is null, '', $field) order by count(*) desc, value");
 			}
