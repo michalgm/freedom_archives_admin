@@ -794,7 +794,7 @@
 				</div>
 			</div>
 			<div ng-switch-when='chooser'>
-				<input typeahead-focus type="text" ng-blur='checkValue(this)' ng-model="$parent.model" typeahead-on-select='addItem()' autocomplete="off" typeahead-editable="{{options.editable}}" typeahead="item for item in fetchList(options.field, $viewValue)" class="form-control" placeholder='Choose a {{label}}{{options.editable ? "": " from list"}}' />
+				<input typeahead-focus type="text" ng-blur='checkValue(this)' ng-model="$parent.model" typeahead-on-select='addItem()' autocomplete="off" typeahead-editable="{{options.editable}}" typeahead="item.item for item in fetchList(options.field, $viewValue)" class="form-control" placeholder='Choose a {{label}}{{options.editable ? "": " from list"}}' />
 			</div>
 			<div ng-switch-when='select'>
 				<select ng-model='$parent.model' ng-options='item.id as item.label for item in options | orderBy:"label"'/>
@@ -845,6 +845,6 @@
 			<a ng-click='removeItem($index)'><span class='close glyphicon glyphicon-remove'></span></a>
 			</span>   
 		</span>
-		<input class='form-control' type='text' ng-model='selected' typeahead-on-select='addItem()' autocomplete="off" typeahead-editable='{{isEditable}}' typeahead="item for item in fetchList(type, $viewValue, 10)" placeholder="Add {{type + (isEditable == 'true' ? '' : ' from list')}}"/>
+		<input class='form-control' type='text' ng-model='selected' typeahead-on-select='addItem()' autocomplete="off" typeahead-editable='{{isEditable}}' typeahead="item.item for item in fetchList(type, $viewValue, 10)" placeholder="Add {{type + (isEditable == 'true' ? '' : ' from list')}}"/>
 	</form>
 </script>

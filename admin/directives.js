@@ -346,7 +346,7 @@ app.directive('formGroup', function($requests, $location) {
 					.then(function(response){
 						var results = response.items;
 						if (scope.options.editable && results[0] != value && value != ' ') {
-							results.unshift('New '+field+': '+value);
+							results.unshift({item: 'New '+field+': '+value});
 						}
 						return results;
 					})
@@ -516,7 +516,7 @@ app.directive('tagger', function($requests, $data) {
 					.then(function(response){
 						var results = response.items;
 						if (scope.isEditable && results[0] != value) {
-							results.unshift('New '+field+': '+value);
+							results.unshift({item:'New '+field+': '+value});
 						}
 						return results;
 					})
