@@ -285,7 +285,7 @@ if ($action) {
 		
 		case 'backupDatabase':
 			global $db;
-			require_once('mysqldump.php');
+			require_once('lib/mysqldump.php');
 			$sql_dump = new MySQLDump($dbname,$dblogin,$dbpass,$dbhost);
 			$sql_dump->droptableifexists = true;
 
@@ -1010,7 +1010,7 @@ function csvImport($data) {
 }
 
 function filemakerImport($data_encoded) { 
-	require_once("FMXMLReader.php");	
+	require_once("lib/FMXMLReader.php");	
 	$collections_lookup = dbLookupArray('select call_number, collection_id from FILEMAKER_COLLECTIONS');
 	$data = base64_decode($data_encoded);
 	if ($data === false) { trigger_error("Invalid data encoding", E_USER_ERROR); } 
