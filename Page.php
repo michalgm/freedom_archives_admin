@@ -296,7 +296,8 @@ class Page {
 				}
 				$data = dbLookupArray("select $lookup_table.item as value, count(*) as count $from $query[where] group by $lookup_table.item order by count(*) desc, $extraOrder value");
 			} else {
-				$data = dbLookupArray("select DOCUMENTS_LIVE.$field as value, count(*) as count $query[from] $query[where] group by if($field is null, '', $field) order by count(*) desc, value");
+				$order = "order by ".($param == 'year' ? "" : " count(*) desc, ")." value";
+				$data = dbLookupArray("select DOCUMENTS_LIVE.$field as value, count(*) as count $query[from] $query[where] group by if($field is null, '', $field) $order");
 			}
 			$filter_components .= "<h5>$display</h5>
 				<ul class='filter_cat $param'>";
