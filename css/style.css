@@ -71,6 +71,20 @@ ol, ul {
 	background: url("../images/freedom_archives_header.jpg") no-repeat scroll center top #b00000;
 	min-width: 990px;
 }
+#header_image {
+	width: 990px;
+	height: 151px;
+	margin: auto;
+	margin-top: 0px;
+	padding-top: 24px;
+}
+
+#image_link {
+	float: left;
+	display: block;
+	width: 434px;
+	height: 137px;
+}
 
 #welcometext { 
 	background: #f8f2ba;
@@ -334,7 +348,7 @@ div.pagination .doc_count, div.pagination .no_digital_doc_count { padding-left: 
 
 #header_links { 
 	margin: auto;
-	padding-top: 28px;
+	padding-top: 4px;
 	text-align: right;
 	width: 978px;
 }

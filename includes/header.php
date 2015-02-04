@@ -47,8 +47,11 @@ if (strstr(basename($_SERVER['PHP_SELF']), 'index')) {
 
 	<body class='<?php echo $pagetype ?>'>
 		<!-- HEADER  -->
-		<div id="header">
-			<div id='header_links'> <a href='/'>Search&raquo;</a> <a href='http://freedomarchives.org'> Home&raquo;</a></div>
+		<div id="header" >
+			<div id='header_image'>
+				<a id='image_link' href="/"></a>
+				<div id='header_links'> <a href='/'>Search&raquo;</a> <a href='http://freedomarchives.org'> Home&raquo;</a></div>
+			</div>
 		</div>
 		<!-- HEADER ENDS-->
 
