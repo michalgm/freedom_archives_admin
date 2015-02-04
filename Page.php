@@ -326,7 +326,11 @@ class Page {
 		include_once "includes/tag-cloud/classes/tagcloud.php";
 		$kw_limit = 30;
 		$query = $this->getQuery();
-		$keywords = dbLookupArray("SELECT KWS.item KEYWORD, count(*) as count $query[from] join LIST_ITEMS_LOOKUP_LIVE KWS on DOCID = KWS.id  and KWS.IS_DOC = 1  and KWS.type='keyword' ".$query['where']." group by lower(KEYWORD) order by counT(*) desc limit $kw_limit");
+		$kw_filter = "";
+		if ($this->params['keyword']) {
+			$kw_filter = " and KWS.item not in (".arrayToInString($this->params['keyword']).") ";
+		}
+		$keywords = dbLookupArray("SELECT KWS.item KEYWORD, count(*) as count $query[from] join LIST_ITEMS_LOOKUP_LIVE KWS on DOCID = KWS.id  and KWS.IS_DOC = 1  and KWS.type='keyword' ".$query['where']." $kw_filter group by lower(KEYWORD) order by counT(*) desc limit $kw_limit");
 		if (! $keywords) { return ""; }
 		$link= $this->getTargetPage();
 		// $link= preg_replace("/s=[^&]*&?/", "", $this->getTargetPage());
