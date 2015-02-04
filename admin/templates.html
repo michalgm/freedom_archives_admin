@@ -1,0 +1,850 @@
+<script type="text/ng-template" id="login.html">
+	<div>
+		<h1 class='text-center'>Welcome to Freedom Archives Search Database Management Tool</h1>
+		<div class='col-md-4 col-md-offset-4'>
+			<div class='panel panel-info'>
+			  <div class="panel-heading"><h3 class="panel-title"><strong>Sign in </strong></h3></div>
+				  <div class="panel-body">
+					<p ng-show='auth.error' class='alert alert-danger'>An error occurred: {{auth.error}}</p>
+					<p ng-show='auth.badLogin' class='alert alert-danger'>Invalid Login</p>
+					<form ng-submit='do_login()'>
+						<div class="form-group">
+							<label for="exampleInputEmail1">Username</label>
+							<input type="text" ng-model='login.user' autocomplete='on' class="form-control" style="border-radius:0px" id="exampleInputEmail1" placeholder="Enter email">
+						</div>
+						<div class="form-group">
+							<label for="exampleInputPassword1">Password</label>
+							<input type="password" ng-model='login.password' class="form-control" style="border-radius:0px" id="exampleInputPassword1" placeholder="Password">
+						</div>
+						<button type="submit" class="btn btn btn-primary">Sign in</button>
+						<input type="submit" class="ng-hide"></input>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="logout.html">
+	<div class='bg-info logout'>
+		<span class="glyphicon glyphicon-user"></span> {{auth.name}} <a class='pull-right' href='' ng-click='logout()'>Log out</a>
+	</div>
+</script>
+
+<script type="text/ng-template" id="documents.html">
+	<div header buttons='buttons'></div>
+	<div content class='content-body'>
+		<div item-search='document' non-digitized-default='1' select-action='selectDoc'></div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="collections.html">
+	<div header buttons='buttons'></div>
+	<div content class='content-body'>
+		<div item-search='collection' select-action='selectCollection'></div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="itemSearch.html">
+	<div id='itemSearch' autoheight class='panel panel-primary'>
+		<form name='searchoptions' class='form-inline panel-heading scroll-header search-options'>
+			<div>
+				<div class='form-group'>
+					<label class="control-label">Text</label>
+					<input tooltip='Search by {{isDoc ? "Title, Description, Keywords, Producers," : "Name," }} Description, Call Number, or ID' type='text' class='form-control' placeholder='Search by text' ng-model='options.filter' autofocus/>
+				</div>
+				<div ng-hide='limitCollectionId' class='form-group'>
+					<label class="control-label">Collection</label>
+					<span collection-chooser select-collection='selectCollection(collection)' model='options.selected'></span>
+				</div>
+				<div class="checkbox form-group" ng-show="isDoc">
+					<label>
+						<input type="checkbox" ng-model='options.nonDigitized' ng-true-value="1" ng-false-value="0"> Include non-digitized
+					</label>
+				</div>
+				<div class="checkbox form-group" ng-show='! embedded'>
+					<label>
+						<input type="checkbox" ng-model='options.NEEDS_REVIEW' ng-true-value="1" ng-false-value="0"> Needs Review
+					</label><br/>
+					<label>
+						<input type="checkbox" ng-model='options.IS_HIDDEN' ng-true-value="1" ng-false-value="0"> Hidden
+					</label>
+				</div>
+				<button ng-click='addFilter()' class='btn btn-default pull-right'><span class="glyphicon glyphicon-plus"></span> Add Filter</button>
+				<button ng-if='isDoc && ! embedded' ng-click='exportItems()' class='btn btn-default pull-right'><span class="glyphicon glyphicon-download-alt"></span> CSV Export</button>
+			</div>
+			<div>
+				<div class='panel panel-info form-group search-filter' ng-repeat='filter in options.filters'>
+					<div class='panel-body bg-info'>
+						<button ng-click='options.filters.splice($index, 1)' class='btn btn-danger btn-xs' tooltip='Remove filter'><span class="glyphicon glyphicon-remove"></span></button>
+						<select class='form-control' ng-model='filter.type' ng-options="item as item|ucf for item in filters"/>
+						<input ng-if='! static[filter.type]' ng-model-options="{allowInvalid: false}" ng-show='filter.type' type="text" ng-model="filter.value" autocomplete="off" typeahead-editable="false" typeahead="item.item for item in fetchList(filter.type, $viewValue, 10)" class="form-control" placeholder='{{filter.type ? "Choose a "+filter.type:""}}' />
+						<input ng-if='static[filter.type] || ! filter.type' class='form-control' type="text" ng-model="filter.value" ng-disabled='! filter.type' placeholder='{{ filter.type ? "Search on " +filter.type : "Select a field"}}' />
+					</div>
+				</div>
+			</div>
+		</form>
+		<div class='list-group scroll-body'>
+			<a href='javascript:void(0);' class='list-group-item' ng-click='selectAction(item)' ng-repeat='item in items'>
+				<div class='media'>
+					<span class='pull-left'>
+						<img class="media-object" style='width: 75px' ng-src='../{{item.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
+					</span>
+					<div class='media-body'>
+						<div class='pull-right text-right'>
+							ID: {{item.id}}
+							<div ng-if='item.CALL_NUMBER'>Call #: {{item.CALL_NUMBER}}</div>
+							<div ng-if='! isDoc'>Records: {{data.collection_index[item.id].count}}</div>
+						</div>
+						<h4 class='list-group-item-heading'>{{((isDoc ? item.label : item.COLLECTION_NAME) || 'Untitled') | truncate:100}}</h4>
+						<p><i><span ng-if='!isDoc'>Parent </span>Collection: {{data.collection_index[item.PARENT_ID].label ||  item.COLLECTION_NAME}}</i></p>
+						<p style='max-height: 150px; overflow: hidden;' ng-bind-html='item.DESCRIPTION || " "'></p>
+					</div>
+				</div>
+			</a>
+		</div>
+		<div class='panel-footer scroll-footer'>
+			<div class='row vertical-align'>
+				<div ng-if='!embedded' class='col-xs-3 text-left'>
+					<span ng-if='isDoc' class='count label label-primary'>{{options.count}} records / {{options.digitized}} digitized</span>
+					<span ng-if='!isDoc' class='count label label-primary'>{{options.count}} collections</span>
+				</div>
+				<div ng-style='{margin: embedded? "auto" : ""}'  ng-class='{"col-xs-6": !embedded, "col-xs-12": embedded}' class='text-center'><pagination previous-text="&lsaquo;" next-text="&rsaquo;" ng-class='{"pagination-sm": embedded}' items-per-page='options.itemLimit' total-items="options.count" boundary-links="true" max-size='5' ng-model="options.page"></pagination></div>
+			</div>
+		</div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="documentEdit.html">
+	<div header title='{{id == "new" ? "New Record" : (document.TITLE || "Untitled Record")}}' buttons='buttons'></div>
+	<div content class='content-body'>
+		<form class="form-horizontal" id='documentEdit'>
+			<div class='row' form-group model='document.TITLE' label='Title'></div>
+			<div class='row'>
+				<div form-group model='document.IS_HIDDEN' input-type='checkbox' label='Hidden'></div>
+				<div form-group model='document.NEEDS_REVIEW' input-type='checkbox' label='Needs Review'></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.CALL_NUMBER' label='Call Number' input-type='callNumber'></div>
+			</div>
+
+			<div class='row'>
+				<div form-group model='document.URL' input-type='url' label='URL'></div>
+				<div form-group model='document.thumbnail_url' label='Thumbnail' input-type='image' options="{type:'document', id:id}"></div>
+			</div>
+			<div class='row' form-group model='document._authors' label='Authors' input-type='tagger' options="{type:'author', editable: true}"></div>
+			<div class='row' form-group model='document._producers' label='Producers' input-type='tagger' options="{type:'producer', editable: true}"></div>
+			<div class='row' form-group model='document._keywords' label='Keywords' input-type='tagger' options="{type:'keyword', editable: true}"></div>
+			<div class='row' form-group model='document._subjects' label='Subjects' input-type='tagger' options="{type:'subject', editable: false}"></div>
+			<div class='row'>
+				<div form-group model='document.COLLECTION_ID' label='Collection' input-type='collectionChooser'></div>
+				<div form-group model='document.FORMAT' label='Format' input-type='chooser' options="{field: 'format', editable: true}"></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.VOL_NUMBER' label='Volume Number/ Date'></div>
+				<div form-group model='document.YEAR' label='Year'></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.LOCATION' label='Location'></div>
+				<div form-group model='document.NO_COPIES' label='Number of Copies' input-type='number'></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.PUBLISHER' label='Organization/ Publisher'></div>
+				<div form-group model='document.PROGRAM' label='Program'  input-type='chooser' options="{field: 'program', editable: false}"></div>
+			</div>
+			<div class='row'>
+				<div form-group model='document.GENERATION' input-type='chooser' label='Generation' options="{field: 'generation'}"></div>
+				<div form-group model='document.QUALITY' label='Quality' input-type='chooser' options="{field: 'quality', editable: true}"></div>
+			</div>
+			<div class='row' form-group model='document.DESCRIPTION' label='Description' input-type='textarea'></div>
+			<div class='row' form-group model='document.NOTES' label='Notes' input-type='textarea'></div>
+			<div class='row'>
+				<label class='col-xs-2 control-label'>Related Records</label>
+				<div class='col-xs-10'>
+					<div class='panel panel-default related-records'>
+						<div class='panel-heading vertical-align'>
+							<span class='col-xs-1'><b>Number</b></span>
+							<span class='col-xs-3'><b>Title</b></span>
+							<span class='col-xs-2'><b>Description</b></span>
+							<span class='col-xs-3'>
+								<input class='form-control' type="text" ng-model="related_filter" typeahead-append-to-body='true' autocomplete="off" typeahead-editable="false" typeahead-on-select="selectRelated($item)" typeahead="doc.label for doc in fetchRelated($viewValue)" class="form-control" placeholder="Add Related Record by Title, Call #, or ID" />
+							</span>
+							<span class='col-xs-2 bold'>Call Number/Format</span>
+						</div>
+						<div class='list-group'>
+							<div class='list-group-item vertical-align' ng-repeat='related in document._related | filter:{delete: "!1"}'>
+								<span class='col-xs-1'>
+									<button class='btn btn-danger btn-xs' title='Remove Relationship' ng-click='related.delete = 1'><span class="glyphicon glyphicon-remove"></span></button>
+									{{$index+1}}
+								</span>
+								<span class='col-xs-3'>
+									<textarea class='form-control' ng-model='related.TITLE'/>
+								</span>
+								<span class='col-xs-5'>
+									<textarea class='form-control' ng-model='related.DESCRIPTION'/>
+								</span>
+								<span class='col-xs-2'>
+									{{related.CALL_NUMBER}}<br/>
+									{{related.FORMAT}}
+								</span>
+								<span class='col-xs-1'>
+									<button ng-if="related.DOCID_OTHER != related.DOCID" class='btn btn-primary pull-right' ng-click='viewRelated(related.DOCID_OTHER)'>View</button>
+								</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div id='footer' class='well'>
+		<div class='row vertical-align'>
+			<span class='col-xs-1'>
+				<button ng-if='search.recordOpts.count' class='btn btn-info' ng-class="{disabled: search.neighbors.records.prev == null}" ng-click='location.path("/documents/"+search.neighbors.records.prev)'>
+					<span class="glyphicon glyphicon-arrow-left"></span> Prev
+				</button>
+			</span>
+			<span class='col-xs-3 text-center'>Document ID: <br/> {{id}}</span>
+			<span class='col-xs-4 text-center'>Created by {{document.CREATOR}} <br/> {{document.DATE_CREATED}}</span>
+			<span class='col-xs-3 text-center'>Modified by {{document.CONTRIBUTOR}} <br/> {{document.DATE_MODIFIED}}</span>
+			<span class='col-xs-1'>
+				<button ng-if='search.recordOpts.count' class='btn btn-info' ng-class="{disabled: search.neighbors.records.next == null}" ng-click='location.path("/documents/"+search.neighbors.records.next)'>
+					Next <span class="glyphicon glyphicon-arrow-right"></span>
+				</button>
+			</span>
+		</div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="header.html">
+	<nav id='header' class="navbar navbar-default " >
+		<div class="container-fluid">
+      <div class="navbar-header">
+      	<ol class="breadcrumb h2">
+	      	<li ng-repeat="breadcrumb in breadcrumbs.get() track by breadcrumb.path" ng-class="{ active: $last }"><a ng-if="!$last" ng-href="#{{ breadcrumb.path }}" ng-bind="breadcrumb.label"></a><span ng-if="$last" ng-bind="(title || breadcrumb.label) | truncate:50"></span>&nbsp;</li>
+	      </ol>
+      </div>
+      <div class="navbar-right">
+			  <span ng-bind-html='safeExtraHeader' />
+			  <button ng-repeat="button in buttons" ng-class='button.class' class="btn btn-default btn-lg navbar-btn" ng-click='doAction(button.action, $index)' type="button">{{button.text}}</button>
+      </div>
+    </div>
+	</nav>
+</script>
+
+<script type="text/ng-template" id="collectionEdit.html">
+	<div header title='{{id == "new" ? "New Collection" : (collection.COLLECTION_NAME || "Untitled Collection")}}' extra-header="extra_header" buttons='buttons'></div>
+	<div content class='content-body'>
+		<tabset>
+			<tab ng-if="id != 0 && id != 1000" heading="Edit Collection">
+				<form class="form-horizontal" id='collectionEdit'>
+					<div form-group model='collection.COLLECTION_NAME' label='Collection Name'></div>
+					<div form-group model='collection.PARENT_ID' label='Parent Collection' input-type='collectionChooser'></div>
+					<div form-group model='collection.IS_HIDDEN' label='Hidden' input-type='checkbox'></div>
+					<div form-group model='collection.NEEDS_REVIEW' label='Needs Review' input-type='checkbox'></div>
+					<div form-group model='collection.CALL_NUMBER' label='Call Number' input-type='callNumber'></div>
+					<div form-group model='collection.ORGANIZATION' label='Organization/ Publisher'></div>
+					<div form-group model='collection.DATE_RANGE' label='Date Range'></div>
+					<div form-group model='collection.THUMBNAIL' label='Thumbnail' input-type='image' options="{type:'collection', id:id}"></div>
+					<div class='row' form-group model='collection._keywords' label='Keywords' input-type='tagger' options="{type:'keyword', editable: true}"></div>
+					<div class='row' form-group model='collection._subjects' label='Subjects' input-type='tagger' options="{type:'subject', editable: false}"></div>
+					<div class='row' form-group model='collection.DESCRIPTION' label='Description' input-type='richtext'></div>
+					<div class='row' form-group model='collection.SUMMARY' label='Summary' input-type='textarea'></div>
+					<div class='row' form-group model='collection.INTERNAL_NOTES' label='Internal Notes' input-type='textarea'></div>
+				</form>
+			</tab>
+			<tab ng-if="id != 0 && id != 1000" heading='Featured Records'>
+				<div featured-docs documents='collection._featured_docs' limit-collection-id='{{id}}'/>
+			</tab>
+			<tab ng-if="1" heading='Subcollections'>
+				<div class='row'>
+					<div class='col-xs-6' autoheight>
+						<h3 class='scroll-header'>Edit Subcollections <small>Drag to reorder</small></h3>
+						<div class="list-group scroll-body" ui-sortable ng-model='collection._subcollections'>
+							<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='sc in collection._subcollections | filter:{DISPLAY_ORDER:"!1000"}'>
+								<strong ng-class='{"text-muted": sc.IS_HIDDEN == 1}'>{{sc.COLLECTION_NAME}}&nbsp;</strong>
+								<span class='pull-right' style='position:absolute; right:15px ' >
+									<button ng-click='editSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+									<!--<button ng-if='sc.IS_HIDDEN == 1' ng-click='hideSubcollection(sc.COLLECTION_ID, 1)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ok-circle"></span> Unhide</button>
+									<button ng-if='sc.IS_HIDDEN == 0' ng-click='hideSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ban-circle"></span> Hide</button>-->
+									<button ng-click='removeSubcollection($index)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-remove"></span> Remove</button>
+								</span>
+							</a>
+						</div>
+					</div>
+					<div class='col-xs-6'>
+						<h3>Add a New Subcollection <small>Click to add</small></h3>
+						<span collection-chooser select-collection='addSubcollection(collection)' clear='1'></span>
+					</div>
+				</div>
+			</tab>
+			<tab ng-if='1' heading='Add/Remove Records'>
+				<div id='featuredDocs' class='row'>
+					<div class='col-xs-6' autoheight>
+						<h3 class='scroll-header'>Records <small>{{documents.length}} Records in Collection</small></h3>
+						<div class="list-group scroll-body" ng-model='documents'>
+							<div class='list-group-item' ng-repeat='doc in documents | orderBy:"label"'>
+								<div class='media'>
+									<span class='pull-left'>
+										<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
+									</span>
+									<div class='media-body'>
+										<div class='pull-right text-right'>
+											<button ng-click='location.path("/documents/"+doc.id)' class='btn btn-default btn-sm'><span class="glyphicon glyphicon-pencil"></span> View</button> 
+											<button ng-click='removeDoc($index)' class='btn btn-default btn-sm'><span class="glyphicon glyphicon-remove"></span> Remove</button> 
+											<div>ID: {{doc.id}}</div>
+											<div ng-if='doc.CALL_NUMBER'>Call #: {{doc.CALL_NUMBER}}</div>
+										</div>
+										<h4 class='list-group-item-heading'>{{(doc.label || 'Untitled') | truncate:100}}</h4>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class='col-xs-6'>
+						<h3>Add a Record <small>Click to add</small></h3>
+						<div item-search='document' search-type='docSearch' embedded=1 select-action='addDoc' limit-collection-id=''></div>
+					</div>
+				</div>
+			</tab>
+		</tabset>
+	</div>
+	<div id='footer' class='well'>
+		<div class='row'>
+			<span class='col-xs-1'>
+				<button ng-if='search.collectionOpts.count' class='btn btn-info' ng-class="{disabled: search.neighbors.collections.prev == null}" ng-click='location.path("/collections/"+search.neighbors.collections.prev)'>
+					<span class="glyphicon glyphicon-arrow-left"></span> Prev
+				</button>
+			</span>
+			<span class='col-xs-3 text-center'>Collection ID: <br/> {{id}}</span>
+			<span class='col-xs-4 text-center'>Created by {{collection.CREATOR}} <br/> {{collection.DATE_CREATED}}</span>
+			<span class='col-xs-3 text-center'>Modified by {{collection.CONTRIBUTOR}} <br/> {{collection.DATE_MODIFIED}}</span>
+			<span class='col-xs-1'>
+				<button ng-if='search.collectionOpts.count' class='btn btn-info' ng-class="{disabled: search.neighbors.collections.next == null}" ng-click='location.path("/collections/"+search.neighbors.collections.next)'>
+					Next <span class="glyphicon glyphicon-arrow-right"></span>
+				</button>
+			</span>
+		</div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="featuredDocs.html">
+	<div id='featuredDocs' class='row'>
+		<div class='col-xs-6' autoheight>
+			<h3 class='scroll-header'>Edit Featured Records <small>Drag to reorder</small></h3>
+			<div class="list-group scroll-body" ui-sortable ng-model='documents'>
+				<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='doc in documents'>
+					<div class='media'>
+						<button ng-click='removeFeaturedDoc($index)' class='btn btn-default' style='position:absolute; top:15px; right:15px;'><span class="glyphicon glyphicon-remove"></span> Remove</button> 
+						<span class='pull-left'>
+							<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
+						</span>
+						<div class='media-body'>
+							<p><strong>{{doc.TITLE}}</strong></p>
+							<p class=''>
+								Description:
+								<span style='width:300px; display: inline-block;'>
+									<input class='form-control' type='text' ng-model='doc.DESCRIPTION'/>
+								</span>
+							</p>
+						</div>
+					</div>
+				</a>
+			</div>
+		</div>
+		<div class='col-xs-6'>
+			<h3>Add a Record <small>Click to add</small></h3>
+			<div item-search='document' embedded=1 select-action='addFeaturedDoc' limit-collection-id='{{limitCollectionId}}'></div>
+		</div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="siteUtils.html">
+	<div header title='{{title}}' buttons='buttons'></div>
+	<div content class='content-body' ng-switch='util'>
+		<div ng-switch-when='backupDatabase'>
+			<p>This will allow you to save a backup of the entire search.freedomarchives.org database (in SQL format).</p>
+			<button ng-click='backupDatabase()' class='btn btn-default btn-large'>Backup Database</button>
+		</div>
+		<div ng-switch-when='filemakerImport'>
+			<p>Upload a Filemaker Pro XML export file to import or update records.</p>
+			<div file-import filetype='XML' action='filemakerImport'/>
+		</div>
+		<div ng-switch-when='csvImport'>
+			<p>Upload a CSV file to import or update records.</p>
+			<ul>
+				<li>The CSV must contain a header row.
+				<li>Rows containing a docid will be updated.
+				<li>Rows without a docid will be added as new records.
+				<li>Records can be assigned to collections via a collection column (enter the most specific collection or subcollection).
+			</ul>
+			<div file-import filetype='CSV' action='csvImport'/>
+		</div>
+		<div ng-switch-when='editLists'>
+			<tabset>
+				<tab ng-repeat='(label,list) in lists' heading='{{label | ucf}}'>
+					<div autoheight class="panel panel-default">
+						<div class="panel-heading scroll-header">
+							<form class='form-inline row'>
+								<div class='form-group col-xs-4'>
+									<label class='control-label'>Filter</label>
+									<input type='text' ng-change='fetchList(label)' class='form-control' placeholder='Filter list' ng-model='list.filter' autofocus/>
+								</div>
+								<div class='form-group col-xs-8 vertical-align' style='display: flex !important;'>
+										<div class='col-xs-6 text-right'>
+											<label class='control-label'>Add new item</label>
+										</div>
+										<div class='input-group col-xs-6'>
+											<input type="text" class="form-control" ng-model='list.new'>
+											<span class="input-group-btn">
+												<button class="btn btn-primary" ng-click='editItem(label, "", "add", list.new)'>Add</button>
+											</span>
+									</div>
+								</div>
+							</form>
+							<div class='bold' style='margin-top: 10px'>
+								<div class='col-xs-4'>Item</div>
+								<div class='col-xs-2 text-center'>Record Count</div>
+								<div class='col-xs-2 text-center'>Collection Count</div>
+							</div>
+						</div>
+						<ul class='list-group scroll-body'>
+							<li class='list-group-item' ng-init='edit=0; new_item = item.item;' ng-repeat='item in list.items'>
+								<div class='row'>
+									<div class='col-xs-4'>	
+										<span ng-hide='edit'>{{item.item}}</span>
+										<form class='form-inline col-xs-6' ng-show='edit'>
+										<div class='form-group'>
+											<div class='input-group'>
+												<input class='form-control' ng-model='new_item'>
+												<span class="input-group-btn">
+													<button class="btn btn-primary" ng-click='editItem(label, item.item, "edit", new_item)'>Save</button>
+												</span>
+											</div>
+										</div>
+										</form>
+									</div>
+									<div class='col-xs-2 text-center'>
+										{{item.record_count}}
+									</div>
+									<div class='col-xs-2 text-center'>
+										{{item.collection_count}}
+									</div>
+									<div class='col-xs-4'>
+										<div class='pull-right btn-group'>	
+											<button  class='btn btn-default btn-sm' ng-click='edit = !edit'>{{edit ? 'Cancel' : 'Edit'}}</button>
+											<button class='btn btn-danger btn-sm' ng-click='editItem(label, item.item, "delete")'>Delete</button>
+										</div>
+									</div>
+								</div>
+							</li>
+						</ul>
+						<div class='panel-footer scroll-footer'>
+							<div class='row vertical-align'>
+								<div class='col-xs-3 text-left'><span class='count label label-primary'>{{list.count}} {{label|ucf}}s</span></div>
+								<div class='col-xs-6 text-center'>
+									<pagination ng-click='fetchList(label)' previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page='limit' total-items="list.count" boundary-links="true" max-size='5' ng-model="list.offset"></pagination>
+								</div>
+							</div>
+						</div>
+					</div>
+				</tab>
+			</tabset>
+		</div>
+		<div ng-switch-when='updateKeywords'>
+			<progressbar ng-show='total != 0 && complete != total' class='progress-striped active' max="100" value="complete*(100/total)">
+				<span style="color:white; white-space:nowrap;">{{complete}} / {{total}}</span>
+			</progressbar>
+			<p>This will scan all documents for keywords, authors, and subjects, split them on commas, and store them in the keywords table, refreshing the word cloud.</p>
+			<button class='btn btn-default btn-large' ng-click='updateKeywords()'>Update Keywords</button>
+		</div>
+		<div ng-switch-when='exportCollections'>
+			<p>This will allow you to save a CSV containing all document records.</p>
+			<button class='btn btn-default btn-large' ng-click='exportCollection()'>Export Collections</button>
+		</div>
+		<div ng-switch-when='reviewChanges'>
+			<p>Below is a list of all changes to the database since the last time the data was pushed to the live search site. Review the changes, and when you are satisfied, click the 'Push to Live Site' button.</p>
+			<div class='row vertical-align'>
+				<div class='col-xs-4'>
+					<div class='radio'>
+						<label>
+							<input type='radio' value='last_update' ng-model='$parent.time_limit' ng-change='fetchLog()'/>
+							Changes since last site update <span class='text-nowrap'>(<b>{{lastUpdate *1000| date:"MM/dd/yyyy 'at' h:mma"}}</b>)</span>
+						</label>
+					</div>
+				</div>
+				<div class='col-xs-5'>
+					<div class='radio form-inline'>
+						<label>
+							<input type='radio' value='time_amount' ng-model='$parent.time_limit' ng-change='fetchLog()'/>
+							Changes made in the last	
+						</label>
+						<select class='form-control input-sm' ng-model='$parent.time_amount' ng-options='n for n in [] | range:1:30'  ng-change='fetchLog()'>
+							<option>1</option>
+							<option>2</option>
+						</select>
+						<select class='form-control input-sm' ng-model='$parent.time_period' ng-change='fetchLog()'>
+							<option value='day'>Days</option>
+							<option value='week'>Weeks</option>
+							<option value='month'>Months</option>
+							<option value='year'>Years</option>
+						</select>
+					</div>
+				</div>
+				<div class='col-xs-3'>
+					<div class="checkbox">
+						<label>
+							<input type="checkbox" ng-model='$parent.only_reviewed' value="" ng-change='fetchLog()'>
+							Only changes needing review
+						</label>
+					</div>
+				</div>
+			</div>
+			<div class='row vertical-align'>
+				<div class="center-block form-inline">
+					<div class='form-group'>
+						<label>Title</label>
+						<input class='form-control' ng-model='$parent.title_filter' ng-change='filter()'/>
+					</div>
+					<div class='form-group'>
+						<label>Collection</label>
+						<span collection-chooser select-collection='filter()' model='$parent.collection_filter'/>
+					</div>
+					<div class='form-group'>
+						<label>User</label>
+						<select class='form-control' ng-model='$parent.user_filter' ng-change='filter()'>
+							<option value='All'>All</option>
+							<option value='{{user.username}}' ng-repeat='user in data.users|toArray|orderBy:"name"'>{{user.name}}</option>
+						</select>
+					</div>
+					<div class='form-group'>
+						<label>Type</label>
+						<select class='form-control' ng-model='$parent.type_filter' ng-change='filter()'>
+							<option>All</option>
+							<option value='document'>Document</option>
+							<option value='collection'>Collection</option>
+						</select>
+					</div>
+					<div class='form-group'>
+						<label>Action</label>
+						<select class='form-control' ng-model='$parent.action_filter' ng-change='filter()'>
+							<option>All</option>
+							<option value='create'>Create</option>
+							<option value='update'>Update</option>
+						</select>
+					</div>
+				</div>
+			</div>
+			<div style='overflow: auto'>
+				<table class='table table-condensed table-bordered'>
+					<thead>
+						<th>Item</th>
+						<th>Type</th>
+						<th>Action</th>
+						<th>User</th>
+						<th>Time</th>
+						<th>Reviewed</th>
+					</thead>
+					<tbody>
+						<tr ng-repeat='item in filtered_log | slice:(pagination.offset-1)*pagination.limit:pagination.limit'>
+							<td><a target='_new' href='#/{{item.type}}s/{{item.id}}'>{{item.description}}</a></td>
+							<td>{{item.type|ucf}}</td>
+							<td>{{item.action|ucf}}</td>
+							<td>{{data.users[item.user].name}}</td>
+							<td>{{item.time*1000| date:"MM/dd/yyyy 'at' hh:mm a"}}</td>
+							<td>
+									<button ng-click='reviewItem(item)' action-button='saving' type="button" style='min-width: 70%' ng-show='item.NEEDS_REVIEW == 0 || item.NEEDS_REVIEW == ""' class="btn btn-sm btn-success">Mark as Needs Review</button>
+									<button ng-click='reviewItem(item)' action-button='saving' type="button" style='min-width: 70%' ng-show='item.NEEDS_REVIEW' class="btn btn-sm btn-danger">Mark as Reviewed</button>
+							</td>
+						</tr>
+					</tbody>
+				</table>	
+			</div>
+		</div>
+		<div ng-switch-when='publish'>
+			<div class='panel panel-default'>
+				<div class='panel-heading bold'>
+					<div class='row'>
+						<div class='col-xs-4'>Name</div>
+						<div class='col-xs-4'>Date Copied from Admin</div>
+					</div>
+				</div>
+				<div class='list-group'>
+					<li class='list-group-item' ng-repeat='backup in backups |toArray | orderBy:"date": true'>
+						<div class='row vertical-align'>
+							<div class='col-xs-4'>{{backup.id | ucf}}</div>
+							<div class='col-xs-4'>{{backup.date}}</div>
+							<div class='col-xs-4' ng-if='backup.id != "LIVE"'><button action-button='restoring' class='btn btn-primary' ng-click='restoreBackup(backup)'>Restore Backup</button></div>
+						</div>
+					</li>
+				</div>
+			</div>
+		</div>
+		<div ng-switch-when='findDuplicates'>
+			<p>This tool locates all documents that share the same title, volume number, and description</p>
+			<div class="list-group">
+				<li class='list-group-item' ng-repeat='set in duplicates | slice:(pagination.offset-1)*pagination.limit:pagination.limit'>
+					<h3 style='margin-top: 5px;' >{{set['TITLE']}}</h3>
+					<p>Volume: {{set['VOL_NUMBER']}}</p>
+					<p>{{set['DESCRIPTION']}}</p>
+					<div style='overflow: auto'>
+						<table class='table table-condensed table-bordered'>
+							<thead>
+								<th ng-repeat='field in fields'>{{field}}</th>
+							</thead>
+							<tbody>
+								<tr ng-repeat='doc in set.docs'>
+									<td ng-repeat='field in fields'>
+										<a ng-if="field == 'DOCID'" href='#/documents/{{doc.DOCID}}' target='{{doc.DOCID}}'>{{doc.DOCID}}</a>
+										<span ng-if="field != 'DOCID'">{{doc[field]}}</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>	
+					</div>
+				</li>
+			</div>
+		</div>
+
+		<div ng-switch-when='updateThumbnails'>
+			<p>This will update the thumbnail images for documents. By default, it only will update documents that have urls but no thumbnail image yet. Checking the 'Force refresh' box will update all document thumbnails (this can take a long time).</p>
+			<progressbar ng-show='total != 0 && complete != total' class='progress-striped active' max="100" value="complete*(100/total)">
+				<span style="color:white; white-space:nowrap;">{{complete}} / {{total}}</span>
+			</progressbar>
+			<p ng-show='complete == total && complete != 0' class='alert alert-success'>{{success}} thumbnails updated successfully. {{failed}} thumbnails failed.</p>
+			<form class="form-horizontal col-xs-6">
+				<div class='form-group'>
+					<label class='col-xs-6 control-label'>Choose a collection to update (leave blank for all)</label>	
+					<div class='col-xs-6'>
+						<div collection-chooser model='options.collection'></div>
+					</div>
+				</div>
+				<div class='form-group'>
+					<div class='col-xs-6 col-xs-offset-6'>
+						<div class='checkbox'>
+							<label>
+								<input type='checkbox' ng-true-value='1' ng-false-value='0' ng-model='options.force'/>
+								Force update of existing thumbnails
+							</label>
+						</div>	
+					</div>	
+				</div>
+
+				<button class='btn btn-default btn-large' ng-click='updateThumbnails()'>Update Thumbnails</button>
+			</form>
+			<div ng-show='thumbnails.length' class='col-xs-6' style='max-height: 400px; overflow: auto;'>
+				<div class='list-group'>
+					<span ng-class="{'list-group-item-success': item.status == 'Success', 'list-group-item-info':  item.status == 'Processing', 'list-group-item-danger': item.statusCode == 3}" class='list-group-item' ng-repeat='item in thumbnails'>
+						<span class='glyphicon' ng-class="{'glyphicon-ok': item.status == 'Success', 'glyphicon-refresh spin': item.status=='Processing', 'glyphicon-remove': item.statusCode == 3}"></span>
+						<b>{{item.title}}</b>: {{item.status}}
+						<img class='pull-right' style='height: 25px' ng-show='item.image' ng-src='{{item.image}}' />
+					</span>
+				</div>
+			</div>
+		</div>
+		<div ng-switch-when='manageUsers'>
+			<ul class="list-group">
+				<li class="list-group-item list-group-item-info bold">
+					<div class='row vertical-align'>
+						<div class='col-xs-2'> Login </div>
+						<div class='col-xs-3'> Name </div>
+						<div class='col-xs-2'> Email </div>
+						<div class='col-xs-2'> Role </div>
+						<div class='col-xs-3'>
+							<button ng-click='addUser()' class='btn btn-success'>
+								<span class="glyphicon glyphicon-plus"></span>
+								Add User
+							</button>
+						</div>
+					</div>
+				</li>
+				<li class="list-group-item" ng-class='{"list-group-item-warning ": edit.user_id == user.user_id}' ng-repeat='user in users'>
+					<div class='row vertical-align' ng-hide='edit.user_id == user.user_id'>
+						<div class='col-xs-2'> {{user.username}}</div>
+						<div class='col-xs-3'> {{user.firstname}} {{user.lastname}}</div>
+						<div class='col-xs-2'> {{user.email}}</div>
+						<div class='col-xs-2'> {{user.user_type}}</div>
+						<div class='col-xs-3'>
+							<button class='btn btn-primary' ng-click='editUser(user)'>Edit</button>
+							<button class='btn btn-danger' action-button='saving' ng-click='deleteUser(user)'>Delete</button>
+						</div>
+					</div>
+					<div class='row vertical-align' ng-show='edit.user_id == user.user_id'>
+						<div class='col-xs-2'><input placeholder='Login' class='form-control' ng-model='edit.username'/></div>
+						<div class='col-xs-3'>
+							<input placeholder='First Name' style='width: 45%; display: inline-block;' class='form-control' ng-model='edit.firstname'/>
+							<input placeholder='Last Name' style='width: 45%; display: inline-block;' class='form-control' ng-model='edit.lastname'/>
+						</div>
+						<div class='col-xs-2'><input placeholder='Email' class='form-control' ng-model='edit.email'/></div>
+						<div class='col-xs-2'>
+							<select class='form-control' ng-model='edit.user_type' ng-options="option as option for option in ['Administrator', 'Intern']"></select>
+						</div>
+						<div class='col-xs-3'>
+							<button class='btn btn-default' ng-click='editUser({})'>Cancel</button>
+							<button class='btn btn-primary' action-button='saving' ng-click='saveUser()'>Save</button>
+							<button class='btn btn-info' ng-show='user.user_id!="new"' ng-click='pw.id = user.user_id'>Change Password</button>
+						</div>
+					</div>
+					<div style='padding: 10px; padding-bottom: 0px;' class='row vertical-align' ng-show='pw.id==user.user_id'>
+						<div class="col-xs-2 text-right">
+							<span ng-show='user.user_id!="new"'>Change </span>Password:
+						</div>
+						<div class="form-group col-xs-2" ng-class='{"has-error": pw.pw1 && pw.pw2 && pw.pw1 != pw.pw2 }'>
+							<input ng-model='pw.pw1' type='password' class="form-control" placeholder='New Password'>
+						</div>
+						<div class="form-group col-xs-2" ng-class='{"has-error": pw.pw1 && pw.pw2 && pw.pw1 != pw.pw2 }'>
+							<input ng-model='pw.pw2' type="password" class="form-control" placeholder='Verify Password'>
+						</div>
+						<div class='col-xs-3 text-error' ng-show='pw.pw1 && pw.pw2 && pw.pw1 != pw.pw2'>
+							Passwords do not match!
+						</div>
+					</div>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<div ng-if="util == 'findDuplicates' || util == 'reviewChanges'" id='footer' class='well well-sm text-center'>
+		<pagination previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page='pagination.limit' total-items="pagination.count" boundary-links="true" max-size='5' ng-model="pagination.offset"></pagination>
+	</div>
+</script>
+
+<script type="text/ng-template" id="siteFeaturedDocs.html">
+	<div header title='Featured Records' buttons='buttons'></div>
+	<div content class='content-body'>
+		<div featured-docs documents='featuredDocs' limit-collection-id='0'/>
+	</div>
+</script>
+
+<script type="text/ng-template" id="fileImport.html">
+	<ol ng-file-drop="onFileSelect($files)" ng-file-drag-over-class="bg-primary">
+		<li>
+			Drag and drop the {{filetype}} file here, or use the button to browse to the file.
+			<div ng-file-drop-available="dropSupported=true" ng-show="!dropSupported">HTML5 Drop File is not supported!</div>
+			<div>
+				<span class="btn btn-default btn-sm btn-file">
+					Choose file <input type="file" ng-file-select="onFileSelect($files)">
+				</span>
+			</div>
+		</li>
+		<li ng-show='badFile' class='bg-danger'>
+			The file you selected is not a {{filetype}} file - please choose a different file
+		</li>
+		<li ng-show='loaded'>
+			<button class='btn btn-primary' ng-click="uploadFile()">Import {{file.name}}</button>
+		</li>
+		<li ng-show='processing || success_count'>
+			<span ng-show='processing'>
+				<span class='glyphicon glyphicon-refresh spin'></span> Processing... (This may take a bit)
+			</span>
+			<span ng-show='success_count'>
+				Successfully imported {{success_count}} documents!
+			</span>
+		</li>
+	</ol>
+</script>
+
+<script type="text/ng-template" id="fileUpload.html">
+	<p ng-show="itemId == 'new'" class='alert alert-warning'>Please save {{type}} before adding a thumbnail</p>
+	<div ng-show="itemId !='new'">
+		<img ng-show="! image_URI" width='75px' ng-src='../{{currentUrl || "images/thumbnails/not_digitized.jpg"}}'/>
+		<div ng-show="image_URI" style='display: inline-block'>
+			<img width='75px' ng-src='{{image_URI}}'/>
+			<div class="btn-group">
+				<button class='btn btn-primary' ng-click='uploadFile()'>
+					<span ng-if='processing' class='glyphicon glyphicon-refresh spin'></span> Upload
+				</button>
+				<button class='btn btn-default' ng-click="clearFile()">Undo</button>
+			</div>
+		</div>
+		<p ng-show='bad_file' class='bad-file bg-danger'> {{bad_file}} </p>
+		<span class='drag-target' ng-file-drop="onFileSelect($files)" ng-file-drag-over-class="bg-primary">
+			Drop new image here or<br/>
+			<span class="btn btn-default  btn-sm btn-file">
+				Choose file <input type="file" ng-file-select="onFileSelect($files)" accept="image/jpg,image/jpeg,image/png,image/gif,image/bmp,image/tiff,application/pdf" />
+			</span>
+		</span>
+	</div>
+</script>
+
+<script type="text/ng-template" id="adminIndex.html">
+	<div header title='{{title}}' extra-header="extra_header" buttons='buttons'></div>
+	<div content class='content-body'>
+	</div>
+</script>
+
+<script type="text/ng-template" id="collectionChooser.html">
+	<input id='colchoose' type="text" ng-change='checkBlank(this.value)' typeahead-append-to-body='true' ng-model="value" typeahead-on-select='selectCollection()' autocomplete="off" typeahead-editable="false" typeahead="collection as collection.label for collection in data.collections | filter:$viewValue | limitTo:8" class="form-control" placeholder="Find by Name or ID"/>
+</script>
+
+<script type="text/ng-template" id="formGroup.html">
+	<div class='form-group'>
+		<label class='col-xs-{{label_width}} control-label'>{{label}}</label>
+		<div class='col-xs-{{field_width}}' ng-switch='type'>
+			<textarea ng-switch-when='textarea' type='text' rows='6' class='form-control' ng-model='$parent.model' />
+			<div ng-switch-when='richtext' text-angular ta-toolbar="[['bold','italics', 'underline'], ['justifyLeft','justifyCenter','justifyRight'], ['indent', 'outdent'], ['ol', 'ul'], ['insertImage', 'insertLink'], ['redo', 'undo', 'clear', 'html']]" ng-model='$parent.model'></div>
+			<div class='checkbox' ng-switch-when='checkbox'>
+				<input type='checkbox' ng-true-value='1' ng-false-value='0' ng-model='$parent.model'/>
+			</div>	
+			<div id='col' ng-switch-when='collectionChooser'>
+				<div class='input-group col-xs-12'>
+					<span class='input-group-btn'>
+						<button class='btn btn-default' ng-click='location.path("/collections/"+$parent.model)'><span class="glyphicon glyphicon-pencil"></span> View</button>
+					</span>
+					<span collection-chooser model='$parent.model'></span>
+				</div>
+			</div>
+			<div ng-switch-when='chooser'>
+				<input typeahead-focus type="text" ng-blur='checkValue(this)' ng-model="$parent.model" typeahead-on-select='addItem()' autocomplete="off" typeahead-editable="{{options.editable}}" typeahead="item.item for item in fetchList(options.field, $viewValue)" class="form-control" placeholder='Choose a {{label}}{{options.editable ? "": " from list"}}' />
+			</div>
+			<div ng-switch-when='select'>
+				<select ng-model='$parent.model' ng-options='item.id as item.label for item in options | orderBy:"label"'/>
+			</div>
+			<div class='image-input' ng-switch-when='image'>
+				<div file-upload filetype='image' action='thumbnailImport' current-url='$parent.model' item-id='{{options.id}}' type='{{options.type}}'/>
+			</div>
+			<div ng-switch-when='tagger'>
+				<div tagger model='$parent.model' type='{{options.type}}' editable='options.editable'/>
+			</div>
+			<div ng-switch-when='callNumber'>
+				<div call-number model='$parent.model'/>
+			</div>
+			<div ng-switch-when='url'>
+				<div class='input-group col-xs-12'>
+					<input type='text' class='form-control' ng-model='$parent.model'/>
+					<div class='input-group-btn' ng-if='$parent.model'>
+						<a class='btn btn-primary' href='{{$parent.model}}' target='_blank'>
+							<span class="glyphicon glyphicon-link"></span> Open
+						</a>
+					</div>
+				</div>
+			</div>
+			<input ng-switch-default='text' type='{{type}}' class='form-control' ng-model='$parent.model' />
+		</div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="callNumber.html">
+	<div class='call-number'>
+		<div class='col-xs-8'>
+			<select class='form-control' ng-model='callNumber' ng-options='item[0] as item[0]+" - "+item[1] for item in subjects'>
+				<option value=""></option>
+			</select>
+		</div>
+		<div class='col-xs-4'>
+			<input class='form-control' type='text' ng-model='desc'/>
+		</div>
+	</div>
+</script>
+
+
+<script type="text/ng-template" id="tagger.html">
+	<form class='well well-sm form-inline tagger' ng-submit='addItem()'>
+		<span ng-repeat='item in model'>
+			<span class='label label-default'>
+			<span class='pull-left'>{{item}}</span>
+			<a ng-click='removeItem($index)'><span class='close glyphicon glyphicon-remove'></span></a>
+			</span>   
+		</span>
+		<input class='form-control' type='text' ng-model='selected' typeahead-on-select='addItem()' autocomplete="off" typeahead-editable='{{isEditable}}' typeahead="item.item for item in fetchList(type, $viewValue, 10)" placeholder="Add {{type + (isEditable == 'true' ? '' : ' from list')}}"/>
+	</form>
+</script>
