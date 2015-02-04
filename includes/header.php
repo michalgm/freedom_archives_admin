@@ -26,7 +26,7 @@ if (strstr(basename($_SERVER['PHP_SELF']), 'index')) {
 		<link type="text/css" rel="stylesheet" href="bower_components/jplayer/skin/midnight.black/jplayer.midnight.black.css"/>
 		<link type="text/css" rel="stylesheet" href="bower_components/jquery-modal/jquery.modal.css"/>
 		<link type="text/css" rel="stylesheet" href="bower_components/flexslider/flexslider.css"/>
-		<link type="text/css" rel="stylesheet" href="includes/tag-cloud/css/tagcloud.css"/>
+		<link type="text/css" rel="stylesheet" href="lib/tag-cloud/css/tagcloud.css"/>
 		<link media="all" rel="stylesheet" type="text/css" href="css/style.css" />
 		<script type="text/javascript">
 			var _gaq = _gaq || [];

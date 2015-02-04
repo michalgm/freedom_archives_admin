@@ -52,7 +52,7 @@ $action_access = array(
 
 checkLogin();
 
-include('dbaccess.php');
+include('../lib/dbaccess.php');
 header('Content-type: application/json');
 
 if ($action) { 

@@ -43,8 +43,8 @@ class Page {
 				'querystring' => "",
 			);
 			if ($DB_SEARCH_TERMS) { 
-				include "includes/search/wordstemmer.php";
-				include "includes/search/search.php";
+				include_once("lib/search/wordstemmer.php");
+				include_once("lib/search/search.php");
 				$search_terms_string = getSearchQueryString($DB_SEARCH_TERMS);
 				$natural_language_terms = preg_replace("/\+|-\w*|\band\b|\bnot\b( \w+)?|\bor\b/i", "", $DB_SEARCH_TERMS);
 				$query['select'] .=	", MATCH(DOCUMENTS_LIVE.TITLE, DOCUMENTS_LIVE.DESCRIPTION, DOCUMENTS_LIVE.SUBJECTS, DOCUMENTS_LIVE.KEYWORDS, DOCUMENTS_LIVE.AUTHORS) AGAINST('$natural_language_terms' IN NATURAL LANGUAGE MODE) as relevance ";
@@ -89,7 +89,7 @@ class Page {
 		if(! $this->docCount) { 
 			$query = $this->getQuery();	
 			$count_query = "select count(*) as count $query[from] ". $query['where'];
-			$count_res = dbLookupSingle($count_query); 
+			$count_res = fetchRow($count_query, true); 
 			$this->docCount = $count_res['count'];	
 		}
 		return $this->docCount;
@@ -100,7 +100,7 @@ class Page {
 			$query = $this->getQuery();	
 			$no_digi_where = str_replace(" and URL != '' ", " and URL = '' ", $query['where']);
 			$no_digi_count = "select count(*) as count $query[from] $no_digi_where";
-			$no_digi_res = dbLookupSingle($no_digi_count); 
+			$no_digi_res = fetchRow($no_digi_count, true); 
 			$this->docNoDigitalCount = $no_digi_res['count'];	
 		}
 		return $this->docNoDigitalCount;
@@ -323,7 +323,7 @@ class Page {
 	}
 
 	function getWordCloud() {
-		include_once "includes/tag-cloud/classes/tagcloud.php";
+		include_once "lib/tag-cloud/classes/tagcloud.php";
 		$kw_limit = 30;
 		$query = $this->getQuery();
 		$kw_filter = "";

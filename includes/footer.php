@@ -1,4 +1,4 @@
-<?php DbClose($db); ?>
+<?php dbClose(); ?>
 			</div>
 			<div id='footer'>
 				<a id='donate_link' target='_blank' href="https://co.clickandpledge.com/Default.aspx?WID=33005"><img width="210" height="34" title="Online donation system by ClickandPledge"style="border:1px solid #efefef" alt="Online donation system by ClickandPledge"src="https://s3.amazonaws.com/clickandpledge/Images/flair/buttons/210x34/CP_EN_OR_S_001.gif" /></a>

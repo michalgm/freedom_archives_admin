@@ -39,6 +39,11 @@ function dbInsert($query) {
 	}
 }
 
+function dbClose() {
+	$db = dbconnect();
+	$db->close();
+}
+
 //fetchRow: performs query and returns single row result
 function fetchRow($query, $assoc=0) {
 	$res = query($query);

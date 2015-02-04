@@ -1,7 +1,7 @@
 <?php
 include_once('config.local.php');
 
-include "dao/db.php";
+include "lib/dbaccess.php";
 include "Page.php";
 $db = DbConnect();
 $page = new Page();
@@ -10,7 +10,7 @@ include "includes/header.php";
 $COLLECTION_ID = dbEscape($page->params['view_collection']);
 
 if ($COLLECTION_ID) { 
-	$collection = dbLookupSingle("SELECT * from COLLECTIONS WHERE COLLECTION_ID=$COLLECTION_ID");
+	$collection = fetchRow("SELECT * from COLLECTIONS WHERE COLLECTION_ID=$COLLECTION_ID");
 	$COLLECTION_DESCRIPTION = $page->cleanDescription($collection['DESCRIPTION']);
 	$COLLECTION_NAME = $collection['COLLECTION_NAME'];
 	$page->params['collection_id'] = $COLLECTION_ID;
