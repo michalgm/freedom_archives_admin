@@ -262,6 +262,29 @@ function query($query) {
 	return $res;
 }
 
+function arrayToInString($array, $assoc=0) {
+  $array2 = Array();
+  if($assoc) { 
+    $array = array_keys($array);
+  }
+  foreach ($array as $key) {
+    $key = dbEscape($key);
+    $array2[] = $key;
+  }
+  return "'".join("','", $array2)."'";
+}
+
+function arrayToUpdateString($array, $keys='', $ignore_empty=0) {
+  if (! $keys) { $keys = array_keys($array); }
+  $values = Array();
+  foreach ($keys as $key) { 
+    if ($ignore_empty && (! isset($array[$key]) || $array[$key] == '')) { continue; }
+    $values[] = "$key='".dbEscape($array[$key])."'";
+  }
+  return implode(",", $values); 
+}
+
+
 if(! function_exists("session_register") ) { 
 	function session_register($key, $value) { 
 		if (!isset($_SESSION[$key])) {

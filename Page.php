@@ -53,21 +53,26 @@ class Page {
 			}
 
 			foreach(array_keys($this->filterparams) as $field) { 
-				if ($this->params[$field]) { 
-					if ($field == 'subject' || $field == 'author' || $field == 'keyword') {
-						$lookup_table = strtoupper($field).'_LOOKUP';
-						$query['from'] .= " join LIST_ITEMS_LOOKUP_LIVE $lookup_table on DOCUMENTS_LIVE.DOCID = $lookup_table.ID and $lookup_table.TYPE = '$field' and $lookup_table.IS_DOC = 1 ";
-						$dbfield = "$lookup_table".".item";
-					} else {
-						$dbfield  = "DOCUMENTS_LIVE.".$this->filterparams[$field]['field'];
+				$params = is_array($this->params[$field]) ? $this->params[$field] : array($this->params[$field]);
+				$count = 0;
+				foreach ($params as $param) {
+					if ($param) { 
+						if ($field == 'subject' || $field == 'author' || $field == 'keyword') {
+							$lookup_table = strtoupper($field)."_LOOKUP_$count";
+							$query['from'] .= " join LIST_ITEMS_LOOKUP_LIVE $lookup_table on DOCUMENTS_LIVE.DOCID = $lookup_table.ID and $lookup_table.TYPE = '$field' and $lookup_table.IS_DOC = 1 ";
+							$dbfield = "$lookup_table".".item";
+						} else {
+							$dbfield  = "DOCUMENTS_LIVE.".$this->filterparams[$field]['field'];
+						}
+						$dbvalue = dbEscape($param);
+						$value = $param == 'None' ? "($dbfield is null or $dbfield = '')" : "$dbfield = \"$dbvalue\"";
+						if ($field == 'collection_id' && $dbvalue) { 
+							$query['where'] .= " AND ($value or parent_id = $dbvalue) ";
+						} else { 
+							$query['where'] .= " AND $value ";
+						}
 					}
-					$dbvalue = dbEscape($this->params[$field]);
-					$value = $this->params[$field] == 'None' ? "($dbfield is null or $dbfield = '')" : "$dbfield = \"$dbvalue\"";
-					if ($field == 'collection_id' && $dbvalue) { 
-						$query['where'] .= " AND ($value or parent_id = $dbvalue) ";
-					} else { 
-						$query['where'] .= " AND $value ";
-					}
+					$count++;
 				}
 			}
 			if (! $this->params['no_digital']) { $query['where'] .= " and URL != '' "; }
@@ -290,7 +295,7 @@ class Page {
 			$filter_components .= "<h5>$display</h5>
 				<ul class='filter_cat $param'>";
 			if (isset($this->params[$param]) && $this->params[$param] != '') {
-				$filter_components .= "<li><a href='".html_encode(preg_replace("/&?$param=[^&]+/", "", $targetpage))."'>&laquo; All {$display}s</a></li>";
+				$filter_components .= "<li><a href='".html_encode(preg_replace("/&?$param(\[\])?=[^&]+/", "", $targetpage))."'>&laquo; All {$display}s</a></li>";
 			}
 			$x = 0;
 			foreach ($data as $item) { 
@@ -298,10 +303,11 @@ class Page {
 				$value_display =  isset($aliases[$param][$item['value']]) ?  $aliases[$param][$item['value']] : $item['value'];
 				$x++;
 				$style = $x > 5 ? "style='display: none;' class='hidden' " : "";
-				if(isset($this->params[$param]) && $this->params[$param] == $item['value']) { 
+				if(isset($this->params[$param]) && (is_array($this->params[$param]) ? in_array($item['value'], $this->params[$param]) : $this->params[$param] == $item['value'])) { 
 					$filter_components .= "\n<li $style>$value_display</li>";
 				} else { 
-					$filter_components .= "\n<li $style><a href='".html_encode("$targetpage&$param=").urlencode($item['value'])."'>$value_display ($item[count])</a></li>";
+					$key = $param . (($param == 'subject' || $param == 'author' || $param == 'keyword') ? "[]" : "");
+					$filter_components .= "\n<li $style><a href='".html_encode("$targetpage&$key=").urlencode($item['value'])."'>$value_display ($item[count])</a></li>";
 				}
 			}
 			if ($x > 5) { $filter_components .= "<li class='more_filters'><a href='#' onclick='return showMoreFilters(\"$param\");'>Show More...</a></li>"; }
@@ -327,7 +333,7 @@ class Page {
 		$cloud = new tagcloud();
 		foreach ($keywords as $kw) { 
 			$tag = $kw['KEYWORD'];
-			$url = $link."&amp;keyword=$tag";
+			$url = $link."&amp;keyword[]=$tag";
 			$cloud->addTag(array('tag'=>$tag, 'size'=>$kw['count'], 'url'=>$url));
 		}
 		$cloud->setOrder('tag','ASC');
