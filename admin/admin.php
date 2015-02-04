@@ -1022,7 +1022,7 @@ function filemakerImport($data_encoded) {
 		$file = array();
 		// if (! in_array($row['id'][0], array(1780, 5516))) { continue; }
 		// if (! in_array($row['id'][0], array(5304, 5744, 5745, 5746, 5747, 5748, 5749, 5750))) { continue; }
-		// if ($count >= 1) { continue; }
+		// if ($count >= 100) { continue; }
 		$file['DOCID'] = $row['id'][0];
 		$file['CALL_NUMBER'] = $row['Call_Number'][0];
 		$file['TITLE'] = $row['Title'][0];
@@ -1160,6 +1160,8 @@ function handleError($errno, $errstr, $errfile, $errline, $errcontext) {
 	if ($db) { $db->rollback(); }
 	$data = array();
 	if ($debug) { $errstr = "'$errstr' in file $errfile line $errline "; } //(".print_r($errcontext, 1).")"; }
+	file_put_contents("docs/admin_errors.log", date('Y-m-d H:i:s') ." - $errstr\n", FILE_APPEND | LOCK_EX);
+
 	setResponse($errno, "$errstr", $data);
 	return true;
 }

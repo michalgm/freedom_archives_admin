@@ -1046,7 +1046,7 @@ app.config(function($httpProvider) {
 			'response': function(response) {
 				if (response.config && response.config.url == 'admin.php') { 
 					if (typeof(response.data) == 'string' && response.data.match(/^#STATUS#/)) {
-            response.data = JSON.parse(response.data.replace(/^#STATUS#.*#ENDSTATUS#/, ''));
+            response.data = JSON.parse(response.data.replace(/^#STATUS#.*?(#ENDSTATUS#)?{/, '{'));
           }
 					if (response.data.statusCode == 1) {
 						return response.data.data;

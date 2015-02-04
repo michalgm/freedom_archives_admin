@@ -64,9 +64,17 @@ function fetchValue($query) {
 }
 
 function query($query) {
-	global $db;
+	global $db, $debug;
 	if (! $db) { $db = dbconnect(); }
 	$res = $db->query($query) or trigger_error(('Query failed: '.$db->error."\n\t<br/>$query\n"));
+	if ($debug && $db->warning_count) {
+		if ($result = $db->query("SHOW WARNINGS")) {
+			$row = $result->fetch_row();
+			$warning = sprintf("%s (%d): %s - %s\n", $row[0], $row[1], $row[2], $query);
+			file_put_contents("docs/mysql_warnings.log", $warning, FILE_APPEND | LOCK_EX);
+			$result->close();
+		}
+	}
 	return $res;
 }
 
