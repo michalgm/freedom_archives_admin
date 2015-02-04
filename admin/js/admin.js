@@ -682,7 +682,7 @@ app.factory('$templateCache', function($cacheFactory, $http, $injector) {
 		 
 			// first template request ever - get the all tpl file
 			if (!allTplPromise) {
-				allTplPromise = $http.get('templates.html').then(function(response) {
+				allTplPromise = $http.get('js/templates.html').then(function(response) {
 					// compile the response, which will put stuff into the cache
 					$injector.get('$compile')(response.data);
 					return response;
