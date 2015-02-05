@@ -47,7 +47,6 @@
     "commit": "90aaf4b2996b4ba45e5d51e71ce90b36071059a8"
   },
   "_source": "git://github.com/ianwalter/ng-breadcrumbs.git",
-  "_target": "~0.4.1",
-  "_originalSource": "ng-breadcrumbs",
-  "_direct": true
+  "_target": "*",
+  "_originalSource": "ng-breadcrumbs"
 }
