@@ -49,8 +49,8 @@ if (strstr(basename($_SERVER['PHP_SELF']), 'index')) {
 		<!-- HEADER  -->
 		<div id="header" >
 			<div id='header_image'>
-				<a id='image_link' href="/"></a>
-				<div id='header_links'> <a href='/'>Search&raquo;</a> <a href='http://freedomarchives.org'> Home&raquo;</a></div>
+				<a id='image_link' href="/" title='Return to Search Site Home'></a>
+				<div id='header_links'> <a href='/' title='Return to Search Site Home'>Search Home&raquo;</a> <a href='http://freedomarchives.org' title="Go to the Freedom Archives' website"> Freedom Archives Home&raquo;</a></div>
 			</div>
 		</div>
 		<!-- HEADER ENDS-->
