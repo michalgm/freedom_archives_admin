@@ -329,6 +329,8 @@ app.directive('formGroup', function($requests, $location) {
 			scope.type = scope.inputType || 'text';
 			scope.label_width = 2;
 			scope.field_width = 10;
+			scope.invalidHtml = false;
+
 			if (! element.hasClass('row')) {
 				scope.label_width = 4;
 				scope.field_width = 8;
@@ -358,6 +360,15 @@ app.directive('formGroup', function($requests, $location) {
 				if (! scope.model && input && input.val()) {
 					input.val('');
 				}
+			}
+
+			if (scope.inputType == 'richtext' && scope.model != '') {
+				var clearWatch = scope.$watch(function() { return $('#htmltest').html(); }, function(html) {
+					if (html != 'Loading...') {
+					scope.invalidHtml = html == '';
+					if (! scope.invalidHtml) { clearWatch(); }
+					}
+				});
 			}
 		}
 	}

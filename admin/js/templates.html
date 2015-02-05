@@ -716,10 +716,10 @@
 </script>
 
 <script type="text/ng-template" id="fileImport.html">
-	<ol ng-file-drop="onFileSelect($files)" ng-file-drag-over-class="bg-primary">
+	<ol ng-file-drop ng-file-change="onFileSelect($files)" drag-over-class="bg-primary">
 		<li>
 			Drag and drop the {{filetype}} file here, or use the button to browse to the file.
-			<div ng-file-drop-available="dropSupported=true" ng-show="!dropSupported">HTML5 Drop File is not supported!</div>
+			<div ng-no-file-drop>HTML5 Drop File is not supported!</div>
 			<div>
 				<span class="btn btn-default btn-sm btn-file">
 					Choose file <input type="file" ng-file-select="onFileSelect($files)">
@@ -757,7 +757,7 @@
 			</div>
 		</div>
 		<p ng-show='bad_file' class='bad-file bg-danger'> {{bad_file}} </p>
-		<span class='drag-target' ng-file-drop="onFileSelect($files)" ng-file-drag-over-class="bg-primary">
+		<span class='drag-target' ng-file-drop ng-file-change="onFileSelect($files)" drag-over-class="bg-primary">
 			Drop new image here or<br/>
 			<span class="btn btn-default  btn-sm btn-file">
 				Choose file <input type="file" ng-file-select="onFileSelect($files)" accept="image/jpg,image/jpeg,image/png,image/gif,image/bmp,image/tiff,application/pdf" />
@@ -781,7 +781,14 @@
 		<label class='col-xs-{{label_width}} control-label'>{{label}}</label>
 		<div class='col-xs-{{field_width}}' ng-switch='type'>
 			<textarea ng-switch-when='textarea' type='text' rows='6' class='form-control' ng-model='$parent.model' />
-			<div ng-switch-when='richtext' text-angular ta-toolbar="[['bold','italics', 'underline'], ['justifyLeft','justifyCenter','justifyRight'], ['indent', 'outdent'], ['ol', 'ul'], ['insertImage', 'insertLink'], ['redo', 'undo', 'clear', 'html']]" ng-model='$parent.model'></div>
+			<div ng-switch-when='richtext'>
+				<div id='htmltest' style='display: none;' ta-bind ng-model="$parent.model">Loading...</div>
+				<div ng-hide='invalidHtml' text-angular ta-toolbar="[['bold','italics', 'underline'], ['justifyLeft','justifyCenter','justifyRight'], ['indent', 'outdent'], ['ol', 'ul'], ['insertImage', 'insertLink'], ['redo', 'undo', 'clear', 'html']]" ng-model='$parent.model'></div>
+				<div ng-show='invalidHtml'>
+					<div class='alert alert-danger'>The {{label}} text contains invalid HTML code. Please correct below and save to view the HTML editor.</div>
+					<textarea type='text' rows='6' class='form-control' ng-model='$parent.model' />
+				</div>
+			</div>
 			<div class='checkbox' ng-switch-when='checkbox'>
 				<input type='checkbox' ng-true-value='1' ng-false-value='0' ng-model='$parent.model'/>
 			</div>	

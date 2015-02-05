@@ -4,7 +4,8 @@
 
 .nav, .pagination, .carousel, .panel-title a { cursor: pointer; }
 
-.ta-editor { height: auto !important; }
+div.ta-editor { height: auto !important; }
+textarea.ta-editor { min-height: 100px; }
 
 #messages {margin-top: 15px; position: fixed; width: 400px; left: 50%; margin-left: -200px; z-index: 110; }
 
