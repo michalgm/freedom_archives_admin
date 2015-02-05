@@ -77,7 +77,7 @@
 				<div class='panel panel-info form-group search-filter' ng-repeat='filter in options.filters'>
 					<div class='panel-body bg-info'>
 						<button ng-click='options.filters.splice($index, 1)' class='btn btn-danger btn-xs' tooltip='Remove filter'><span class="glyphicon glyphicon-remove"></span></button>
-						<select class='form-control' ng-model='filter.type' ng-options="item as item|ucf for item in filters"/>
+						<select class='form-control' ng-model='filter.type' ng-options="item as (item == 'publisher' ? 'Organization/Publisher' : item)|ucf for item in filters"/>
 						<input ng-if='! static[filter.type]' ng-model-options="{allowInvalid: false}" ng-show='filter.type' type="text" ng-model="filter.value" autocomplete="off" typeahead-editable="false" typeahead="item.item for item in fetchList(filter.type, $viewValue, 10)" class="form-control" placeholder='{{filter.type ? "Choose a "+filter.type:""}}' />
 						<input ng-if='static[filter.type] || ! filter.type' class='form-control' type="text" ng-model="filter.value" ng-disabled='! filter.type' placeholder='{{ filter.type ? "Search on " +filter.type : "Select a field"}}' />
 					</div>

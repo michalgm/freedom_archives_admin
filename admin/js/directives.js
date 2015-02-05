@@ -196,6 +196,7 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 			scope.isDoc = false;
 			scope.static = {
 				'location': true,
+				'publisher': true,
 				'organization': true,
 				'description': true,
 				'title': true,
@@ -206,7 +207,7 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 			var searchType = '';
 			if (scope.itemType == 'document') {
 				action =  'fetchDocuments';
-				scope.filters = ['author', 'description', 'format', 'generation', 'keyword', 'location', 'organization', 'producer', 'program', 'quality', 'subject', 'title'];
+				scope.filters = ['author', 'description', 'format', 'generation', 'keyword', 'location', 'publisher', 'producer', 'program', 'quality', 'subject', 'title'];
 				scope.isDoc = true;
 				if ( scope.searchType) {
 					searchType = scope.searchType;
