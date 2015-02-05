@@ -35,7 +35,7 @@ class Page {
 		if (! $this->query) { 
 			$DB_SEARCH_TERMS = dbEscape($this->params['s']);
 			$query = array(
-				'select' => "select DOCUMENTS_LIVE.*, date_format(DOCUMENTS_LIVE.DATE_CREATED, '%c/%e/%Y') as DATE, collection_name, ".$this->filterparams['media']['field']." as media_type ",
+				'select' => "select DOCUMENTS_LIVE.*, if(str_to_date(trim(VOL_NUMBER), '%m/%d/%Y'), VOL_NUMBER, '') as DATE, collection_name, ".$this->filterparams['media']['field']." as media_type ",
 				'from' => "from DOCUMENTS_LIVE join COLLECTIONS_LIVE using (collection_id)",
 				'where' => " where DOCUMENTS_LIVE.IS_HIDDEN = 0 ",
 				'order' => "",
@@ -122,6 +122,7 @@ class Page {
 		}
 		foreach ($docs as $doc) { 
 			$title = htmlspecialchars($doc['TITLE'], ENT_QUOTES);
+			$details = "";
 			foreach(array('KEYWORDS', 'TITLE', 'DESCRIPTION', 'AUTHORS') as $key) {
 				if (! $doc[$key]) { continue; }
 				foreach($search_terms as $term) { 
@@ -132,12 +133,13 @@ class Page {
 				$doc[$key] = html_encode($doc[$key]);
 				$doc[$key] = str_replace('[[!]]', "<span class='highlight_search'>", $doc[$key]);
 				$doc[$key] = str_replace('[[#]]', "</span>", $doc[$key]);
-				
 			}
-			foreach(array('publisher', 'year', 'call_number', 'date', 'producers', 'program') as $key) { 
+			foreach(array('publisher', 'year', 'date', 'call_number', 'format', 'producers', 'program') as $key) { 
 				$ukey = strtoupper($key);
 				$nicekey = ucwords(str_replace("_", " ", $key));
-				$doc[$ukey] = $doc[$ukey] ? "<span class='$key'>$nicekey: ".html_encode($doc[$ukey])."</span>" : "";
+				if ($doc[$ukey] && ($key != 'year' || ! $doc['DATE'])) { 
+					$details .= "<span class='$key'>$nicekey: ".html_encode($doc[$ukey])."</span>";
+				}
 			}
 			$doc['AUTHORS'] = $doc['AUTHORS'] ? "<span class='author'>Author".(strstr($doc['AUTHORS'], ',') || stristr($doc['AUTHORS'], ' and ')  ? 's' : '').": ".$doc['AUTHORS']."</span>" : "";
 			$thumbnail = $doc['THUMBNAIL'] ? $doc['THUMBNAIL'] : "images/thumbnails/not_digitized.jpg";
@@ -156,7 +158,7 @@ class Page {
 				<div id='doc_$doc[DOCID]' class='document'>
 					$image
 					$title
-					<div class='details'>$doc[AUTHORS]$doc[PUBLISHER]$doc[YEAR]$doc[CALL_NUMBER]$doc[DATE]$doc[PRODUCERS]$doc[PROGRAM]$collection</div>
+					<div class='details'>$doc[AUTHORS]$details$collection</div>
 					<div class='doc_description'>$description</div>
 				</div>
 			";
