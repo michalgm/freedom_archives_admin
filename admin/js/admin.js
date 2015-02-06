@@ -78,7 +78,7 @@ app.controller('collections', function($scope, $data, $requests, $location) {
 	}
 });
 
-app.controller('documentEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location, $search) {
+app.controller('documentEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location, $search, $timeout) {
   $scope.data = $data;
 	$scope.search = $search;
   $scope.location = $location;
@@ -86,7 +86,8 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 		'_authors': [],
 		'_keywords': [],
 		'_subjects': [],
-		'_producers': [],
+    '_producers': [],
+		'_related': [],
 	};
   var orig_doc = angular.copy($scope.document);
   $scope.related_filter= '';
@@ -147,6 +148,9 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
       TRACK_NUMBER: $filter('filter')($scope.document['_related'], {delete: "!1"}).length+1
     })
     $scope.related_filter= '';
+    $timeout(function() { 
+      $('.content-body').scrollTop($('.content-body')[0].scrollHeight);
+    });
   }
 
   $scope.viewRelated= function(id) { 

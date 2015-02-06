@@ -50,17 +50,11 @@
 		<form name='searchoptions' class='form-inline panel-heading scroll-header search-options'>
 			<div>
 				<div class='form-group'>
-					<label class="control-label">Text</label>
-					<input tooltip='Search by {{isDoc ? "Title, Description, Keywords, Producers," : "Name," }} Description, Call Number, or ID' type='text' class='form-control' placeholder='Search by text' ng-model='options.filter' autofocus/>
+					<input tooltip='Search by {{isDoc ? "Title, Description, Keywords, Producers," : "Name," }} Description, Call Number, or ID' type='text' class='form-control' placeholder='Quick search' ng-model='options.filter' autofocus/>
 				</div>
 				<div ng-hide='limitCollectionId' class='form-group'>
 					<label class="control-label">Collection</label>
 					<span collection-chooser select-collection='selectCollection(collection)' model='options.selected'></span>
-				</div>
-				<div class="checkbox form-group" ng-show="isDoc">
-					<label>
-						<input type="checkbox" ng-model='options.nonDigitized' ng-true-value="1" ng-false-value="0"> Include non-digitized
-					</label>
 				</div>
 				<div class="checkbox form-group" ng-show='! embedded'>
 					<label>
@@ -70,8 +64,13 @@
 						<input type="checkbox" ng-model='options.IS_HIDDEN' ng-true-value="1" ng-false-value="0"> Hidden
 					</label>
 				</div>
-				<button ng-click='addFilter()' class='btn btn-default pull-right'><span class="glyphicon glyphicon-plus"></span> Add Filter</button>
-				<button ng-if='isDoc && ! embedded' ng-click='exportItems()' class='btn btn-default pull-right'><span class="glyphicon glyphicon-download-alt"></span> CSV Export</button>
+				<div class="checkbox form-group" ng-show="isDoc">
+					<label>
+						<input type="checkbox" ng-model='options.nonDigitized' ng-true-value="1" ng-false-value="0"> Include non-digitized
+					</label>
+				</div>
+				<button ng-click='addFilter()' class='btn btn-default pull-right btn-sm'><span class="glyphicon glyphicon-plus"></span> Add Filter</button>
+				<button ng-if='isDoc && ! embedded' ng-click='exportItems()' class='btn btn-default pull-right btn-sm'><span class="glyphicon glyphicon-download-alt"></span> CSV Export</button>
 			</div>
 			<div>
 				<div class='panel panel-info form-group search-filter' ng-repeat='filter in options.filters'>
@@ -165,16 +164,13 @@
 						<div class='panel-heading vertical-align'>
 							<span class='col-xs-1'><b>Number</b></span>
 							<span class='col-xs-3'><b>Title</b></span>
-							<span class='col-xs-2'><b>Description</b></span>
-							<span class='col-xs-3'>
-								<input class='form-control' type="text" ng-model="related_filter" typeahead-append-to-body='true' autocomplete="off" typeahead-editable="false" typeahead-on-select="selectRelated($item)" typeahead="doc.label for doc in fetchRelated($viewValue)" class="form-control" placeholder="Add Related Record by Title, Call #, or ID" />
-							</span>
-							<span class='col-xs-2 bold'>Call Number/Format</span>
+							<span class='col-xs-5'><b>Description</b></span>
+							<span class='col-xs-3 bold'>Call Number/Format</span>
 						</div>
 						<div class='list-group'>
 							<div class='list-group-item vertical-align' ng-repeat='related in document._related | filter:{delete: "!1"}'>
 								<span class='col-xs-1'>
-									<button class='btn btn-danger btn-xs' title='Remove Relationship' ng-click='related.delete = 1'><span class="glyphicon glyphicon-remove"></span></button>
+									<button class='btn btn-danger btn-xs' tooltip='Remove Relationship' ng-click='related.delete = 1'><span class="glyphicon glyphicon-remove"></span></button>
 									{{$index+1}}
 								</span>
 								<span class='col-xs-3'>
@@ -190,6 +186,14 @@
 								<span class='col-xs-1'>
 									<button ng-if="related.DOCID_OTHER != related.DOCID" class='btn btn-primary pull-right' ng-click='viewRelated(related.DOCID_OTHER)'>View</button>
 								</span>
+							</div>
+							<div class='list-group-item vertical-align'>
+								<div class='col-xs-9'>
+									<div class='input-group'>
+										<span class="input-group-addon"><span class="glyphicon glyphicon-plus"></span></span>
+										<input class='form-control' type="text" ng-model="related_filter" typeahead-append-to-body='true' autocomplete="off" typeahead-editable="false" typeahead-on-select="selectRelated($item)" typeahead="doc.label for doc in fetchRelated($viewValue)" class="form-control" placeholder="Add Related Record by Title, Call #, or ID" />
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -263,11 +267,11 @@
 						<div class="list-group scroll-body" ui-sortable ng-model='collection._subcollections'>
 							<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='sc in collection._subcollections | filter:{DISPLAY_ORDER:"!1000"}'>
 								<strong ng-class='{"text-muted": sc.IS_HIDDEN == 1}'>{{sc.COLLECTION_NAME}}&nbsp;</strong>
-								<span class='pull-right' style='position:absolute; right:15px ' >
-									<button ng-click='editSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+								<span class='pull-right btn-group' style='position:absolute; right:15px ' >
+									<button ng-click='editSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-sm'><span class="glyphicon glyphicon-pencil"></span> Edit</button>
 									<!--<button ng-if='sc.IS_HIDDEN == 1' ng-click='hideSubcollection(sc.COLLECTION_ID, 1)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ok-circle"></span> Unhide</button>
 									<button ng-if='sc.IS_HIDDEN == 0' ng-click='hideSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ban-circle"></span> Hide</button>-->
-									<button ng-click='removeSubcollection($index)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-remove"></span> Remove</button>
+									<button ng-click='removeSubcollection($index)' tooltip='Remove subcollection from collection' tooltip-append-to-body='true' class='btn btn-danger btn-sm'><span class="glyphicon glyphicon-remove"></span></button>
 								</span>
 							</a>
 						</div>
@@ -279,7 +283,7 @@
 				</div>
 			</tab>
 			<tab ng-if='1' heading='Add/Remove Records'>
-				<div id='featuredDocs' class='row'>
+				<div id='addRemoveRecords' class='row'>
 					<div class='col-xs-6' autoheight>
 						<h3 class='scroll-header'>Records <small>{{documents.length}} Records in Collection</small></h3>
 						<div class="list-group scroll-body" ng-model='documents'>
@@ -290,8 +294,10 @@
 									</span>
 									<div class='media-body'>
 										<div class='pull-right text-right'>
-											<button ng-click='location.path("/documents/"+doc.id)' class='btn btn-default btn-sm'><span class="glyphicon glyphicon-pencil"></span> View</button> 
-											<button ng-click='removeDoc($index)' class='btn btn-default btn-sm'><span class="glyphicon glyphicon-remove"></span> Remove</button> 
+											<div class='btn-group'>
+												<button ng-click='location.path("/documents/"+doc.id)' class='btn btn-default btn-sm'><span class="glyphicon glyphicon-pencil"></span> Edit</button> 
+												<button ng-click='removeDoc($index)' tooltip='Remove record from collection' tooltip-append-to-body='true' class='btn btn-danger btn-sm'><span class="glyphicon glyphicon-remove"></span></button> 
+											</div>
 											<div>ID: {{doc.id}}</div>
 											<div ng-if='doc.CALL_NUMBER'>Call #: {{doc.CALL_NUMBER}}</div>
 										</div>
@@ -335,14 +341,14 @@
 			<div class="list-group scroll-body" ui-sortable ng-model='documents'>
 				<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='doc in documents'>
 					<div class='media'>
-						<button ng-click='removeFeaturedDoc($index)' class='btn btn-default' style='position:absolute; top:15px; right:15px;'><span class="glyphicon glyphicon-remove"></span> Remove</button> 
+						<button ng-click='removeFeaturedDoc($index)' tooltip='Remove record from featured list' tooltip-append-to-body='true' class='btn btn-default btn-xs btn-danger' style='position:absolute; top:15px; right:15px;'><span class="glyphicon glyphicon-remove"></span></button> 
 						<span class='pull-left'>
 							<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
 						</span>
 						<div class='media-body'>
 							<p><strong>{{doc.TITLE}}</strong></p>
 							<p class=''>
-								Description:
+								Label:
 								<span style='width:300px; display: inline-block;'>
 									<input class='form-control' type='text' ng-model='doc.DESCRIPTION'/>
 								</span>
