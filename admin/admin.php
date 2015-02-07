@@ -1,7 +1,7 @@
 <?php
 set_error_handler('handleError');
 
-$debug=1;
+$debug=0;
 $db = null;
 include_once('../config.local.php');
 
@@ -1040,8 +1040,26 @@ function filemakerImport($data_encoded) {
 		$file['CONTRIBUTOR'] = $row['modified_by'][0];
 		$file['DATE_MODIFIED'] = dateToSQL($row['Last Modified'][0], $row['modified_time'][0]);
 		$file['LOCATION'] = $row['Location'][0];
-		$file['YEAR'] = substr($row['Date_Made'][0], -4);
-		$file['VOL_NUMBER'] = $row['Date_Made'][0];
+		//$file['YEAR'] = substr($row['Date_Made'][0], -4);
+		$volume = $row['Date_Made'][0];// ? $row['Date_Made'][0] : $row['new date field'][0];
+		$parsed = date_parse($volume);
+		// $date = str_replace("-", "/", $date);
+		if (preg_match("/^(\d\d?)[\/\-](\d\d?)[\/\-](\d\d\d?\d?)$/", $volume, $matches)) {
+			$file['MONTH'] = $matches[1];
+			$file['DAY'] = $matches[2];
+			$year = $matches[3];
+			if ($year < 100) {$year +=1900; }
+			if ($year > 2015) {$year -= 100; }
+			$file['YEAR'] = $year;
+		} else if ($parsed['warning_count'] == 0 && $parsed['error_count'] == 0) {
+			if ($parsed['month']) { $file['MONTH'] = $parsed['month']; }
+			if ($parsed['day']) { $file['DAY'] = $parsed['day']; }
+			if ($parsed['year']) { $file['YEAR'] = $parsed['year']; }
+		} else {
+			$file['VOL_NUMBER'] = $volume;
+		}
+		// $file['VOL_NUMBER'] = $row['Date_Made'][0] ? $row['Date_Made'][0] : $row['new date field'][0];
+		// $file['OTHER_DATE'] = $row['new date field'][0];
 		$file['_related'] = array();
 
 		$cn_parts =explode(" ", $file['CALL_NUMBER']);; 
@@ -1070,6 +1088,7 @@ function filemakerImport($data_encoded) {
 	while($row=$reader->nextRow()) {
 		$file = array();
 		$id = $row['id'][0];
+		// if ($count >= 100) { continue; }
 		// if (! in_array($row['id'][0], array(1780, 5516))) { continue; }
 		$file['DOCID'] = $id;
 		$file['TITLE'] = $row['Title'][0];
