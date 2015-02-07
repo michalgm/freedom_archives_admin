@@ -231,3 +231,5 @@ td { vertical-align: middle !important; }
 .text-nowrap {white-space: nowrap;}
 
 .related-records: {margin-bottom: 20px; }
+
+.date-input .col-xs-4,.date-input .col-xs-3 { padding: 0px;}

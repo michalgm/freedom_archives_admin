@@ -35,7 +35,7 @@ class Page {
 		if (! $this->query) { 
 			$DB_SEARCH_TERMS = dbEscape($this->params['s']);
 			$query = array(
-				'select' => "select DOCUMENTS_LIVE.*, if(str_to_date(trim(VOL_NUMBER), '%m/%d/%Y'), VOL_NUMBER, '') as DATE, collection_name, ".$this->filterparams['media']['field']." as media_type ",
+				'select' => "select DOCUMENTS_LIVE.*, collection_name, ".$this->filterparams['media']['field']." as media_type ",
 				'from' => "from DOCUMENTS_LIVE join COLLECTIONS_LIVE using (collection_id)",
 				'where' => " where DOCUMENTS_LIVE.IS_HIDDEN = 0 ",
 				'order' => "",
@@ -134,11 +134,31 @@ class Page {
 				$doc[$key] = str_replace('[[!]]', "<span class='highlight_search'>", $doc[$key]);
 				$doc[$key] = str_replace('[[#]]', "</span>", $doc[$key]);
 			}
-			foreach(array('publisher', 'year', 'date', 'call_number', 'format', 'producers', 'program') as $key) { 
+
+			foreach(array('publisher', 'year', 'call_number', 'vol_number', 'format', 'producers', 'program') as $key) { 
 				$ukey = strtoupper($key);
-				$nicekey = ucwords(str_replace("_", " ", $key));
-				if ($doc[$ukey] && ($key != 'year' || ! $doc['DATE'])) { 
-					$details .= "<span class='$key'>$nicekey: ".html_encode($doc[$ukey])."</span>";
+				$nicekey = $key == 'vol_number' ? 'Volume Number' : ucwords(str_replace("_", " ", $key));
+				if ($doc[$ukey]) {
+					$value = html_encode($doc[$ukey]);
+					if ($key == 'year') {
+						if ($doc['YEAR'] != '?') {
+							if ($doc['MONTH'] != '?') {
+								if ($doc['DAY'] != '?') {
+									$value = "$doc[MONTH]/$doc[DAY]/$doc[YEAR]";
+								} else {
+									$value = "$doc[MONTH]/$doc[YEAR]";
+								}
+								$nicekey = "Date";
+							} else {
+								$value = $doc['YEAR'];
+							}
+						} else {
+							$value = '';
+						}
+					}
+					if ($value) { 
+						$details .= "<span class='$key'>$nicekey: $value</span>";
+					}
 				}
 			}
 			$doc['AUTHORS'] = $doc['AUTHORS'] ? "<span class='author'>Author".(strstr($doc['AUTHORS'], ',') || stristr($doc['AUTHORS'], ' and ')  ? 's' : '').": ".$doc['AUTHORS']."</span>" : "";

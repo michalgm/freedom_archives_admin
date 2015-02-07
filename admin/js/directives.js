@@ -202,12 +202,16 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 				'title': true,
 				'collection_name': true,
 				'date_range': true,
+				'day': true,
+				'month': true,
+				'year': true,
+				'vol_number': true,
 			};
 			var action = '';
 			var searchType = '';
 			if (scope.itemType == 'document') {
 				action =  'fetchDocuments';
-				scope.filters = ['author', 'description', 'format', 'generation', 'keyword', 'location', 'publisher', 'producer', 'program', 'quality', 'subject', 'title'];
+				scope.filters = ['author', 'day', 'description', 'format', 'generation', 'keyword', 'location', 'month', 'publisher', 'producer', 'program', 'quality', 'subject', 'title', 'vol_number', 'year'];
 				scope.isDoc = true;
 				if ( scope.searchType) {
 					searchType = scope.searchType;
@@ -330,6 +334,22 @@ app.directive('formGroup', function($requests, $location) {
 			scope.label_width = 2;
 			scope.field_width = 10;
 			scope.invalidHtml = false;
+
+			scope.months = [
+				{value:'?', label: '?'},
+				{value:'1', label:'Jan'},
+				{value:'2', label:'Feb'},
+				{value:'3', label:'Mar'},
+				{value:'4', label:'Apr'},
+				{value:'5', label:'May'},
+				{value:'6', label:'Jun'},
+				{value:'7', label:'Jul'},
+				{value:'8', label:'Aug'},
+				{value:'9', label:'Sep'},
+				{value:'10', label:'Oct'},
+				{value:'11', label:'Nov'},
+				{value:'12', label:'Dec'}
+			];
 
 			if (! element.hasClass('row')) {
 				scope.label_width = 4;

@@ -140,8 +140,8 @@
 				<div form-group model='document.FORMAT' label='Format' input-type='chooser' options="{field: 'format', editable: true}"></div>
 			</div>
 			<div class='row'>
-				<div form-group model='document.VOL_NUMBER' label='Volume Number/ Date'></div>
-				<div form-group model='document.YEAR' label='Year'></div>
+				<div form-group model='document.VOL_NUMBER' label='Volume Number'></div>
+				<div form-group model='document' input-type='date' label='Date'></div>
 			</div>
 			<div class='row'>
 				<div form-group model='document.LOCATION' label='Location'></div>
@@ -829,6 +829,19 @@
 							<span class="glyphicon glyphicon-link"></span> Open
 						</a>
 					</div>
+				</div>
+			</div>
+			<div ng-switch-when="date" class='vertical-align date-input'>
+				<div class='col-xs-3'>
+					<select class='form-control' ng-model='$parent.model.MONTH' ng-options="item.value as item.label for item in months"/>
+				</div>
+				<div class='col-xs-1'>/</div>
+				<div class='col-xs-3'>
+					<select class='form-control' ng-model='$parent.model.DAY' ng-options="item for item in ['?'] | range:1:31:true"/>
+				</div>
+				<div class='col-xs-1'>/</div>
+				<div class='col-xs-4'>
+					<input class='form-control' ng-model='$parent.model.YEAR'/>
 				</div>
 			</div>
 			<input ng-switch-default='text' type='{{type}}' class='form-control' ng-model='$parent.model' />

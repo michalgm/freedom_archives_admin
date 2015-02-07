@@ -75,11 +75,16 @@ app.filter('truncate', function () {
 })
 
 .filter('range', function() {
-  return function(input, min, max) {
+  return function(input, min, max, toString) {
     min = parseInt(min); //Make string input int
     max = parseInt(max);
-    for (var i=min; i<=max; i++)
-      input.push(i);
+    for (var i=min; i<=max; i++) {
+      if (toString) {
+        input.push(i.toString());
+      } else {
+        input.push(i);
+      }
+    }
     return input;
   };
 });

@@ -523,7 +523,7 @@ function fetchItems($type, $request) {
 			if ($filter_type != '' && $filter_value != '') {
 				if (in_array($filter_type, array('keyword', 'author', 'subject', 'producer'))) {
 					$filters.= " JOIN LIST_ITEMS_LOOKUP $filter_count on $filter_count.id = I.$idfield and IS_DOC = $isDoc and $filter_count.type = '$filter_type' and $filter_count.item = '$filter_value' ";
-				} else if (in_array($filter_type, array('location', 'organization', 'publisher', 'description', 'title', 'collection_name', 'date_range'))) {
+				} else if (in_array($filter_type, array('location', 'organization', 'publisher', 'description', 'title', 'collection_name', 'date_range', 'vol_number'))) {
 					$filter_value = str_replace(" ", '%', $filter_value);
 					$where[] = "I.$filter_type like _utf8 '%$filter_value%'";
 					$order[] = "I.$filter_type like _utf8 '$filter_value%'";
@@ -670,7 +670,10 @@ function saveItem($type, $id, $data, $noLog=false) {
 			$data['MEDIA'] = $media_type;
 		}
 	}
-	
+	foreach(array('MONTH', 'DAY', 'YEAR') as $time) {
+		if(isset($data[$time]) && $data[$time] === '') {$data[$time] = '?'; }
+	}
+
 	if (isset($data['CALL_NUMBER'])) {
 		if (preg_match("/^([A-z\/]+)(.*)$/", $data['CALL_NUMBER'], $matches)) {
 			if ($matches[1] && $matches[2]) {
@@ -872,7 +875,8 @@ function csvImport($data) {
 		'identifier', 'source', 'language', 'relation', 'coverage', 'rights', 'audience', 'format', 
 		'keywords', 'authors', 'vol_number', 'no_copies', 'file_name', 'doc_text', 'file_extension', 
 		'collection_id', 'url', 'url_text', 'producers', 'program', 'generation', 'quality', 'year', 
-		'location', 'needs_review', 'is_hidden', 'call_number', 'notes', 'thumbnail', 'length', 'collection');
+		'location', 'needs_review', 'is_hidden', 'call_number', 'notes', 'thumbnail', 'length', 'month', 'day',
+		'collection');
 
 	$aliases = array(
 		'no. copies'=>'no_copies',

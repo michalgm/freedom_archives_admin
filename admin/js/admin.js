@@ -88,6 +88,11 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 		'_subjects': [],
     '_producers': [],
 		'_related': [],
+    'MONTH': '?',
+    'DAY': '?',
+    'YEAR': '?',
+    'NO_COPIES': '1',
+    'COLLECTION_ID': 1000,
 	};
   var orig_doc = angular.copy($scope.document);
   $scope.related_filter= '';
