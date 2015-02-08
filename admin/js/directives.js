@@ -382,14 +382,18 @@ app.directive('formGroup', function($requests, $location) {
 				}
 			}
 
-			if (scope.inputType == 'richtext' && scope.model != '') {
-				var clearWatch = scope.$watch(function() { return $('#htmltest').html(); }, function(html) {
-					if (html != 'Loading...') {
-					scope.invalidHtml = html == '';
-					if (! scope.invalidHtml) { clearWatch(); }
+			if (scope.inputType == 'richtext') {
+				var clearWatch = scope.$watch(
+					function() {
+						if (scope.model != undefined && scope.model != '') { return $('#htmltest').html(); }
+					}, 
+					function(html) {
+						scope.invalidHtml = html == '';
+						if (! scope.invalidHtml && html != undefined) {clearWatch(); }
 					}
-				});
+				);
 			}
+
 		}
 	}
 });

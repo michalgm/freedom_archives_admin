@@ -798,10 +798,10 @@
 			<div class='checkbox' ng-switch-when='checkbox'>
 				<input type='checkbox' ng-true-value='1' ng-false-value='0' ng-model='$parent.model'/>
 			</div>	
-			<div id='col' ng-switch-when='collectionChooser'>
+			<div id='col' ng-switch-when='collectionChooser' ng-class='{"has-warning":$parent.model == 1000}'>
 				<div class='input-group col-xs-12'>
 					<span class='input-group-btn'>
-						<button class='btn btn-default' ng-click='location.path("/collections/"+$parent.model)'><span class="glyphicon glyphicon-pencil"></span> View</button>
+						<button class='btn btn-default' ng-class='{"btn-warning": $parent.model == 1000}' ng-click='location.path("/collections/"+$parent.model)'><span class="glyphicon glyphicon-pencil"></span> View</button>
 					</span>
 					<span collection-chooser model='$parent.model'></span>
 				</div>
