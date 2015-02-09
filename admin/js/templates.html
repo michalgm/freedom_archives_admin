@@ -553,7 +553,7 @@
 					</thead>
 					<tbody>
 						<tr ng-repeat='item in filtered_log | slice:(pagination.offset-1)*pagination.limit:pagination.limit'>
-							<td><a target='_new' href='#/{{item.type}}s/{{item.id}}'>{{item.description}}</a></td>
+							<td><a target='_new' href='#/{{item.type}}s/{{item.id}}'>{{item.description || 'Untitled'}}</a></td>
 							<td>{{item.type|ucf}}</td>
 							<td>{{item.action|ucf}}</td>
 							<td>{{data.users[item.user].name}}</td>
@@ -643,7 +643,7 @@
 					<span ng-class="{'list-group-item-success': item.status == 'Success', 'list-group-item-info':  item.status == 'Processing', 'list-group-item-danger': item.statusCode == 3}" class='list-group-item' ng-repeat='item in thumbnails'>
 						<span class='glyphicon' ng-class="{'glyphicon-ok': item.status == 'Success', 'glyphicon-refresh spin': item.status=='Processing', 'glyphicon-remove': item.statusCode == 3}"></span>
 						<b>{{item.title}}</b>: {{item.status}}
-						<img class='pull-right' style='height: 25px' ng-show='item.image' ng-src='{{item.image}}' />
+						<img class='pull-right' style='height: 25px' ng-show='item.image' ng-src='../{{item.image}}' />
 					</span>
 				</div>
 			</div>

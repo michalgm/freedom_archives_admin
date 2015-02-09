@@ -140,7 +140,7 @@ if ($action) {
 			$filename = 'All Collections';
 			$where = isset($request['collection_id']) ? " and c.collection_id = ".dbEscape($request['collection_id']). " " : "";
 			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors, 
-				publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description, 
+				publisher as 'Organization or Publisher', vol_number as 'Vol #-Issue', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description, 
 				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
 				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where 1=1 $where group by docid");
 
@@ -156,7 +156,7 @@ if ($action) {
 			$ids = arrayToInString(array_map(function($doc) { return $doc['id']; }, $searchdocs['docs']));
 
 			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors, 
-				publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description, 
+				publisher as 'Organization or Publisher', vol_number as 'Vol #-Issue', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description, 
 				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
 				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where d.docid in ($ids) group by docid");
 
@@ -178,7 +178,18 @@ if ($action) {
 			if (isset($request['limit'])) {
 				$limit = " limit $offset, ".dbEscape($request['limit']);
 			}
-			$query = "select a.item, sum(if(is_doc, 1, 0)) as record_count, sum(if(is_doc, 1, 0)) as collection_count from LIST_ITEMS a left join LIST_ITEMS_LOOKUP b using(item) where a.type = '$field' and a.item like('%$value%') collate utf8_unicode_ci  group by item order by if(a.item like('$value%') collate utf8_unicode_ci, 0, 1), ucase(a.item) $limit";
+
+			$query = "";
+			$query_suffix = "where a.type = '$field' and a.item like('%$value%') collate utf8_unicode_ci
+				group by item order by if(a.item like('$value%') collate utf8_unicode_ci, 0, 1), ucase(a.item) $limit";
+
+			if (in_array($field, array('author', 'subject', 'producer', 'keyword'))) {
+				$query = "select a.item, sum(if(is_doc = 1, 1, 0)) as record_count, sum(if(is_doc = 0, 1, 0)) as collection_count 
+					from LIST_ITEMS a left join LIST_ITEMS_LOOKUP b using(item, type) $query_suffix";
+			} else {
+				$query = "select a.item, count(*) as record_count, 0 as collection_count 
+					from LIST_ITEMS a left join DOCUMENTS b on a.item = b.$field $query_suffix";
+			}
 
 			$data = array(
 				'items'=> fetchRows("$query"),
@@ -294,7 +305,8 @@ if ($action) {
 			break;
 		
 		case 'getDocIds':
-			$data = fetchCol("select DOCID from DOCUMENTS");
+			$data = fetchRows("select DOCID as id, 'document' as type from DOCUMENTS union 
+				select COLLECTION_ID as id, 'collection' as type from COLLECTIONS");
 			//$data = fetchCol("select DOCID from DOCUMENTS where authors != '' or keywords != '' or subjects != '' or producers != ''");
 			break;
 
@@ -883,10 +895,12 @@ function csvImport($data) {
 		'no. copies'=>'no_copies',
 		'no. of copies'=>'no_copies',
 		'organization of publisher'=>'publisher',
+		'organization or publisher'=>'publisher',
 		'place of publication'=>'location',
 		'issue date/no'=>'vol_number',
 		'vol #-issue/ date'=>'vol_number',
 		'vol #-issue/date'=>'vol_number',
+		'vol #-issue'=>'vol_number',
 		'file name'=>'url',
 		'folder'=>'collection',
 		'subcollection'=>'collection',
@@ -1336,7 +1350,7 @@ function updateThumbnail($doc_id, $check=0) {
 				}
 				if(file_exists($tmpfile)) { unlink($tmpfile); }
 			} else { $status = "bad url for doc #$doc_id: $url"; }
-		} else if ($ext == 'htm' || $ext == 'html') { 
+		} else if ($ext == 'htm' || $ext == 'html' || $ext == '') { 
 			$image_file = "images/thumbnails/HTM.jpg";
 			$status = 'Success';
 		} else if ($ext == 'mp3') { 

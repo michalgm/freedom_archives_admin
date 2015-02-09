@@ -466,18 +466,20 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			$scope.updateKeywords  = function() { 
 				$messages.clearMessages();
 				$scope.complete = 0;
-				$scope.total = Object.keys($data.collections).length;
+        $scope.total = 0;
+				// $scope.total = Object.keys($data.collections).length;
 				var ids = [];
-				angular.forEach($data.collections, function(c) {
-					ids.push({id: c.id, type: 'collection'});
-				})
+				// angular.forEach($data.collections, function(c) {
+				// 	ids.push({id: c.id, type: 'collection'});
+				// })
 
 				$requests.fetch('getDocIds').then(function(results) {
 					if (results.length) { 
-						$scope.total += results.length;
-						angular.forEach(results, function(v) {
-							ids.push({id: v, type: 'document'});
-						});
+						ids = results;
+            $scope.total = results.length;
+						// angular.forEach(results, function(v) {
+						// 	ids.push({id: v, type: 'document'});
+						// });
 					}
 					var updateLookups = function() {
 						var items = [];

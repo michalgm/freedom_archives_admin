@@ -132,11 +132,9 @@ app.directive('collectionChooser', function($requests, $data, $timeout) {
 
 			scope.$watch('model', function() {
 				if (angular.isDefined(scope.model) && scope.model != '') { 
-					angular.forEach($data.collections, function(v,k) { 
-						if (!scope.value && v.id == scope.model) { 
-							scope.value = v;
-						}
-					});
+					if ($data.collection_index[scope.model]) {
+						scope.value = $data.collection_index[scope.model];
+					}
 				}
 			});
 		}
