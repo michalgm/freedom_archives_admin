@@ -140,9 +140,9 @@ if ($action) {
 			$filename = 'All Collections';
 			$where = isset($request['collection_id']) ? " and c.collection_id = ".dbEscape($request['collection_id']). " " : "";
 			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors, 
-				publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, 
+				publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description, 
 				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
-				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where c.collection_id != 20 $where group by docid");
+				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where 1=1 $where group by docid");
 
 			if (isset($request['collection_id']) && isset($docs[0])) { 
 				$filename = $docs[0]['Folder'];
@@ -156,9 +156,9 @@ if ($action) {
 			$ids = arrayToInString(array_map(function($doc) { return $doc['id']; }, $searchdocs['docs']));
 
 			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors, 
-				publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Year, no_copies as 'No. of Copies', Format, d.Description, 
+				publisher as 'Organization of Publisher', vol_number as 'Vol #-Issue/Date', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description, 
 				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
-				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where c.collection_id != 20 and d.docid in ($ids) group by docid");
+				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where d.docid in ($ids) group by docid");
 
 			$filename = "Search Results";
 			$csv = arrayToCSV($docs);
@@ -294,7 +294,8 @@ if ($action) {
 			break;
 		
 		case 'getDocIds':
-			$data = fetchCol("select DOCID from DOCUMENTS where authors != '' or keywords != '' or subjects != '' or producers != ''");
+			$data = fetchCol("select DOCID from DOCUMENTS");
+			//$data = fetchCol("select DOCID from DOCUMENTS where authors != '' or keywords != '' or subjects != '' or producers != ''");
 			break;
 
 		case 'findDuplicates':
@@ -657,7 +658,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 			$url = strtolower($data['URL']);
 			if ($url != '') {
 				if (stristr($url, 'vimeo')) { 
-					$ext = 'Video'; 
+					$media_type = 'Video'; 
 				} else {
 					$ext = strtolower(pathinfo($url, PATHINFO_EXTENSION));
 					if (isset($mediaTypes[$ext])) {
