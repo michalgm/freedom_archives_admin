@@ -130,13 +130,14 @@ app.directive('collectionChooser', function($requests, $data, $timeout) {
 				}
 			}
 
-			scope.$watch('model', function() {
+			scope.$watchCollection('[model,data.collection_index]', function(n) {
+				console.log(n);
 				if (angular.isDefined(scope.model) && scope.model != '') { 
 					if ($data.collection_index[scope.model]) {
 						scope.value = $data.collection_index[scope.model];
 					}
 				}
-			});
+			}, true);
 		}
 	}
 });
