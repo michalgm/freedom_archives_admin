@@ -1015,7 +1015,7 @@ function csvImport($data) {
 		if (isset($col_id)) { 
 			$data['COLLECTION_ID'] = $col_id;
 		}
-		$id = isset($data['DOCID']) ? $data['DOCID'] : 'new';
+		$id = isset($data['DOCID']) && $data['DOCID'] != '' ? $data['DOCID'] : 'new';
 			// $values .= ", `collection_id` = $col_id"; }
 		$data = parseLookups('document', $data);
 		$data = saveItem('document', $id, $data);
