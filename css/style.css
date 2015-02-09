@@ -276,7 +276,7 @@ div.pagination span.current {
 .ui-menu-icon { display: none; }
 .ui-menu .ui-menu-item a.ui-state-focus, a.ui-state-active { margin: 0px !important; }
 #collections_menu { border: none; border-radius: 0px; }
-#collections_menu a {text-decoration: none; }
+#collections_menu a {text-decoration: none; display: block; }
 #collections_menu>li {position: relative; }
 #collections_nav_menu { color: #920000; background: #f8f2ba; width: 281px;  border: 2px solid #f1e688; border-top: none; padding: 0px; box-shadow: 0px 5px 5px 0px #bbb; position: absolute; top: 44px; left: -20px;font-size: .8em;}
 #collections_nav_menu .submenu { margin: 0px; padding: 0px; border: 2px solid #f1e688; width: 281px; max-height: 300px; overflow: auto; box-shadow: 0px 5px 5px 0px #bbb; background: #f8f2ba; }
