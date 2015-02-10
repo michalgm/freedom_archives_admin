@@ -1196,7 +1196,7 @@ function handleError($errno, $errstr, $errfile, $errline, $errcontext) {
 	if ($debug) { $errstr = "'$errstr' in file $errfile line $errline "; } //(".print_r($errcontext, 1).")"; }
 	
 	if (!(error_reporting() & $errno)) {return; }
-	
+
 	file_put_contents("docs/admin_errors.log", date('Y-m-d H:i:s') ." - $errstr\n", FILE_APPEND | LOCK_EX);
 
 	setResponse($errno, "$errstr", $data);
@@ -1434,7 +1434,7 @@ function url_exists($url) {
 	} else { return false; }	
 }
 
-function ExecWaitTimeout($cmd, $timeout=5) {
+function ExecWaitTimeout($cmd, $timeout=10) {
 	exec($cmd." > /dev/null 2>&1 & echo $! ", $op);
 	$pid = (int)$op[0];
 	$time = 0;
