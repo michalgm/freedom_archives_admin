@@ -123,6 +123,7 @@ function arrayValuesToInString($array) {
 
 function arrayToInString($array, $assoc=0) {
 	$array2 = Array();
+	if (! is_array($array)) { return "''"; }
 	if($assoc) { 
 		$array = array_keys($array);
 	}
