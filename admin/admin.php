@@ -1194,6 +1194,9 @@ function handleError($errno, $errstr, $errfile, $errline, $errcontext) {
 	if ($db) { $db->rollback(); }
 	$data = array();
 	if ($debug) { $errstr = "'$errstr' in file $errfile line $errline "; } //(".print_r($errcontext, 1).")"; }
+	
+	if (!(error_reporting() & $errno)) {return; }
+	
 	file_put_contents("docs/admin_errors.log", date('Y-m-d H:i:s') ." - $errstr\n", FILE_APPEND | LOCK_EX);
 
 	setResponse($errno, "$errstr", $data);
