@@ -190,7 +190,7 @@ ol, ul {
 .details>span:last-child:after { content: ''; font-style: normal; }
 .document { margin: 10px 0px; overflow: auto; border-bottom: 1px dotted #bbb; padding-bottom: 10px; }
 .document .doc_title { font-weight: bold; display: block; }
-.document .doc_thumbnail { float: left; width: 75px;  min-width: 75px; margin: 0px 10px 0px 0px; background: #999;}
+.document .doc_thumbnail { float: left; width: 75px;  min-width: 75px; margin: 0px 10px 0px 0px;}
 #content {
 	border-right: 1px dotted #bbb;
 	padding: 0 15px 0 24px;
