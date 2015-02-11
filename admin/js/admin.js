@@ -437,7 +437,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 							var doc = results.shift();
 							doc.status = 'Processing';
 							doc.statusCode = 0;
-							$scope.thumbnails.push(doc);
+							$scope.thumbnails.unshift(doc);
 							if (doc.docid) { 
 								var request = $requests.fetch('updateThumbnail', {id:doc.docid}).then(function(result) { 
 									$scope.complete++;	
@@ -447,7 +447,9 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 									//doc.image = result.image;
 									if (result.status == 'Success') { $scope.success++; } else { $scope.failed++; }
 									//$scope.thumbnails.push(result);
-									updateThumbnail();
+									if (results.length) {
+                    updateThumbnail();
+                  }
 								});
 							} else { 
 								console.log('all done');

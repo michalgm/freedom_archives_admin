@@ -61,11 +61,11 @@ $(window).load(function() {
 
 function showDoc(title, media_type, url) {
 	media_type = media_type.toLowerCase();
-	if (media_type == 'mp3' || media_type == 'video' || media_type == 'image') { 
+	if (media_type == 'audio' || media_type == 'video' || media_type == 'image') { 
 		var modal = $('#modal');
 		$('#modal_title').html(title);
 		$('#modal>div').hide();
-		if (media_type == 'mp3') { 
+		if (media_type == 'audio') { 
 			//$('#modal_player').prepend($('#jquery_jplayer_1'));
 			$('#modal_player').show();
 			$('#jquery_jplayer_1').jPlayer("setMedia", { mp3: url} );
@@ -75,10 +75,9 @@ function showDoc(title, media_type, url) {
 			$('#modal_vimeo').html('<iframe id="vimeo" src="http://player.vimeo.com/video/'+vid+'?title=0&amp;byline=0&amp;portrait=0&amp;api=1&autoplay=1" width="400" height="300" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>');
 			$('#modal_vimeo').show();
 		} else if (media_type == 'image') { 
-			$('#modal_content').html("<img src='"+url+"'/>");
+			$('#modal_content').html("<a href='"+url+"' title='View Original Size' target='_blank'><img src='"+url+"'/><br/><br/>View Original Size</a>");
 			$('#modal_content img').on('load', $.modal.resize);
 			$('#modal_content').show();
-
 		}
 		modal.modal();
 	} else {

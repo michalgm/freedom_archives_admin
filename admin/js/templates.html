@@ -87,7 +87,7 @@
 			<a href='javascript:void(0);' class='list-group-item' ng-click='selectAction(item)' ng-repeat='item in items'>
 				<div class='media'>
 					<span class='pull-left'>
-						<img class="media-object" style='width: 75px' ng-src='../{{item.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
+						<img class="media-object" style='width: 75px' ng-src='../{{item.THUMBNAIL || "images/fileicons/nodigital.png"}}'/>
 					</span>
 					<div class='media-body'>
 						<div class='pull-right text-right'>
@@ -290,7 +290,7 @@
 							<div class='list-group-item' ng-repeat='doc in documents | orderBy:"label"'>
 								<div class='media'>
 									<span class='pull-left'>
-										<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
+										<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL || "images/fileicons/nodigital.png"}}'/>
 									</span>
 									<div class='media-body'>
 										<div class='pull-right text-right'>
@@ -343,7 +343,7 @@
 					<div class='media'>
 						<button ng-click='removeFeaturedDoc($index)' tooltip='Remove record from featured list' tooltip-append-to-body='true' class='btn btn-default btn-xs btn-danger' style='position:absolute; top:15px; right:15px;'><span class="glyphicon glyphicon-remove"></span></button> 
 						<span class='pull-left'>
-							<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL || "images/thumbnails/not_digitized.jpg"}}'/>
+							<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL || "images/fileicons/nodigital.png"}}'/>
 						</span>
 						<div class='media-body'>
 							<p><strong>{{doc.TITLE}}</strong></p>
@@ -752,7 +752,7 @@
 <script type="text/ng-template" id="fileUpload.html">
 	<p ng-show="itemId == 'new'" class='alert alert-warning'>Please save {{type}} before adding a thumbnail</p>
 	<div ng-show="itemId !='new'">
-		<img ng-show="! image_URI" width='75px' ng-src='../{{currentUrl || "images/thumbnails/not_digitized.jpg"}}'/>
+		<img ng-show="! image_URI" width='75px' ng-src='../{{currentUrl || "images/fileicons/nodigital.png"}}'/>
 		<div ng-show="image_URI" style='display: inline-block'>
 			<img width='75px' ng-src='{{image_URI}}'/>
 			<div class="btn-group">
@@ -829,6 +829,10 @@
 							<span class="glyphicon glyphicon-link"></span> Open
 						</a>
 					</div>
+				</div>
+				<div class='text-small text-muted'>
+					<span class='col-xs-6' ng-show='$parent.$parent.document.MEDIA_TYPE'><b>Media Type:</b> {{$parent.$parent.document.MEDIA_TYPE}}</span>
+					<span class='col-xs-6' ng-show='$parent.$parent.document.FILE_EXTENSION'><b>File Extension:</b> {{$parent.$parent.document.FILE_EXTENSION}}</span>
 				</div>
 			</div>
 			<div ng-switch-when="date" class='vertical-align date-input'>

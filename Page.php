@@ -11,7 +11,7 @@ class Page {
 	public $collections_limit = 0;
 	public $filterparams = array(
 			'collection_id'=>array('field'=>'collection_id', 'display'=>'Collection'),
-			'media'=>array('field'=>'MEDIA', 'display'=>'Media Type'),
+			'media'=>array('field'=>'MEDIA_TYPE', 'display'=>'Media Type'),
 			'format'=>array('field'=>'FORMAT', 'display'=>'Source Format'),
 			'year'=>array('field'=>'YEAR', 'display'=>'Year'),
 			'title'=>array('field'=>'TITLE', 'display'=>'Title'),
@@ -35,7 +35,7 @@ class Page {
 		if (! $this->query) { 
 			$DB_SEARCH_TERMS = dbEscape($this->params['s']);
 			$query = array(
-				'select' => "select DOCUMENTS_LIVE.*, collection_name, ".$this->filterparams['media']['field']." as media_type ",
+				'select' => "select DOCUMENTS_LIVE.*, collection_name, MEDIA_TYPE ",
 				'from' => "from DOCUMENTS_LIVE join COLLECTIONS_LIVE using (collection_id)",
 				'where' => " where DOCUMENTS_LIVE.IS_HIDDEN = 0 ",
 				'order' => "",
@@ -162,7 +162,7 @@ class Page {
 				}
 			}
 			$doc['AUTHORS'] = $doc['AUTHORS'] ? "<span class='author'>Author".(strstr($doc['AUTHORS'], ',') || stristr($doc['AUTHORS'], ' and ')  ? 's' : '').": ".$doc['AUTHORS']."</span>" : "";
-			$thumbnail = $doc['THUMBNAIL'] ? $doc['THUMBNAIL'] : "images/thumbnails/not_digitized.jpg";
+			$thumbnail = $doc['THUMBNAIL'] ? $doc['THUMBNAIL'] : "images/fileicons/nodigital.png";
 			$link_title = preg_replace("/<\/?span[^>]*?>/si", "", $title);
 			$doc['TITLE'] = trim($doc['TITLE']);
 			$description = $this->cleanDescription($doc['DESCRIPTION']);
@@ -170,7 +170,7 @@ class Page {
 			$collection = "<span class='collection_name'>Collection: <a href='search.php?view_collection=$doc[COLLECTION_ID]'>".$doc['collection_name']."</a></span>";
 			$title = "<span class='doc_title'>$doc[TITLE]</span>";
 			if ($doc['URL']) { 
-				$action = "onclick='showDoc(\"$link_title\", \"$doc[media_type]\", \"".trim($doc['URL'])."\"); return false;'";
+				$action = "onclick='showDoc(\"$link_title\", \"$doc[MEDIA_TYPE]\", \"".trim($doc['URL'])."\"); return false;'";
 				$image = "<a href='#' $action>$image</a>";
 				$title = "<a href='#' $action class='doc_title'>$doc[TITLE]</a>";
 			}
@@ -295,9 +295,7 @@ class Page {
 		$query = $this->getQuery();
 		#foreach (list('format', 'collection') as $field) { }
 		$digital = "<span onclick='window.location=\"".$this->getNoDigitalLink()."\"'><input id='no_digital' name='no_digital' type='checkbox' ".($this->params['no_digital'] ? "checked='checked'" : '')."/><label for='no_digital'>Include non-digitized documents</label></span><br/>";
-		$aliases = array(
-			'media'=>array('pdf'=>'PDF', 'mp3'=>"Audio", 'jpg'=>'Image', 'jpeg'=>'Image'),
-		);
+		$aliases = array();
 		$collections = dbLookupArray("select collection_id, collection_name from COLLECTIONS_LIVE");
 		$filter_components = "";
 		foreach (array_values($collections) as $c) {
@@ -319,6 +317,7 @@ class Page {
 				$data = dbLookupArray("select $lookup_table.item as value, count(*) as count $from $query[where] group by $lookup_table.item order by count(*) desc, $extraOrder value");
 			} else {
 				$order = "order by ".($param == 'year' ? "" : " count(*) desc, ")." value";
+				// print "<li>select DOCUMENTS_LIVE.$field as value, count(*) as count $query[from] $query[where] group by if($field is null, '', $field) $order";
 				$data = dbLookupArray("select DOCUMENTS_LIVE.$field as value, count(*) as count $query[from] $query[where] group by if($field is null, '', $field) $order");
 			}
 			$filter_components .= "<h5>$display</h5>
@@ -380,7 +379,7 @@ class Page {
 
 	function getFeaturedSlideshow($collection_id) {
 		$slideshow = "";
-		$featured_docs = dbLookupArray("select DOCID, a.DESCRIPTION, THUMBNAIL, URL,  TITLE, ".$this->filterparams['media']['field']."	as media_type  from FEATURED_DOCS_LIVE a join DOCUMENTS_LIVE using (DOCID) where a.collection_id = $collection_id order by doc_order"); 
+		$featured_docs = dbLookupArray("select DOCID, a.DESCRIPTION, THUMBNAIL, URL,  TITLE, MEDIA_TYPE from FEATURED_DOCS_LIVE a join DOCUMENTS_LIVE using (DOCID) where a.collection_id = $collection_id order by doc_order"); 
 		if (sizeof($featured_docs)) { 
 			$slideshow .= "
 				<div id='featured_media'>
@@ -389,14 +388,14 @@ class Page {
 						<ul class='slides'>
 			";
 			foreach($featured_docs as $doc) { 
-				$thumbnail = $doc['THUMBNAIL'] ? $doc['THUMBNAIL'] : "images/thumbnails/not_digitized.jpg";
+				$thumbnail = $doc['THUMBNAIL'] ? $doc['THUMBNAIL'] : "images/fileicons/nodigital.png";
 				$large_thumb = str_replace(".jpg", "_large.jpg", $thumbnail);
 				if (! file_exists($large_thumb)) { 
 					$large_thumb = $thumbnail;
 				}
 				$slideshow .=  "
 							<li data-thumb='$thumbnail' class='media_item'>
-							<img onclick='showDoc(\"$doc[TITLE]\", \"$doc[media_type]\", \"$doc[URL]\");' src='$large_thumb' alt='$doc[TITLE]' />
+							<img onclick='showDoc(\"$doc[TITLE]\", \"$doc[MEDIA_TYPE]\", \"$doc[URL]\");' src='$large_thumb' alt='$doc[TITLE]' />
 								$doc[DESCRIPTION]
 							</li>";
 			}

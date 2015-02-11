@@ -131,7 +131,6 @@ app.directive('collectionChooser', function($requests, $data, $timeout) {
 			}
 
 			scope.$watchCollection('[model,data.collection_index]', function(n) {
-				console.log(n);
 				if (angular.isDefined(scope.model) && scope.model != '') { 
 					if ($data.collection_index[scope.model]) {
 						scope.value = $data.collection_index[scope.model];
@@ -201,16 +200,13 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 				'title': true,
 				'collection_name': true,
 				'date_range': true,
-				'day': true,
-				'month': true,
-				'year': true,
 				'vol_number': true,
 			};
 			var action = '';
 			var searchType = '';
 			if (scope.itemType == 'document') {
 				action =  'fetchDocuments';
-				scope.filters = ['author', 'day', 'description', 'format', 'generation', 'keyword', 'location', 'month', 'publisher', 'producer', 'program', 'quality', 'subject', 'title', 'vol_number', 'year'];
+				scope.filters = ['author', 'day', 'description', 'format', 'generation', 'file_extension', 'keyword', 'location', 'media_type', 'month', 'publisher', 'producer', 'program', 'quality', 'subject', 'title', 'vol_number', 'year'];
 				scope.isDoc = true;
 				if ( scope.searchType) {
 					searchType = scope.searchType;

@@ -224,7 +224,7 @@ div.pagination span.current {
 
 
 #modal_content { text-align:center; }
-#modal_content img { max-width: 500px; max-height: 400px; margin: auto;}
+#modal_content img { max-width: 400px; max-height: 400px; margin: auto;}
 #header_search input, #search input { 
 	//background: url("../images/search.png") no-repeat scroll 0 0 transparent;
 	border: none;

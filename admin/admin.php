@@ -186,6 +186,8 @@ if ($action) {
 			if (in_array($field, array('author', 'subject', 'producer', 'keyword'))) {
 				$query = "select a.item, sum(if(is_doc = 1, 1, 0)) as record_count, sum(if(is_doc = 0, 1, 0)) as collection_count 
 					from LIST_ITEMS a left join LIST_ITEMS_LOOKUP b using(item, type) $query_suffix";
+			} else if (in_array($field, array('file_extension', 'media_type', 'day', 'month', 'year'))) {
+				$query = "select $field as item, count(*) as record_count, 0 as collection_count from DOCUMENTS where $field like '%$value%' group by $field order by item";
 			} else {
 				$query = "select a.item, count(*) as record_count, 0 as collection_count 
 					from LIST_ITEMS a left join DOCUMENTS b on a.item = b.$field $query_suffix";
@@ -655,36 +657,19 @@ function saveItem($type, $id, $data, $noLog=false) {
 		unset($data['_producers']);
 		unset($data['_related']);
 		if (isset($data['URL'])) {
-			$mediaTypes = array(
-				'mp3'=>'Audio',
-				'mp4'=>'Audio',
-				'wav'=>'Audio',
-				'jpg'=>'Image',
-				'png'=>'Image',
-				'jpeg'=>'Image',
-				'tiff'=>'Image',
-				'bmp'=>'Image',
-				'pdf'=>'PDF',
-			);
-			$media_type = '';
-			$url = strtolower($data['URL']);
-			if ($url != '') {
-				if (stristr($url, 'vimeo')) { 
-					$media_type = 'Video'; 
+			$filetype = checkFileType($data['URL']);
+			$data['MEDIA_TYPE'] = $filetype['media_type'];
+			$data['FILE_EXTENSION'] = $filetype['ext'];
+		}
+		foreach(array('MONTH', 'DAY', 'YEAR') as $time) {
+			if(isset($data[$time])) {
+				if ($data[$time] === '') {
+					$data[$time] = '?';
 				} else {
-					$ext = strtolower(pathinfo($url, PATHINFO_EXTENSION));
-					if (isset($mediaTypes[$ext])) {
-						$media_type = $mediaTypes[$ext];
-					} else {
-						$media_type = 'Webpage';
-					}
+					$data[$time] = preg_replace("/^0/", "", $data[$time]);
 				}
 			}
-			$data['MEDIA'] = $media_type;
 		}
-	}
-	foreach(array('MONTH', 'DAY', 'YEAR') as $time) {
-		if(isset($data[$time]) && $data[$time] === '') {$data[$time] = '?'; }
 	}
 
 	if (isset($data['CALL_NUMBER'])) {
@@ -1147,6 +1132,41 @@ function filemakerImport($data_encoded) {
 	return array("status"=>"success", "count"=>$count);
 }
 
+function checkFileType($url) {
+	$filetype = array(
+		'media_type'=>'',
+		'ext'=>''
+	);
+
+	$mediaTypes = array(
+		'mp3'=>'Audio',
+		'mp4'=>'Audio',
+		'wav'=>'Audio',
+		'jpg'=>'Image',
+		'png'=>'Image',
+		'jpeg'=>'Image',
+		'tiff'=>'Image',
+		'bmp'=>'Image',
+		'pdf'=>'PDF',
+	);
+
+	$url = strtolower($url);
+	if ($url != '') {
+		if (stristr($url, 'vimeo')) { 
+			$filetype['media_type'] = 'Video'; 
+			$filetype['ext'] = 'vimeo';
+		} else {
+			$filetype['ext'] = strtolower(pathinfo($url, PATHINFO_EXTENSION));
+			if (isset($mediaTypes[$filetype['ext']])) {
+				$filetype['media_type'] = $mediaTypes[$filetype['ext']];
+			} else {
+				$filetype['media_type'] = 'Webpage';
+			}
+		}
+	}
+	return $filetype;
+}
+
 function dateToSQL($date, $time) {
 	if (!$date) { return ""; }
   $times = array(0,0,0,0);
@@ -1315,53 +1335,51 @@ function updateThumbnail($doc_id, $check=0) {
 	$image_file = "";
 	if ($doc['URL']) {
 		$url = $doc['URL'];
-		if (stristr($url, 'vimeo')) { 
-			$ext = 'video'; 
-		} else {
-			$ext = strtolower(pathinfo($url, PATHINFO_EXTENSION));
-		}
-		$icon = "";
-		$filename = "";
+		$filetype = checkFileType($url);
 		if ($production) { 
 			$url = preg_replace("|^http:\/\/[^\.]*\.?freedomarchives.org\/|",  '/home/claude/public_html/', $url);
 		}
-		if($ext == 'pdf' || $ext == 'video' || $ext == 'jpg' || $ext == 'jpeg') { 
-			if ($ext == 'pdf') { 
-				$icon = "../images/fileicons/pdf.png";
-			} elseif($ext == 'video') {
-				$vimeo_id = preg_replace("/^.*?\/(\d+)$/", "$1", $url);
-				$json_url = "http://vimeo.com/api/v2/video/$vimeo_id.json";
-				if (url_exists($json_url)) { 
-					$icon = "../images/fileicons/video.png";
-					$json = json_decode(file_get_contents($json_url), 1);
-					$url = $json[0]['thumbnail_large'];
+		if (file_exists($url) || url_exists($url)) {
+			if ($filetype['media_type'] == 'Webpage') {
+				$image_file = "images/fileicons/webpage.png";
+				$status = 'Success';			
+			} else if ($filetype['media_type'] == 'Audio') {
+				$image_file = "images/fileicons/audio.png";
+				$status = 'Success';
+			} else if ($filetype['media_type'] != '') {
+				$icon = "";
+				$filename = "";
+				if ($filetype['media_type'] == 'PDF') {
+					$icon = "../images/fileicons/pdf.png";
+				} else if ($filetype['media_type'] == 'Video') {
+					$vimeo_id = preg_replace("/^.*?\/(\d+)$/", "$1", $url);
+					$json_url = "http://vimeo.com/api/v2/video/$vimeo_id.json";
+					if (url_exists($json_url)) { 
+						$icon = "../images/fileicons/video.png";
+						$json = json_decode(file_get_contents($json_url), 1);
+						$url = $json[0]['thumbnail_large'];
+					}
 				}
+				if (file_exists($url)) { 
+					$filename = $url;
+				} else if (url_exists($url)) { 
+					copy($url, $tmpfile);
+					$filename = $tmpfile;
+				}
+				if (file_exists($filename)) { 
+					$image_file = createThumbnail($filename, $icon, $doc_id);
+					if ($image_file == 'timeout') { 
+						$status = 'Thumbnail creation timed out. Bad Document?';	
+					}
+					if (file_exists("$image_file")) { 
+						$status = 'Success';
+					}
+					if(file_exists($tmpfile)) { unlink($tmpfile); }
+				} else { $status = "bad url for doc #$doc_id: $url"; }
+			} else { 
+				$status = "Unknown file format '$filetype[ext]' for doc id $doc_id";
 			}
-			if (file_exists($url)) { 
-				$filename = $url;
-			} else if (url_exists($url)) { 
-				copy($url, $tmpfile);
-				$filename = $tmpfile;
-			}
-			if (file_exists($filename)) { 
-				$image_file = createThumbnail($filename, $icon, $doc_id);
-				if ($image_file == 'timeout') { 
-					$status = 'Thumbnail creation timed out. Bad Document?';	
-				}
-				if (file_exists("$image_file")) { 
-					$status = 'Success';
-				}
-				if(file_exists($tmpfile)) { unlink($tmpfile); }
-			} else { $status = "bad url for doc #$doc_id: $url"; }
-		} else if ($ext == 'htm' || $ext == 'html' || $ext == '') { 
-			$image_file = "images/thumbnails/HTM.jpg";
-			$status = 'Success';
-		} else if ($ext == 'mp3') { 
-			$image_file = "images/thumbnails/MP3.jpg";
-			$status = 'Success';
-		} else { 
-			$status = "Unknown file format '$ext' for doc id $doc_id";
-		}
+		} else { $status = "bad url for doc #$doc_id: $url"; }
 		$image_file = preg_replace("|^../|", "", $image_file);
 		dbwrite("update DOCUMENTS set thumbnail= '$image_file' where docid = $doc_id");
 	} else { 
@@ -1386,11 +1404,11 @@ function createThumbnail($image, $icon, $output_name) {
 		#if(! preg_match("/\....$/", $image)) {
 		#	$image.= ".jpg";
 		#}
-		if(stripos($image, 'tmp')) {
-			$border = " -bordercolor '#333' -border 1 ";
-			$large_size -= 2;
-			$small_size -= 2;
-		}
+		//if(stripos($image, 'tmp')) {
+		$border = " -bordercolor '#333' -border 1 ";
+		$large_size -= 2;
+		$small_size -= 2;
+		//}
 
 		$large_file = "$thumbnail_path/$output_name"."_large.jpg";
 		$small_file = "$thumbnail_path/$output_name.jpg";
@@ -1399,8 +1417,8 @@ function createThumbnail($image, $icon, $output_name) {
 
 		$icon_image = $icon ? "-background transparent $icon -gravity SouthEast -geometry 70x+15+15 -composite " : "";
 		$small_icon_image = $icon ? "-background transparent $icon -gravity SouthEast -geometry 23x+5+5 -composite " : "";
-		$large_cmd = "$convert_path $image"."[0] -trim +repage -background \"#fff\" -flatten -thumbnail '$large_size"."x$large_size>' -background \"#333\" -gravity center -extent $large_size"."x$large_size $icon_image $border ../$large_file 2>&1";
-		$small_cmd = "$convert_path $image"."[0] -trim +repage -background \"#fff\" -flatten -thumbnail '$small_size"."x' -background \"#333\" -gravity center -extent $small_size"."x $small_icon_image $border ../$small_file 2>&1";
+		$large_cmd = "$convert_path $image"."[0] -trim +repage -background \"#fff\" -flatten -thumbnail '$large_size"."x$large_size>' -background \"#fff\" -gravity center -extent $large_size"."x$large_size $icon_image $border ../$large_file 2>&1";
+		$small_cmd = "$convert_path $image"."[0] -trim +repage -background \"#fff\" -flatten -thumbnail '$small_size"."x' -background \"#fff\" -gravity center -extent $small_size"."x $small_icon_image $border ../$small_file 2>&1";
 		/*
 		exec($large_cmd, $output1);
 		print_r($output1);
