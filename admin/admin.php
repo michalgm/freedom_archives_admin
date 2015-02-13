@@ -1452,14 +1452,14 @@ function url_exists($url) {
 	} else { return false; }	
 }
 
-function ExecWaitTimeout($cmd, $timeout=10) {
+function ExecWaitTimeout($cmd, $timeout=15) {
 	exec($cmd." > /dev/null 2>&1 & echo $! ", $op);
 	$pid = (int)$op[0];
 	$time = 0;
-	
-	while($time < $timeout) {
+	$wait = .05;
+	while($time < $timeout/$wait) {
 		$output = "";
-		sleep(1);
+		usleep($wait*1000000);
 		$time++;
 		exec("ps -p $pid", $foo, $val);
 		if ($val) {
