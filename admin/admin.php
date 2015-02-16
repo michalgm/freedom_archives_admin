@@ -264,7 +264,7 @@ if ($action) {
 		case 'getThumbnailDocs': 
 			$where = $request['force'] ? "" : " and (thumbnail = '' or thumbnail is null) ";
 			if ($request['collection']) { $where .= " and collection_id = '".$request['collection']."'"; }
-			$query = "select docid, title from DOCUMENTS where url is not null and url != '' $where";# and docid=5675");
+			$query = "select docid, title from DOCUMENTS where url is not null and url != '' $where";// and docid=6123";
 			$data = array_values(dbLookupArray($query));
 			break;
 
@@ -1336,8 +1336,9 @@ function updateThumbnail($doc_id, $check=0) {
 	if ($doc['URL']) {
 		$url = $doc['URL'];
 		$filetype = checkFileType($url);
+		
 		if ($production) { 
-			$url = preg_replace("|^http:\/\/[^\.]*\.?freedomarchives.org\/|",  '/home/claude/public_html/', $url);
+			$url = urldecode(preg_replace("|^http:\/\/[^\.]*\.?freedomarchives.org\/|",  '/home/claude/public_html/', $url));
 		}
 		if (file_exists($url) || url_exists($url)) {
 			if ($filetype['media_type'] == 'Webpage') {
@@ -1370,9 +1371,10 @@ function updateThumbnail($doc_id, $check=0) {
 					$image_file = createThumbnail($filename, $icon, $doc_id);
 					if ($image_file == 'timeout') { 
 						$status = 'Thumbnail creation timed out. Bad Document?';	
-					}
-					if (file_exists("$image_file")) { 
+					} else if (file_exists("$image_file")) { 
 						$status = 'Success';
+					} else {
+						$status = "Failed: $filename";
 					}
 					if(file_exists($tmpfile)) { unlink($tmpfile); }
 				} else { $status = "bad url for doc #$doc_id: $url"; }
@@ -1414,7 +1416,8 @@ function createThumbnail($image, $icon, $output_name) {
 		$small_file = "$thumbnail_path/$output_name.jpg";
 		if (file_exists("../$large_file")) { unlink("../$large_file"); }
 		if (file_exists("../$small_file")) { unlink("../$small_file"); }
-
+		
+		$image = escapeshellarg($image);
 		$icon_image = $icon ? "-background transparent $icon -gravity SouthEast -geometry 70x+15+15 -composite " : "";
 		$small_icon_image = $icon ? "-background transparent $icon -gravity SouthEast -geometry 23x+5+5 -composite " : "";
 		$large_cmd = "$convert_path $image"."[0] -trim +repage -background \"#fff\" -flatten -thumbnail '$large_size"."x$large_size>' -background \"#fff\" -gravity center -extent $large_size"."x$large_size $icon_image $border ../$large_file 2>&1";
@@ -1443,16 +1446,24 @@ function createThumbnail($image, $icon, $output_name) {
 }
 
 function url_exists($url) {
-	$headers = @get_headers($url);
+	$ch = curl_init("$url");
+	curl_setopt($ch, CURLOPT_NOBODY, true);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	curl_exec($ch);
+	$retcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	return $retcode == 200;
+	/*
+	$headers = @get_headers($url,1);
 	if($headers) { 
 		$content_type = array_pop($headers);
 		if(strpos($headers[0],'200')===false || strpos($content_type, 'html')) {
 			return false;
 		} else { return true; }
-	} else { return false; }	
+	} else { return false; }
+	*/
 }
 
-function ExecWaitTimeout($cmd, $timeout=15) {
+function ExecWaitTimeout($cmd, $timeout=10) {
 	exec($cmd." > /dev/null 2>&1 & echo $! ", $op);
 	$pid = (int)$op[0];
 	$time = 0;
@@ -1467,7 +1478,7 @@ function ExecWaitTimeout($cmd, $timeout=15) {
 		}
 	}
 	exec("kill -9 $pid");
-	throw new Exception("command timeout on: $cmd", "444444");
+	//throw new Exception("command timeout on: $cmd", "444444");
 	return false;
 	//throw new Exception("command timeout on: " . $cmd);
 }
