@@ -388,7 +388,8 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 				$requests.fetch('fetchList', {field: label, value: list.filter, limit: $scope.limit, offset: (list.offset-1)*$scope.limit  })
 					.then(function(results){
 						$scope.lists[label].items = results.items;
-						$scope.lists[label].count = results.count;
+            $scope.lists[label].count = results.count;
+						$scope.lists[label].max = Math.ceil(results.count/$scope.limit);
 					})
 			}
 
@@ -407,9 +408,14 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 					filter: '',
 					count: 0,
 					offset: 1,
+          max: 1,
 					new: ''
 				}
-				$scope.fetchList(v);
+
+        $scope.$watch('lists.'+v+'.offset', function(n, o) {
+          if (! angular.isNumber($scope.lists[v].offset)) { return; }
+          $scope.fetchList(v);          
+        })
 			})
 			break;
 		case 'updateThumbnails':

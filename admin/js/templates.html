@@ -449,7 +449,14 @@
 							<div class='row vertical-align'>
 								<div class='col-xs-3 text-left'><span class='count label label-primary'>{{list.count}} {{label|ucf}}s</span></div>
 								<div class='col-xs-6 text-center'>
-									<pagination ng-click='fetchList(label)' previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page='limit' total-items="list.count" boundary-links="true" max-size='5' ng-model="list.offset"></pagination>
+									<pagination previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page='limit' total-items="list.count" boundary-links="true" max-size='5' ng-model="list.offset"></pagination>
+								</div>
+								<div class='col-xs-3 form-inline text-right'>
+									<small>Page&nbsp;</small>
+									<div style='width: 110px;' class='input-group input-group-sm' tooltip='Go to page'>
+										<input type='number' min='1' max='{{list.max}}' class="form-control" ng-model='list.offset'/>
+										<span class="input-group-addon">/ {{list.max}}</span>
+									</div>
 								</div>
 							</div>
 						</div>
