@@ -394,7 +394,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			}
 
 			$scope.editItem = function(label, item, action, new_item) {
-				$requests.fetch('editListItem', {field: label, item: item, new_item: new_item || "", listAction: action})
+				$requests.write('editListItem', {field: label, item: item, new_item: new_item || "", listAction: action})
 					.then(function(results) {
 						$messages.addMessage("Item "+(action == 'delete' ? item : new_item)+" "+action+'ed successfully');
 						$scope.fetchList(label);
