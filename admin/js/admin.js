@@ -217,6 +217,9 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 	$scope.data = $data;
   $scope.location = $location;
 	$scope.id = $routeParams.id == 'top' ? 0 : $routeParams.id;
+  $scope.frontPageCollectionNum = 0;
+  $scope.saving = {status: false };
+
   var orig_col = angular.copy($scope.collection);
   $scope.search.updateNeighbors('collectionOpts', $scope.id);
 
@@ -250,9 +253,13 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 			$scope.id = $routeParams.id;
       orig_col = angular.copy($scope.collection);
 			$data.updateData().then(function() {
-				if ( $scope.collection.COLLECTION_ID == 0) { 
-					$messages.addMessage("Top-level collection successfully saved");
-				} else { 
+				if ( $scope.collection.COLLECTION_ID == 0) {
+          $requests.write('saveConfig', {'frontPageCollectionNum': $scope.frontPageCollectionNum}).then(function(results) {
+            $scope.saving.status = false;
+          }).then(function() {
+  					$messages.addMessage("Top-level collection successfully saved");
+				  });
+        } else { 
 					$messages.addMessage("Collection '"+$scope.collection.COLLECTION_NAME+"' successfully saved");
 				}
 			})
@@ -294,6 +301,12 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 		$location.path('/collections/'+id);
 	}
 
+  $scope.saveCollectionNum = function() {
+    $requests.write('saveConfig', {'frontPageCollectionNum': $scope.frontPageCollectionNum}).then(function(results) {
+      $scope.saving.status = false;
+    });
+  }
+
   var checkChanged = function() {
     var col = angular.copy($scope.collection);
     $.each(['DATE_MODIFIED', 'DATE_CREATED'], function(i, v){
@@ -328,6 +341,11 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 	if ($scope.id != 'new') { 
 		$scope.loadCollection();
 	}
+  if ($scope.id == 0 ) { 
+    $requests.fetch('fetchConfig', {'key': 'frontPageCollectionNum'}).then(function(results) {
+      $scope.frontPageCollectionNum = results;
+    })
+  }
 
 })
 
@@ -357,6 +375,7 @@ app.controller('adminIndex', function($scope) {
 app.controller('siteUtils', function($scope, $routeParams, $requests, $messages, $q, $data, $download, $timeout, $filter) {
 	$scope.util = $routeParams.util;
 	$scope.title = '';
+  $scope.saving = {status: false };
 
 	switch($scope.util) { 
 		case 'backupDatabase': 
@@ -378,6 +397,19 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 				});
 			}
 			break;
+    case 'introText':
+      $scope.title = 'Edit Site Intro Text'
+      $scope.introText = '';
+      $requests.fetch('fetchConfig', {'key': 'introText'}).then(function(results) {
+        $scope.introText = results;
+      })
+
+      $scope.save = function() {
+        $requests.write('saveConfig', {'introText': $scope.introText}).then(function(results) {
+          $scope.saving.status = false;
+        });
+      }
+      break;
 		case 'editLists':
 			$scope.title = 'Edit Lists';
 			$scope.lists = {};
@@ -394,7 +426,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			}
 
 			$scope.editItem = function(label, item, action, new_item) {
-				$requests.fetch('editListItem', {field: label, item: item, new_item: new_item || "", listAction: action})
+				$requests.write('editListItem', {field: label, item: item, new_item: new_item || "", listAction: action})
 					.then(function(results) {
 						$messages.addMessage("Item "+(action == 'delete' ? item : new_item)+" "+action+'ed successfully');
 						$scope.fetchList(label);
@@ -414,7 +446,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 
         $scope.$watch('lists.'+v+'.offset', function(n, o) {
           if (! angular.isNumber($scope.lists[v].offset)) { return; }
-          $scope.fetchList(v);          
+          $scope.fetchList(v);
         })
 			})
 			break;
@@ -572,7 +604,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
         var action = item.type == 'document' ? 'saveDocument' : 'saveCollection';
 
         $requests.write(action, save, item.id).then(function(results) {
-          $scope.saving = false;
+          $scope.saving.status =  false;
           $scope.fetchLog();
         });
       }
@@ -647,11 +679,11 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
       $scope.saveUser = function() {
         var user = angular.copy($scope.edit);
         if ($scope.pw.pw1 && $scope.pw.pw1 != $scope.pw.pw2) { 
-          $scope.saving = false;
+          $scope.saving.status = false;
           return;
         }
         if (user.user_id == 'new' && ! $scope.pw.pw1) {
-          $scope.saving = false;
+          $scope.saving.status = false;
           $messages.error("Password cannot be blank");
           return;
         }
@@ -670,10 +702,10 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
         if(window.confirm("Are you sure you want to delete '"+user.username+"'?")) { 
           $requests.write('deleteUser', {id: user.user_id}).then(function(response) {
             delete $scope.users[user.user_id];
-            $scope.saving = false;
+            $scope.saving.status =  false;
           })
         } else {
-          $timeout(function() {$scope.saving.status = false;});
+          $timeout(function() {$scope.saving.status =  false;});
         }
       }
 

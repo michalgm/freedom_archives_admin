@@ -48,7 +48,11 @@ $action_access = array(
 	'fetchUsers'=>'Administrator',
 	'saveUser'=>'Administrator',
 	'deleteUser'=>'Administrator',
+	'fetchConfig'=>'all',
+	'saveConfig'=>'all',
 );
+
+$publish_tables = array('DOCUMENTS', 'COLLECTIONS', 'LIST_ITEMS_LOOKUP', 'FEATURED_DOCS', 'CONFIG');
 
 checkLogin();
 
@@ -120,6 +124,22 @@ if ($action) {
 			$data = 1;
 			break;
 		
+		case 'fetchConfig':
+			$query = "select value from CONFIG where setting = '".dbEscape($request['key'])."'";
+			$data = fetchValue($query);
+			break;
+		
+		case 'saveConfig':
+			$keys = fetchCol("select setting from CONFIG");
+			foreach($keys as $key) {
+				if (isset($request['data'][$key])) {
+					$query = "update CONFIG set value = '".dbEscape($request['data'][$key])."' where setting = '$key'";
+					dbwrite($query);
+					$data = 1;
+				}
+			}
+			break;
+
 		case 'fetchDocument':
 			$data = fetchItem('document', $request['id']);
 			break;
@@ -372,7 +392,7 @@ if ($action) {
 
 		case 'pushChanges':
 			$tables = fetchCol("show tables");
-			foreach (array('DOCUMENTS', 'COLLECTIONS', 'LIST_ITEMS_LOOKUP', 'FEATURED_DOCS') as $table) {
+			foreach ($publish_tables as $table) {
 				$where = ($table == 'DOCUMENTS' || $table == 'COLLECTIONS') ? " where IS_HIDDEN = 0 and NEEDS_REVIEW = 0 " : "";
 				dbwrite("drop table IF EXISTS $table"."_BACKUP_3");
 				if (in_array($table."_BACKUP_2", $tables)) {
@@ -402,7 +422,7 @@ if ($action) {
 
 		case 'restoreBackup':
 			$id = dbEscape($request['id']);
-			foreach (array('DOCUMENTS', 'COLLECTIONS', 'LIST_ITEMS_LOOKUP', 'FEATURED_DOCS') as $table) {
+			foreach ($publish_tables as $table) {
 				dbwrite("drop table $table"."_LIVE");
 				dbwrite("create table $table"."_LIVE like $table"."_$id");
 				dbwrite("insert into $table"."_LIVE select * from $table"."_$id");

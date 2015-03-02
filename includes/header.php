@@ -76,10 +76,7 @@ if (strstr(basename($_SERVER['PHP_SELF']), 'index')) {
 				<button onclick='$.modal.close();'>Close</button>
 			</div>
 			<div id='header_content'>
-				<div id='welcometext'>
-					<b>Welcome to the Freedom Archives' Digital Search Engine.</b>
-					The Freedom Archives contains over 10,000 hours of audio and video tapes which date from the late-1960s to the mid-90s and chronicle the progressive history of the Bay Area, the United States, and international movements. We are also in the process of scanning and uploading thousands of historical documents which enrich our media holdings. Our collection includes weekly news, poetry, music programs; in-depth interviews and reports on social and cultural issues; numerous voices from behind prison walls; diverse activists; and pamphlets, journals and other materials from many radical organizations and movements.
-				</div>
+				<div id='welcometext'> <?=$introText?> </div>
 				<div id='header_search'>
 					<h2>Search Archives</h2><form action='search.php'><input placeholder='Enter Search Keywords' id='search_box' name='s' value='<?php
 					if(isset($_REQUEST['s'])) {

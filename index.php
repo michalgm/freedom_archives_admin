@@ -6,8 +6,8 @@ include "Page.php";
 $page = new Page();
 
 //Edit this number to limit the # of collections that show on the page
-$page->collections_limit = 14;
-
+$page->collections_limit = fetchValue("select value from CONFIG_LIVE where setting = 'frontPageCollectionNum'");
+$introText = fetchValue("select value from CONFIG_LIVE where setting = 'introText'");
 
 include "includes/header.php";
 

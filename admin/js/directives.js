@@ -82,14 +82,20 @@ app.directive('actionButton', function() {
 			actionButton:'='
 		},
 		link: function(scope,element, attribs) {
+			scope.actionButton = false;
 			element.bind('click', function(e) {
-				attribs.$set('disabled', true);
-				element.prepend("<span class='processing-spinner glyphicon glyphicon-refresh spin'></span> ");
+				scope.$apply(function() { 
+					scope.actionButton = true;
+					attribs.$set('disabled', true);
+					element.prepend("<span class='processing-spinner glyphicon glyphicon-refresh spin'></span> ");
+				})
 			})
 
 			scope.$watch('actionButton', function(n, o) {
-				attribs.$set('disabled', null);
-				$(element).find('.processing-spinner').remove();
+				if (n == false) {
+					attribs.$set('disabled', null);
+					$(element).find('.processing-spinner').remove();
+				}
 			});
 
 		}

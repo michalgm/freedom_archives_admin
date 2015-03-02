@@ -264,16 +264,27 @@
 				<div class='row'>
 					<div class='col-xs-6' autoheight>
 						<h3 class='scroll-header'>Edit Subcollections <small>Drag to reorder</small></h3>
-						<div class="list-group scroll-body" ui-sortable ng-model='collection._subcollections'>
-							<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='sc in collection._subcollections | filter:{DISPLAY_ORDER:"!1000"}'>
-								<strong ng-class='{"text-muted": sc.IS_HIDDEN == 1}'>{{sc.COLLECTION_NAME}}&nbsp;</strong>
-								<span class='pull-right btn-group' style='position:absolute; right:15px ' >
-									<button ng-click='editSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-sm'><span class="glyphicon glyphicon-pencil"></span> Edit</button>
-									<!--<button ng-if='sc.IS_HIDDEN == 1' ng-click='hideSubcollection(sc.COLLECTION_ID, 1)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ok-circle"></span> Unhide</button>
-									<button ng-if='sc.IS_HIDDEN == 0' ng-click='hideSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ban-circle"></span> Hide</button>-->
-									<button ng-click='removeSubcollection($index)' tooltip='Remove subcollection from collection' tooltip-append-to-body='true' class='btn btn-danger btn-sm'><span class="glyphicon glyphicon-remove"></span></button>
-								</span>
-							</a>
+
+						<div class="panel panel-default scroll-container">
+							<div class='panel-heading' ng-show='id == 0'>
+								<div class='form-inline text-right'>
+									<label class="control-label">Front Page Collections Limit</label>
+									<div style='width: 100px;' class='input-group'>
+										<input type="number" name="" id="input" class="form-control" ng-model='$parent.$parent.frontPageCollectionNum' min="1">
+									</div>
+								</div>
+							</div>
+							<ul class="list-group scroll-body" ui-sortable ng-model='collection._subcollections'>
+								<li href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='sc in collection._subcollections | filter:{DISPLAY_ORDER:"!1000"}' ng-class="{'list-group-item-info': $index+1 <= $parent.frontPageCollectionNum}">
+									<strong ng-class='{"text-muted": sc.IS_HIDDEN == 1}'>{{sc.COLLECTION_NAME}}&nbsp;</strong>
+									<span class='pull-right btn-group' style='position:absolute; right:15px ' >
+										<button ng-click='editSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-sm'><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+										<!--<button ng-if='sc.IS_HIDDEN == 1' ng-click='hideSubcollection(sc.COLLECTION_ID, 1)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ok-circle"></span> Unhide</button>
+										<button ng-if='sc.IS_HIDDEN == 0' ng-click='hideSubcollection(sc.COLLECTION_ID)' class='btn btn-default btn-xs'><span class="glyphicon glyphicon-ban-circle"></span> Hide</button>-->
+										<button ng-click='removeSubcollection($index)' tooltip='Remove subcollection from collection' tooltip-append-to-body='true' class='btn btn-danger btn-sm'><span class="glyphicon glyphicon-remove"></span></button>
+									</span>
+								</li>
+							</ul>
 						</div>
 					</div>
 					<div class='col-xs-6'>
@@ -566,8 +577,8 @@
 							<td>{{data.users[item.user].name}}</td>
 							<td>{{item.time*1000| date:"MM/dd/yyyy 'at' hh:mm a"}}</td>
 							<td>
-									<button ng-click='reviewItem(item)' action-button='saving' type="button" style='min-width: 70%' ng-show='item.NEEDS_REVIEW == 0 || item.NEEDS_REVIEW == ""' class="btn btn-sm btn-success">Mark as Needs Review</button>
-									<button ng-click='reviewItem(item)' action-button='saving' type="button" style='min-width: 70%' ng-show='item.NEEDS_REVIEW' class="btn btn-sm btn-danger">Mark as Reviewed</button>
+									<button ng-click='reviewItem(item)' action-button='saving.status' type="button" style='min-width: 70%' ng-show='item.NEEDS_REVIEW == 0 || item.NEEDS_REVIEW == ""' class="btn btn-sm btn-success">Mark as Needs Review</button>
+									<button ng-click='reviewItem(item)' action-button='saving.status' type="button" style='min-width: 70%' ng-show='item.NEEDS_REVIEW' class="btn btn-sm btn-danger">Mark as Reviewed</button>
 							</td>
 						</tr>
 					</tbody>
@@ -618,7 +629,15 @@
 				</li>
 			</div>
 		</div>
-
+		<div ng-switch-when='introText'>
+			<div class='row' form-group model='$parent.introText' label='Site Intro Text' input-type='richtext'></div>
+			<br/>
+			<div class='row'>
+				<div class='col-xs-offset-2 col-xs-10'>
+					<button class='btn btn-primary' action-button='saving.status' ng-click='save()'>Save</button>
+				</div>
+			</div>
+		</div>
 		<div ng-switch-when='updateThumbnails'>
 			<p>This will update the thumbnail images for documents. By default, it only will update documents that have urls but no thumbnail image yet. Checking the 'Force refresh' box will update all document thumbnails (this can take a long time).</p>
 			<progressbar ng-show='total != 0 && complete != total' class='progress-striped active' max="100" value="complete*(100/total)">
@@ -679,7 +698,7 @@
 						<div class='col-xs-2'> {{user.user_type}}</div>
 						<div class='col-xs-3'>
 							<button class='btn btn-primary' ng-click='editUser(user)'>Edit</button>
-							<button class='btn btn-danger' action-button='saving' ng-click='deleteUser(user)'>Delete</button>
+							<button class='btn btn-danger' action-button='saving.status' ng-click='deleteUser(user)'>Delete</button>
 						</div>
 					</div>
 					<div class='row vertical-align' ng-show='edit.user_id == user.user_id'>
@@ -694,7 +713,7 @@
 						</div>
 						<div class='col-xs-3'>
 							<button class='btn btn-default' ng-click='editUser({})'>Cancel</button>
-							<button class='btn btn-primary' action-button='saving' ng-click='saveUser()'>Save</button>
+							<button class='btn btn-primary' action-button='saving.status' ng-click='saveUser()'>Save</button>
 							<button class='btn btn-info' ng-show='user.user_id!="new"' ng-click='pw.id = user.user_id'>Change Password</button>
 						</div>
 					</div>
