@@ -221,10 +221,10 @@ if ($action) {
 
 		case 'editListItem':
 			$ids = array();
-			$listAction = $request['listAction'];
-			$field = dbEscape($request['field']);
-			$item = dbEscape($request['item']);
-			$new_item = dbEscape($request['new_item']);
+			$listAction = $request['data']['listAction'];
+			$field = dbEscape($request['data']['field']);
+			$item = dbEscape($request['data']['item']);
+			$new_item = dbEscape($request['data']['new_item']);
 			$query = "";
 
 			if (in_array($field, array('author', 'subject', 'producer', 'keyword'))) {
