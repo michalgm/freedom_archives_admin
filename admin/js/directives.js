@@ -415,6 +415,7 @@ app.directive('callNumber', function(){
 				['CAA','Comunicacion Aztlan Arts'],
 				['CAP','Comunicacion Aztlan Politics'],
 				['CD','Compact Disc and DVD'],
+				['CE','Colin Edwards'],
 				['CV','Chuy Varela'],
 				['FI','Freedom is a Constant Struggle'],
 				['JG/LS','Judy Gerber and Laurie Simms'],
