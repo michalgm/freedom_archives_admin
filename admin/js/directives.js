@@ -411,20 +411,25 @@ app.directive('callNumber', function(){
 			scope.desc = '';
 			scope.subjects = [
 				['AFR','Africa'],
-				['CMA','Comomis Antepasados'],
+				['AS',  'Art Sato'],
 				['CAA','Comunicacion Aztlan Arts'],
 				['CAP','Comunicacion Aztlan Politics'],
 				['CD','Compact Disc and DVD'],
 				['CE','Colin Edwards'],
+				['CMA','Comomis Antepasados'],
 				['CV','Chuy Varela'],
+				['DOC','Document'],
 				['FI','Freedom is a Constant Struggle'],
+				['HD',  'Hard-drives'],
 				['JG/LS','Judy Gerber and Laurie Simms'],
 				['JH','Pajaro Latino'],
 				['KN','Kiilu Nyasha'],
 				['KP','General Materials'],
 				['LA','Latin America'],
+				['M',  'Masters'],
 				['MAJ','Mumia Abu Jamal'],
 				['NI','Nothing is More Precious Than'],
+				['OS',  'Oversized'],
 				['PM','Prison Movement'],
 				['POE','Poetry'],
 				['PR','Paul Robeson'],
@@ -433,8 +438,8 @@ app.directive('callNumber', function(){
 				['RP','Reflecciones de La Raza'],
 				['SS','Sue Supriano'],
 				['V','Video all formats'],
+				['Vin',  'Vinyl'],
 				['WP','Wild Poppies'],
-				['DOC','Document'],
 			];
 
 			scope.$watch('model', function() {
