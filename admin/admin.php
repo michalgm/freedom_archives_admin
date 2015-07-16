@@ -615,8 +615,8 @@ function fetchItem($type, $id) {
 		$query = "select D.* from DOCUMENTS D where DOCID = $id";
 	}
 	$data = fetchRow($query, 1);
-	$data['_keywords'] = fetchCol("select item from LIST_ITEMS_LOOKUP where id = $id and type = 'keyword' and is_doc=$is_doc order by `order`");
-	$data['_subjects'] = fetchCol("select item from LIST_ITEMS_LOOKUP where id = $id and type = 'subject' and is_doc=$is_doc order by `order`");
+	$data['_keywords'] = fetchCol("select distinct item from LIST_ITEMS_LOOKUP where id = $id and type = 'keyword' and is_doc=$is_doc order by `order`");
+	$data['_subjects'] = fetchCol("select distinct item from LIST_ITEMS_LOOKUP where id = $id and type = 'subject' and is_doc=$is_doc order by `order`");
 
 	if ($type == 'collection') { 
 		$data['_featured_docs'] = array_values(dbLookupArray("select F.DOCID, F.DOC_ORDER, F.DESCRIPTION, D.TITLE, D.THUMBNAIL from FEATURED_DOCS F join DOCUMENTS D using(DOCID) where F.COLLECTION_ID = '$id' order by F.DOC_ORDER"));
@@ -814,17 +814,17 @@ function saveRelated($relatedDocs) {
 function parseLookups($type, $data) {
 	if ($type == 'document') {
 		if (isset($data['PRODUCERS'])) {
-			$data['_producers'] = preg_split("/ ?(,| and |\&|\/) ?/i", $data['PRODUCERS']);
+			$data['_producers'] = array_unique(preg_split("/ ?(,| and |\&|\/) ?/i", $data['PRODUCERS']));
 		}
 		if (isset($data['AUTHORS'])) {
-			$data['_authors'] = preg_split("/[,;] ?/", $data['AUTHORS']);
+			$data['_authors'] = array_unique(preg_split("/[,;] ?/", $data['AUTHORS']));
 		}
 	}
 	if (isset($data['KEYWORDS'])) {
-		$data['_keywords'] = preg_split("/[,;] ?/", $data['KEYWORDS']);
+		$data['_keywords'] = array_unique(preg_split("/[,;] ?/", $data['KEYWORDS']));
 	}
 	if (isset($data['SUBJECTS'])) {
-		$data['_subjects'] = preg_split("/[,;] ?/", $data['SUBJECTS']);
+		$data['_subjects'] = array_unique(preg_split("/[,;] ?/", $data['SUBJECTS']));
 	}
 	return $data;
 }
