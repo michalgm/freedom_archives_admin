@@ -737,6 +737,9 @@
 	</div>
 	<div ng-if="util == 'findDuplicates' || util == 'reviewChanges'" id='footer' class='well well-sm text-center'>
 		<pagination previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page='pagination.limit' total-items="pagination.count" boundary-links="true" max-size='5' ng-model="pagination.offset"></pagination>
+		<div class='form-inline' style='margin: 8px 0px; display: inline-block; vertical-align: top;'>
+			<div class='form-group'><label>Page</label> <input style='width: 50px;' class='form-control input-sm' ng-model='pagination.offset'/></div>
+		</div>
 	</div>
 </script>
 
