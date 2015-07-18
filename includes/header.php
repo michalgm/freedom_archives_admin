@@ -3,6 +3,7 @@ $pagetype = '';
 if (strstr(basename($_SERVER['PHP_SELF']), 'index')) {
 	$pagetype = 'home';
 }
+$introText = fetchValue("select value from CONFIG_LIVE where setting = 'introText'");
 ?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
