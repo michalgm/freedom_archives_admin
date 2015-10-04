@@ -195,7 +195,7 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 			scope.data = $data;
 			scope.options = {};
 			scope.items = [];
-			scope.selected = null;
+			// scope.selected = null;
 			scope.digitized = 0;
 			scope.isDoc = false;
 			scope.static = {
@@ -230,7 +230,7 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 				searchType = 'collectionOpts';
 			}
 			scope.options = $search[searchType];
-      if (scope.limitCollectionId != '' && scope.limitCollectionId != 'new' && scope.limitCollectionId != 0) { 
+      if (angular.isDefined(scope.limitCollectionId) && scope.limitCollectionId != '' && scope.limitCollectionId != 'new' && scope.limitCollectionId != 0) { 
 	      scope.options.collection = scope.limitCollectionId;
       }
 
@@ -269,7 +269,7 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 				});
 			}
 
-			scope.$watch('options', function(o, n) {
+			scope.$watch('options', function(n, o) {
 				if (scope.searchoptions.$valid) {
 					scope.fetchItems();
 				}
