@@ -558,7 +558,7 @@ function fetchItems($type, $request) {
 			if ($filter_type != '' && $filter_value != '') {
 				if (in_array($filter_type, array('keyword', 'author', 'subject', 'producer'))) {
 					$filters.= " JOIN LIST_ITEMS_LOOKUP $filter_count on $filter_count.id = I.$idfield and IS_DOC = $isDoc and $filter_count.type = '$filter_type' and $filter_count.item = '$filter_value' ";
-				} else if (in_array($filter_type, array('location', 'organization', 'publisher', 'description', 'title', 'collection_name', 'date_range', 'vol_number'))) {
+				} else if (in_array($filter_type, array('location', 'organization', 'publisher', 'description', 'title', 'collection_name', 'date_range', 'vol_number', 'call_number'))) {
 					$filter_value = str_replace(" ", '%', $filter_value);
 					$where[] = "I.$filter_type like _utf8 '%$filter_value%'";
 					$order[] = "I.$filter_type like _utf8 '$filter_value%'";

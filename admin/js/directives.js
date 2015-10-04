@@ -207,12 +207,13 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 				'collection_name': true,
 				'date_range': true,
 				'vol_number': true,
+				'call_number': true,
 			};
 			var action = '';
 			var searchType = '';
 			if (scope.itemType == 'document') {
 				action =  'fetchDocuments';
-				scope.filters = ['author', 'day', 'description', 'format', 'generation', 'file_extension', 'keyword', 'location', 'media_type', 'month', 'publisher', 'producer', 'program', 'quality', 'subject', 'title', 'vol_number', 'year'];
+				scope.filters = ['author', 'call_number', 'day', 'description', 'format', 'generation', 'file_extension', 'keyword', 'location', 'media_type', 'month', 'publisher', 'producer', 'program', 'quality', 'subject', 'title', 'vol_number', 'year'];
 				scope.isDoc = true;
 				if ( scope.searchType) {
 					searchType = scope.searchType;
