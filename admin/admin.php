@@ -977,7 +977,7 @@ function csvImport($data) {
 	$col_num = 0;
 	foreach($headers as $header) {
 		$header = strtolower(trim($header));
-		if ($header)
+		if ($header) {
 			if (isset($aliases[$header])) { $header = $aliases[$header]; }
 			if (! in_array(strtolower($header), $fields)) { trigger_error("Unrecognized Column Name: $header. <br/>Accepted columns are '".implode(array_merge($fields, array_keys($aliases)), "', '")."'"); }
 		}
@@ -1020,7 +1020,7 @@ function csvImport($data) {
 				}
 				$data[strtoupper($column)] = $value; //.= " `$column`='$value', ";
 			}
-		}	
+		}
 		//$values = substr($values, 0, -2);
 		if (isset($col_id)) { 
 			$data['COLLECTION_ID'] = $col_id;
