@@ -975,13 +975,12 @@ function csvImport($data) {
 	$headers = array_shift($csv);
 	$collection = null;
 	$col_num = 0;
-	foreach($headers as $header) { 
-		if (! $header) { 
-			trigger_error("Blank header column found (column ".($col_num+1).")");
-		}
+	foreach($headers as $header) {
 		$header = strtolower(trim($header));
-		if (isset($aliases[$header])) { $header = $aliases[$header]; }
-		if (! in_array(strtolower($header), $fields)) { trigger_error("Unrecognized Column Name: $header. <br/>Accepted columns are '".implode(array_merge($fields, array_keys($aliases)), "', '")."'"); }
+		if ($header)
+			if (isset($aliases[$header])) { $header = $aliases[$header]; }
+			if (! in_array(strtolower($header), $fields)) { trigger_error("Unrecognized Column Name: $header. <br/>Accepted columns are '".implode(array_merge($fields, array_keys($aliases)), "', '")."'"); }
+		}
 		if ($header == 'collection') { 
 			if (isset($collection)) { 
 				trigger_error("Two collection fields specified!");
@@ -1011,10 +1010,16 @@ function csvImport($data) {
 		$data = array();
 		foreach ($columns as $column) {
 			$value = dbEscape(trim(array_shift($row)));
-			if ($column == 'url' && $value && ! preg_match("/^http:\/\//i", $value)) {
-				trigger_error("Bad URL in row $row_num ('$value'). URL field must contain full URL path (i.e. 'http://freedomarchives.org/doc.html')");
+			if (! $column) {
+				if ($value) {
+					trigger_error("Blank header column found - value '$value' ignored on row $row_num");
+				}
+			} else {
+				if ($column == 'url' && $value && ! preg_match("/^http:\/\//i", $value)) {
+					trigger_error("Bad URL in row $row_num ('$value'). URL field must contain full URL path (i.e. 'http://freedomarchives.org/doc.html')");
+				}
+				$data[strtoupper($column)] = $value; //.= " `$column`='$value', ";
 			}
-			$data[strtoupper($column)] = $value; //.= " `$column`='$value', ";
 		}	
 		//$values = substr($values, 0, -2);
 		if (isset($col_id)) { 
