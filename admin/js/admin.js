@@ -119,6 +119,16 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 		}
 	}
 
+  $scope.copyDocument = function() {
+    $scope.id = $routeParams.id = $scope.document.DOCID = 'new';
+    $scope.document.DATE_MODIFIED = '';
+    $scope.document.DATE_CREATED = '';
+    $scope.document.CREATOR = '';
+    $scope.document.CONTRIBUTOR = '';
+    $scope.document.FORMAT = '';
+    $('.processing-spinner').remove();
+  }
+
 	$scope.saveDocument = function() {
 		var data = angular.copy($scope.document);
 		delete data.thumbnail_url;
@@ -202,7 +212,7 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
   if ($routeParams.id != 'new') { 
 		$scope.loadDocument();
 	}
-	$scope.buttons = [{text:'Delete', action:$scope.deleteDocument, class:'btn-danger'}, {text:'Save', action:$scope.saveDocument, class:'btn-primary'}];
+	$scope.buttons = [{text: 'Copy', action: $scope.copyDocument, admin: true}, {text:'Delete', action:$scope.deleteDocument, class:'btn-danger'}, {text:'Save', action:$scope.saveDocument, class:'btn-primary'}];
 });
 
 app.controller('collectionEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location, $download, $search) {

@@ -54,7 +54,7 @@ app.directive('navLink', function($data, AuthenticationService, $location) {
 	}
 });
 
-app.directive('header', function($requests, $sce, breadcrumbs) {
+app.directive('header', function($requests, $sce, breadcrumbs, AuthenticationService) {
 	return {
 		restrict: 'A',
 		templateUrl:'header.html',
@@ -66,6 +66,7 @@ app.directive('header', function($requests, $sce, breadcrumbs) {
 		link: function(scope,element, attribs) {
 			scope.breadcrumbs = breadcrumbs;
 			scope.safeExtraHeader = $sce.trustAsHtml(scope.extraHeader);
+			scope.isAdmin = AuthenticationService.user_type == 'Administrator';
 			scope.doAction = function(action, index) {
 				b = $(element.find('.btn')[index]);
 				b.prepend("<span class='processing-spinner glyphicon glyphicon-refresh spin'></span> ");

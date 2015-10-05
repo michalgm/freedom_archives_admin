@@ -115,7 +115,7 @@
 </script>
 
 <script type="text/ng-template" id="documentEdit.html">
-	<div header title='{{id == "new" ? "New Record" : (document.TITLE || "Untitled Record")}}' buttons='buttons'></div>
+	<div header title='{{document.TITLE ? document.TITLE + (id == "new" ? " (New Record)" : "") : (id == "new" ? "New Record" : "Untitled Record")}}' buttons='buttons'></div>
 	<div content class='content-body'>
 		<form class="form-horizontal" id='documentEdit'>
 			<div class='row' form-group model='document.TITLE' label='Title'></div>
@@ -230,7 +230,7 @@
       </div>
       <div class="navbar-right">
 			  <span ng-bind-html='safeExtraHeader' />
-			  <button ng-repeat="button in buttons" ng-class='button.class' class="btn btn-default btn-lg navbar-btn" ng-click='doAction(button.action, $index)' type="button">{{button.text}}</button>
+			  <button ng-repeat="button in buttons" ng-if='!button.admin || isAdmin' ng-class='button.class' class="btn btn-default btn-lg navbar-btn" ng-click='doAction(button.action, $index)' type="button">{{button.text}}</button>
       </div>
     </div>
 	</nav>
