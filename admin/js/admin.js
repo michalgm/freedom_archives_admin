@@ -212,7 +212,7 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
   if ($routeParams.id != 'new') { 
 		$scope.loadDocument();
 	}
-	$scope.buttons = [{text: 'Copy', action: $scope.copyDocument, admin: true}, {text:'Delete', action:$scope.deleteDocument, class:'btn-danger'}, {text:'Save', action:$scope.saveDocument, class:'btn-primary'}];
+	$scope.buttons = [{text: 'Duplicate', action: $scope.copyDocument, admin: true}, {text:'Delete', action:$scope.deleteDocument, class:'btn-danger'}, {text:'Save', action:$scope.saveDocument, class:'btn-primary'}];
 });
 
 app.controller('collectionEdit', function($scope, $filter, $routeParams, $requests, $messages, $data, $location, $download, $search) {
