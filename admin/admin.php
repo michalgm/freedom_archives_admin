@@ -209,7 +209,7 @@ if ($action) {
 			} else if (in_array($field, array('file_extension', 'media_type', 'day', 'month', 'year'))) {
 				$query = "select $field as item, count(*) as record_count, 0 as collection_count from DOCUMENTS where $field like '%$value%' group by $field order by item";
 			} else {
-				$query = "select a.item, count(*) as record_count, 0 as collection_count 
+				$query = "select a.item, a.description, count(*) as record_count, 0 as collection_count 
 					from LIST_ITEMS a left join DOCUMENTS b on a.item = b.$field $query_suffix";
 			}
 
@@ -225,6 +225,7 @@ if ($action) {
 			$field = dbEscape($request['data']['field']);
 			$item = dbEscape($request['data']['item']);
 			$new_item = dbEscape($request['data']['new_item']);
+			$new_desc = dbEscape($request['data']['new_desc']);
 			$query = "";
 
 			if (in_array($field, array('author', 'subject', 'producer', 'keyword'))) {
@@ -232,7 +233,7 @@ if ($action) {
 					$ids = dbLookupArray("select id, is_doc from LIST_ITEMS_LOOKUP where item = '$item' and type='$field'");
 				}
 			} else {
-				if ($listAction != 'add') {
+				if ($listAction != 'add' && $field != 'call_number') {
 					$ids = dbLookupArray("select docid as id from DOCUMENTS where $field = '$item'");
 				}
 			}
@@ -242,7 +243,7 @@ if ($action) {
 			} elseif ($listAction == 'edit') {
 				dbwrite("delete from LIST_ITEMS where item='$item' and type='$field'");
 				dbwrite("delete from LIST_ITEMS where item='$new_item' and type='$field'");
-				$query = "insert ignore into LIST_ITEMS set item = '$new_item', type='$field'";
+				$query = "insert ignore into LIST_ITEMS set item = '$new_item', type='$field', description = '$new_desc'";
 			} elseif ($listAction == 'delete') {
 				$query = "delete from LIST_ITEMS where item='$item' and type='$field'";
 			}

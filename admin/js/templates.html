@@ -413,8 +413,9 @@
 										</div>
 										<div class='input-group col-xs-6'>
 											<input type="text" class="form-control" ng-model='list.new'>
+											<input ng-if='label == "call_number"' placeholder='Description' class='form-control' ng-model='new_item.desc'>
 											<span class="input-group-btn">
-												<button class="btn btn-primary" ng-click='editItem(label, "", "add", list.new)'>Add</button>
+												<button class="btn btn-primary" ng-click='editItem(label, "", "add", {item:list.new})'>Add</button>
 											</span>
 									</div>
 								</div>
@@ -426,19 +427,23 @@
 							</div>
 						</div>
 						<ul class='list-group scroll-body'>
-							<li class='list-group-item' ng-init='edit=0; new_item = item.item;' ng-repeat='item in list.items'>
+							<li class='list-group-item' ng-init='edit=0; new_item = {item: item.item, desc: item.description};' ng-repeat='item in list.items'>
 								<div class='row'>
 									<div class='col-xs-4'>	
-										<span ng-hide='edit'>{{item.item}}</span>
-										<form class='form-inline col-xs-6' ng-show='edit'>
-										<div class='form-group'>
-											<div class='input-group'>
-												<input class='form-control' ng-model='new_item'>
-												<span class="input-group-btn">
-													<button class="btn btn-primary" ng-click='editItem(label, item.item, "edit", new_item)'>Save</button>
-												</span>
+										<span ng-hide='edit'>{{item.item}}<span ng-if='label == "call_number"'> - {{item.description}}</span></span>
+										<form class='form-inline col-xs-12' ng-show='edit'>
+											<div class='alert alert-warning'>Note: Editing Call Number will not update existing records/collections</div>
+											<div class='form-group'>
+												<div class='input-group'>
+													<input class='form-control' ng-model='new_item.item'>
+												</div>
+												<div class='input-group'>
+													<input ng-if='label == "call_number"' placeholder='Description' class='form-control' ng-model='new_item.desc'>
+													<span class="input-group-btn">
+														<button class="btn btn-primary" ng-click='editItem(label, item.item, "edit", new_item)'>Save</button>
+													</span>
+												</div>
 											</div>
-										</div>
 										</form>
 									</div>
 									<div class='col-xs-2 text-center'>

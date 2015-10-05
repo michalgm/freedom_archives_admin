@@ -425,16 +425,16 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 					})
 			}
 
-			$scope.editItem = function(label, item, action, new_item) {
-				$requests.write('editListItem', {field: label, item: item, new_item: new_item || "", listAction: action})
+			$scope.editItem = function(label, item, action, new_item, new_desc) {
+				$requests.write('editListItem', {field: label, item: item, new_item: new_item.item || "", new_desc: new_item.desc || "", listAction: action})
 					.then(function(results) {
-						$messages.addMessage("Item "+(action == 'delete' ? item : new_item)+" "+action+'ed successfully');
+						$messages.addMessage("Item "+(action == 'delete' ? item : new_item.item)+" "+action+'ed successfully');
 						$scope.fetchList(label);
 						$scope.lists[label].new = '';
 					})
 			}
 
-			angular.forEach(['keyword', 'subject', 'author', 'producer', 'program', 'quality', 'generation', 'format'], function(v) {
+			angular.forEach(['keyword', 'subject', 'author', 'producer', 'program', 'quality', 'generation', 'format', 'call_number'], function(v) {
 				$scope.lists[v] = {
 					items: [],
 					filter: '',
