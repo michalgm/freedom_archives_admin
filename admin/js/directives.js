@@ -207,7 +207,6 @@ app.directive('itemSearch', function($requests, $search, $sce, $data, $download)
 				'collection_name': true,
 				'date_range': true,
 				'vol_number': true,
-				'call_number': true,
 			};
 			var action = '';
 			var searchType = '';
