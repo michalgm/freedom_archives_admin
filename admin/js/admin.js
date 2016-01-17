@@ -2,11 +2,11 @@
 
 var app = angular.module('FA_Admin', ['ngRoute', 'ui.bootstrap', 'textAngular', 'ui.sortable', 'angularFileUpload', 'ng-breadcrumbs']);
 
-/*app.run(function($rootScope, $location, AuthenticationService) { 
+/*app.run(function($rootScope, $location, AuthenticationService) {
 	var original_path = $location.path;
 	$rootScope.$on('$routeChangeStart', function(event, next, current) {
-		if ($location.path != '/login') { 
-			AuthenticationService.checkLogin().then(function(results) { 
+		if ($location.path != '/login') {
+			AuthenticationService.checkLogin().then(function(results) {
 				console.log(results);
 				$location.path('/login');
 			});
@@ -48,7 +48,7 @@ app.config(function($routeProvider, $compileProvider) {
       label: 'Featured Docs'
 		}).
 		when('/site/:util', {
-			templateUrl: 'siteUtils.html', 
+			templateUrl: 'siteUtils.html',
 			controller: 'siteUtils',
       label: 'Site'
 		}).
@@ -66,14 +66,14 @@ app.config(function($routeProvider, $compileProvider) {
 
 app.controller('documents', function($scope, $data, $requests, $location) {
 	$scope.data = $data;
-	$scope.selectDoc = function(doc) { 
+	$scope.selectDoc = function(doc) {
 		$location.path('documents/'+doc.id);
 	}
 });
 
 app.controller('collections', function($scope, $data, $requests, $location) {
 	$scope.data = $data;
-	$scope.selectCollection = function(collection) { 
+	$scope.selectCollection = function(collection) {
 		$location.path('collections/'+collection.COLLECTION_ID);
 	}
 });
@@ -101,17 +101,17 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
   $scope.search.updateNeighbors('recordOpts', $scope.id);
 
 	$scope.loadDocument = function() {
-		return $requests.fetch('fetchDocument', {id:$routeParams.id}).then(function(results) { 
+		return $requests.fetch('fetchDocument', {id:$routeParams.id}).then(function(results) {
 			$scope.document = results;
 			$scope.document.thumbnail_url = $scope.document.THUMBNAIL ? $scope.document.THUMBNAIL + '?' + Date.now() : "";
       orig_doc = angular.copy($scope.document);
 		})
 	}
-	
-	$scope.deleteDocument = function() { 
-		if(window.confirm("Are you sure you want to delete the document '"+$scope.document.TITLE+"'?")) { 
-			$requests.write('deleteDocument', null, $scope.document.DOCID).then(function(results) { 
-				$data.updateData().then(function() { 
+
+	$scope.deleteDocument = function() {
+		if(window.confirm("Are you sure you want to delete the document '"+$scope.document.TITLE+"'?")) {
+			$requests.write('deleteDocument', null, $scope.document.DOCID).then(function(results) {
+				$data.updateData().then(function() {
 					$messages.addMessage("Document '"+$scope.document.TITLE+"' successfully deleted");
 					$location.path('/documents');
 				})
@@ -133,7 +133,7 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 		var data = angular.copy($scope.document);
 		delete data.thumbnail_url;
 
-		return $requests.write('saveDocument', data, $routeParams.id).then(function(results) {  
+		return $requests.write('saveDocument', data, $routeParams.id).then(function(results) {
 			$scope.document = results;
 			$scope.id = $routeParams.id = $scope.document.DOCID;
 			$data.updateData().then(function() {
@@ -145,9 +145,9 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
 		});
 	}
 
-  $scope.fetchRelated = function(value) { 
+  $scope.fetchRelated = function(value) {
     return $requests.fetch('fetchDocuments', {filter:value, limit:10, page: 1, nonDigitized:true, titleOnly: true})
-      .then(function(results) { 
+      .then(function(results) {
         return results.docs;
       })
   }
@@ -163,13 +163,13 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
       TRACK_NUMBER: $filter('filter')($scope.document['_related'], {delete: "!1"}).length+1
     })
     $scope.related_filter= '';
-    $timeout(function() { 
+    $timeout(function() {
       $('.content-body').scrollTop($('.content-body')[0].scrollHeight);
     });
   }
 
-  $scope.viewRelated= function(id) { 
-    if (id) { 
+  $scope.viewRelated= function(id) {
+    if (id) {
       $location.path('/documents/'+id);
     }
   }
@@ -195,7 +195,7 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
       if (!answer) {event.preventDefault(); };
     }
   });
-  
+
   $scope.$on('$destroy', function() {
      window.onbeforeunload = undefined;
   });
@@ -208,8 +208,8 @@ app.controller('documentEdit', function($scope, $filter, $routeParams, $requests
       return msg;
     }
   }
-  
-  if ($routeParams.id != 'new') { 
+
+  if ($routeParams.id != 'new') {
 		$scope.loadDocument();
 	}
 	$scope.buttons = [{text: 'Duplicate', action: $scope.copyDocument, admin: true}, {text:'Delete', action:$scope.deleteDocument, class:'btn-danger'}, {text:'Save', action:$scope.saveDocument, class:'btn-primary'}];
@@ -235,16 +235,16 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 
   $scope.removeDoc = function(index) {
     $scope.collection['_removeDocs'].push($scope.documents[index].id);
-    $scope.documents.splice(index, 1);  
+    $scope.documents.splice(index, 1);
   }
 
   $scope.addDoc = function(doc) {
     $scope.collection['_addDocs'].push(doc.id);
-    $scope.documents.push(doc);  
+    $scope.documents.push(doc);
   }
 
 	$scope.loadCollection = function() {
-		return $requests.fetch('fetchCollection', {id: $scope.id}).then(function(results) { 
+		return $requests.fetch('fetchCollection', {id: $scope.id}).then(function(results) {
 			$scope.collection = results;
       orig_col = angular.copy($scope.collection);
 
@@ -253,11 +253,11 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
       })
 		});
 	}
-	
+
 	$scope.saveCollection = function() {
 		var data = angular.copy($scope.collection);
 		delete data.count;
-		return $requests.write('saveCollection', data, $scope.id).then(function(results) {  
+		return $requests.write('saveCollection', data, $scope.id).then(function(results) {
 			$scope.collection = results;
 			$routeParams.id = $scope.collection.COLLECTION_ID;
 			$scope.id = $routeParams.id;
@@ -269,45 +269,45 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
           }).then(function() {
   					$messages.addMessage("Top-level collection successfully saved");
 				  });
-        } else { 
+        } else {
 					$messages.addMessage("Collection '"+$scope.collection.COLLECTION_NAME+"' successfully saved");
 				}
 			})
 		});
 	}
-	
-	$scope.exportCollection = function() { 
-		$requests.fetch('exportCollection', {collection_id:$scope.id}).then(function(results) { 
+
+	$scope.exportCollection = function() {
+		$requests.fetch('exportCollection', {collection_id:$scope.id}).then(function(results) {
 			$download.downloadFile(results.filename+'.csv', 'text/csv', results.file);
 		});
 	}
-	
-	$scope.addSubcollection = function(collection) { 
+
+	$scope.addSubcollection = function(collection) {
 		var skip = 0
-		if (collection.id != $scope.id && collection.id) { 
+		if (collection.id != $scope.id && collection.id) {
 			angular.forEach($scope.collection._subcollections, function(v) { if (v.COLLECTION_ID == collection.id) { skip = 1; }});
-			if (! skip) { 
+			if (! skip) {
 				$scope.collection._subcollections.push({COLLECTION_ID:collection.id, COLLECTION_NAME:collection.label});
 			}
 		}
 	}
 
-  $scope.deleteCollection = function() { 
-    if(window.confirm("Are you sure you want to delete the collection '"+$scope.collection.COLLECTION_NAME+"'?")) { 
-      $requests.write('deleteCollection', null, $scope.collection.COLLECTION_ID).then(function(results) { 
-        $data.updateData().then(function() { 
+  $scope.deleteCollection = function() {
+    if(window.confirm("Are you sure you want to delete the collection '"+$scope.collection.COLLECTION_NAME+"'?")) {
+      $requests.write('deleteCollection', null, $scope.collection.COLLECTION_ID).then(function(results) {
+        $data.updateData().then(function() {
           $messages.addMessage("Collection '"+$scope.collection.COLLECTION_NAME+"' successfully deleted");
           $location.path('/collections');
         })
       });
     }
   }
-	
-	$scope.removeSubcollection = function(index) { 
+
+	$scope.removeSubcollection = function(index) {
 		$scope.collection._subcollections.splice(index, 1);
 	}
-	
-	$scope.editSubcollection = function(id) { 
+
+	$scope.editSubcollection = function(id) {
 		$location.path('/collections/'+id);
 	}
 
@@ -332,7 +332,7 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
       if (!answer) {event.preventDefault(); };
     }
   });
-  
+
   $scope.$on('$destroy', function() {
      window.onbeforeunload = undefined;
   });
@@ -348,10 +348,10 @@ app.controller('collectionEdit', function($scope, $filter, $routeParams, $reques
 
 	$scope.buttons = [{text:'Export Collection', action:$scope.exportCollection, class:'btn-default'}, {text:'Delete', action:$scope.deleteCollection, class:'btn-danger'}, {text:'Save', action:$scope.saveCollection, class:'btn-primary'}];
 
-	if ($scope.id != 'new') { 
+	if ($scope.id != 'new') {
 		$scope.loadCollection();
 	}
-  if ($scope.id == 0 ) { 
+  if ($scope.id == 0 ) {
     $requests.fetch('fetchConfig', {'key': 'frontPageCollectionNum'}).then(function(results) {
       $scope.frontPageCollectionNum = results;
     })
@@ -363,13 +363,13 @@ app.controller('siteFeaturedDocs', function($scope, $requests, $messages) {
 	$scope.featuredDocs = {};
 
 	$scope.loadFeaturedDocs = function() {
-		return $requests.fetch('fetchCollection', {id:0}).then(function(results) { 
+		return $requests.fetch('fetchCollection', {id:0}).then(function(results) {
 			$scope.featuredDocs = results._featured_docs;
 		})
 	}
 
 	$scope.saveFeaturedDocs = function() {
-		return $requests.write('saveCollection', {COLLECTION_NAME:'', _featured_docs:$scope.featuredDocs}, 0).then(function(results) {  
+		return $requests.write('saveCollection', {COLLECTION_NAME:'', _featured_docs:$scope.featuredDocs}, 0).then(function(results) {
 			$messages.addMessage("Featured Docs successfully saved");
 			$scope.featuredDocs = results._featured_docs;
 		});
@@ -387,11 +387,11 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 	$scope.title = '';
   $scope.saving = {status: false };
 
-	switch($scope.util) { 
-		case 'backupDatabase': 
+	switch($scope.util) {
+		case 'backupDatabase':
 			$scope.title = 'Backup Database';
 			$scope.backupDatabase = function() {
-				$requests.write('backupDatabase').then(function(results) { 
+				$requests.write('backupDatabase').then(function(results) {
 					$download.downloadFile('freedom_archives_export.sql', 'text/plain', results);
 				});
 			}
@@ -401,8 +401,8 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			break;
 		case 'exportCollections':
 			$scope.title = 'Export Collections';
-			$scope.exportCollection = function() { 
-				$requests.fetch('exportCollection').then(function(results) { 
+			$scope.exportCollection = function() {
+				$requests.fetch('exportCollection').then(function(results) {
 					$download.downloadFile(results.filename+'.csv', 'text/csv', results.file);
 				});
 			}
@@ -424,7 +424,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			$scope.title = 'Edit Lists';
 			$scope.lists = {};
 			$scope.limit = 50;
-			
+
 			$scope.fetchList = function(label) {
 				var list = $scope.lists[label];
 				$requests.fetch('fetchList', {field: label, value: list.filter, limit: $scope.limit, offset: (list.offset-1)*$scope.limit  })
@@ -435,12 +435,20 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 					})
 			}
 
-			$scope.editItem = function(label, item, action, new_item, new_desc) {
-				$requests.write('editListItem', {field: label, item: item, new_item: new_item.item || "", new_desc: new_item.desc || "", listAction: action})
+			$scope.editItem = function(label, item, action, new_item_obj) {
+				if (! item && (! new_item_obj || ! new_item_obj.item)) { return; }
+				var new_item = "";
+				var new_desc = "";
+				if (new_item_obj !== undefined) {
+					new_item = new_item_obj.item;
+					new_desc = new_item_obj.desc || "";
+				}
+				$requests.write('editListItem', {field: label, item: item, new_item: new_item, new_desc: new_desc, listAction: action})
 					.then(function(results) {
-						$messages.addMessage("Item "+(action == 'delete' ? item : new_item.item)+" "+action+'ed successfully');
+						$messages.addMessage("Item "+(action == 'delete' ? item : new_item)+" "+action+'ed successfully');
 						$scope.fetchList(label);
 						$scope.lists[label].new = '';
+						$scope.lists[label].desc = '';
 					})
 			}
 
@@ -469,7 +477,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			$scope.complete = 0;
 			$scope.total = 0;
 
-			$scope.updateThumbnails = function() { 
+			$scope.updateThumbnails = function() {
 				$messages.clearMessages();
 				$scope.complete = 0;
 				$scope.total = 0;
@@ -477,18 +485,18 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 				$scope.success = 0;
 				$scope.failed = 0;
 
-				$requests.fetch('getThumbnailDocs', {collection:$scope.options.collection, force:$scope.options.force}).then(function(results) { 
-					if(results.length) { 
+				$requests.fetch('getThumbnailDocs', {collection:$scope.options.collection, force:$scope.options.force}).then(function(results) {
+					if(results.length) {
 						$scope.total = results.length;
-				
-						var updateThumbnail = function() { 
+
+						var updateThumbnail = function() {
 							var doc = results.shift();
 							doc.status = 'Processing';
 							doc.statusCode = 0;
 							$scope.thumbnails.unshift(doc);
-							if (doc.docid) { 
-								var request = $requests.fetch('updateThumbnail', {id:doc.docid}).then(function(result) { 
-									$scope.complete++;	
+							if (doc.docid) {
+								var request = $requests.fetch('updateThumbnail', {id:doc.docid}).then(function(result) {
+									$scope.complete++;
 									angular.extend(doc, result);
 									doc.statusCode = doc.status == 'Success' ? 2 : 3;
 									//doc.status = result.status;
@@ -499,13 +507,13 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
                     updateThumbnail();
                   }
 								});
-							} else { 
+							} else {
 								console.log('all done');
 							}
 						}
 
 						updateThumbnail();
-					} else { 
+					} else {
 						$messages.addMessage("There are no thumbnails to update", 'warning');
 					}
 				});
@@ -513,7 +521,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 			break;
 		case 'updateKeywords':
 			$scope.title = 'Update Keywords';
-			$scope.updateKeywords  = function() { 
+			$scope.updateKeywords  = function() {
 				$messages.clearMessages();
 				$scope.complete = 0;
         $scope.total = 0;
@@ -524,7 +532,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 				// })
 
 				$requests.fetch('getDocIds').then(function(results) {
-					if (results.length) { 
+					if (results.length) {
 						ids = results;
             $scope.total = results.length;
 						// angular.forEach(results, function(v) {
@@ -538,7 +546,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 							items.push(ids.shift());
 							x++;
 						}
-						var request = $requests.write('updateLookups', {items:items}).then(function(result) { 
+						var request = $requests.write('updateLookups', {items:items}).then(function(result) {
 							$scope.complete+=result;
 							if (ids.length) {
 								updateLookups();
@@ -627,7 +635,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
       $scope.backups = {};
 
       $scope.restoreBackup = function(backup) {
-        if(window.confirm("Are you sure you want to restore "+backup.id+" from "+backup.date+" to the live site?")) { 
+        if(window.confirm("Are you sure you want to restore "+backup.id+" from "+backup.date+" to the live site?")) {
           $requests.fetch('restoreBackup', {id: backup.id}).then(function(results) {
             $messages.addMessage(backup.id+' restored', 'success');
             $scope.restoring = false;
@@ -637,13 +645,13 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
           $timeout(function() {$scope.restoring = false; });
         }
       }
-      
+
       $scope.fetchBackups = function() {
         $requests.fetch('fetchBackups').then(function(results) {
           $scope.backups = results;
         });
       }
-      
+
       $scope.pushChanges = function() {
         $requests.fetch('pushChanges').then(function(results) {
           $messages.addMessage('Live site updated', 'success');
@@ -662,7 +670,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 				offset: 1,
 				count:0
 			}
-			$requests.fetch('findDuplicates').then(function(results) { 
+			$requests.fetch('findDuplicates').then(function(results) {
 				$scope.duplicates = results;
 				$scope.fields = Object.keys($scope.duplicates[0].docs[0]);
 				$scope.pagination.count = $scope.duplicates.length+1;
@@ -688,7 +696,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 
       $scope.saveUser = function() {
         var user = angular.copy($scope.edit);
-        if ($scope.pw.pw1 && $scope.pw.pw1 != $scope.pw.pw2) { 
+        if ($scope.pw.pw1 && $scope.pw.pw1 != $scope.pw.pw2) {
           $scope.saving.status = false;
           return;
         }
@@ -709,7 +717,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
       }
 
       $scope.deleteUser = function(user) {
-        if(window.confirm("Are you sure you want to delete '"+user.username+"'?")) { 
+        if(window.confirm("Are you sure you want to delete '"+user.username+"'?")) {
           $requests.write('deleteUser', {id: user.user_id}).then(function(response) {
             delete $scope.users[user.user_id];
             $scope.saving.status =  false;
@@ -721,7 +729,7 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 
     	$requests.fetch('fetchUsers').then(function(results){
         $scope.users = results;
-      }) 
+      })
 
       break;
   }
@@ -731,16 +739,16 @@ app.controller('siteUtils', function($scope, $routeParams, $requests, $messages,
 app.factory('$templateCache', function($cacheFactory, $http, $injector) {
 	var cache = $cacheFactory('templates');
 	var allTplPromise;
-	 
+
 	return {
 		get: function(url) {
 			var fromCache = cache.get(url);
-			 
+
 			// already have required template in the cache
 			if (fromCache) {
 				return fromCache;
 			}
-		 
+
 			// first template request ever - get the all tpl file
 			if (!allTplPromise) {
 				allTplPromise = $http.get('js/templates.html').then(function(response) {
@@ -749,7 +757,7 @@ app.factory('$templateCache', function($cacheFactory, $http, $injector) {
 					return response;
 				});
 			}
-		 
+
 			// return the all-tpl promise to all template requests
 			return allTplPromise.then(function(response) {
 				return {
@@ -758,7 +766,7 @@ app.factory('$templateCache', function($cacheFactory, $http, $injector) {
 				};
 			});
 		},
-		 
+
 		put: function(key, value) {
 			cache.put(key, value);
 		}
@@ -766,17 +774,17 @@ app.factory('$templateCache', function($cacheFactory, $http, $injector) {
 });
 app.service('$requests', function($http, $messages, $upload) {
 	var service = this;
-	service.fetch = function(action, params) { 
+	service.fetch = function(action, params) {
 		params = params || {};
 		params.action = action;
 		return $http.get('admin.php', {params:params, timeout:600000});
 	}
-	service.write = function(action, data, id) { 
+	service.write = function(action, data, id) {
 		//data = data || {};
 		//data.action = action;
 		return $http.post('admin.php', {action: action, id: id, data:data}, {timeout:600000});
 	}
-	service.handleError = function(data, status, headers, config) { 
+	service.handleError = function(data, status, headers, config) {
 		console.log('Error');
 		console.log(status);
 	}
@@ -790,7 +798,7 @@ app.service('$data', function($requests, $rootScope, $messages, $filter) {
   $data.users = [];
 
 	$data.updateData = function(noclear) {
-		if (! noclear) { 
+		if (! noclear) {
 			$messages.clearMessages();
 		}
 		return $requests.fetch('fetchData').then(function(results) {
@@ -801,14 +809,14 @@ app.service('$data', function($requests, $rootScope, $messages, $filter) {
 		});
 	}
 
-	$data.clearData = function() { 
+	$data.clearData = function() {
     $data.collections = [];
 		$data.users = [];
     $data.action_access = {};
 		$data.collection_index = {};
-	}	
-		
-	//$data.updateData();	
+	}
+
+	//$data.updateData();
 	return $data;
 
 });
@@ -823,12 +831,12 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 	AuthenticationService.badLogin = 0;
 	AuthenticationService.error = 0;
 
-	AuthenticationService.login = function(user, password) { 
+	AuthenticationService.login = function(user, password) {
 		AuthenticationService.badLogin = 0;
 		AuthenticationService.error = 0;
-		return $requests.write('login', {user:user, password:password}).then(function(result) { 
-			if(setLogin(result)) { 
-				if ($rootScope.username) { 
+		return $requests.write('login', {user:user, password:password}).then(function(result) {
+			if(setLogin(result)) {
+				if ($rootScope.username) {
 					$data.updateData();
 				} else {
 					AuthenticationService.badLogin = 1;
@@ -836,10 +844,10 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 				}
 				return $rootScope.username || false;
 			}
-		}, function(error) { 
-			if (error && error.data && error.data.statusString && error.data.statusString == 'Bad Login') { 
+		}, function(error) {
+			if (error && error.data && error.data.statusString && error.data.statusString == 'Bad Login') {
 				AuthenticationService.badLogin = 1;
-			} else { 
+			} else {
 				AuthenticationService.error = error.data.statusString;
 			}
 			$rootScope.username = AuthenticationService.username = '';
@@ -849,18 +857,18 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 		});
 	};
 
-	AuthenticationService.logout = function() { 
-		return $requests.fetch('logout').then(function(result) { 
+	AuthenticationService.logout = function() {
+		return $requests.fetch('logout').then(function(result) {
 			$data.clearData();
 			$rootScope.username = AuthenticationService.username = '';
 			AuthenticationService.user_type = '';
 		});
 	}
 
-	AuthenticationService.checkLogin = function() { 
-		return $requests.fetch('check_login').then(function(results) { 
-			if (setLogin(results) ) { 
-				if ($rootScope.username) { 
+	AuthenticationService.checkLogin = function() {
+		return $requests.fetch('check_login').then(function(results) {
+			if (setLogin(results) ) {
+				if ($rootScope.username) {
 					$data.updateData();
 				} else {
 					$data.clearData();
@@ -869,9 +877,9 @@ app.service('AuthenticationService', function($requests, $rootScope, $data) {
 			}
 		});
 	}
-	
+
 	var setLogin = function(data) {
-		if (angular.isDefined(data.username)) { 
+		if (angular.isDefined(data.username)) {
 			$rootScope.username = AuthenticationService.username = data.username;
       AuthenticationService.user_type = data.user_type;
 			AuthenticationService.name = data.name;
@@ -890,7 +898,7 @@ app.service('$search', function($rootScope, $requests) {
     }
     var params = {
       filter:service[type].filter,
-      collection:service[type].collection, 
+      collection:service[type].collection,
       page:service[type].page,
       limit:service[type].itemLimit,
       nonDigitized:service[type].nonDigitized,
@@ -929,7 +937,7 @@ app.service('$search', function($rootScope, $requests) {
             index = $.inArray(id, items);
             if ( index < 0) {
               console.log('give up!');
-            } else {      
+            } else {
               service.updateNeighbors(type, id);
             }
           });
@@ -947,28 +955,28 @@ app.service('$search', function($rootScope, $requests) {
           neighbors.prev = res[options.itemLimit-1].id;
         })
       } else{
-        neighbors.prev = index == 0 ? null : items[index -1];   
+        neighbors.prev = index == 0 ? null : items[index -1];
       }
 
       if (index == options.itemLimit-1 && neighbors.resultNum < options.count) {
         var params = service.buildSearch(type);
         params.page++;
-        
+
         service.fetchItems(type, params, true).then(function(res) {
           neighbors.next = res[0].id;
         })
       } else {
-        neighbors.next = neighbors.resultNum >= options.count ? null : items[index +1];   
+        neighbors.next = neighbors.resultNum >= options.count ? null : items[index +1];
       }
     }
   }
 
-  service.fetchItems = function(type, params, nosave) { 
+  service.fetchItems = function(type, params, nosave) {
     if (!params) {
       var params = service.buildSearch(type);
     }
     var action = type == 'collectionOpts' ? 'fetchCollections' : 'fetchDocuments';
-    return $requests.fetch(action, params).then(function(results) { 
+    return $requests.fetch(action, params).then(function(results) {
       var items = {};
 
       if (type == 'collectionOpts') {
@@ -1074,63 +1082,63 @@ app.service('$messages', function($rootScope) {
 	service.addMessage = function(message, type) {
 		var type = type || 'info';
 		service.messages.push({message: message, type: type});
-		$('.processing-spinner').remove(); 		
+		$('.processing-spinner').remove();
 	};
 
-	service.error = function(message) { 
+	service.error = function(message) {
 		console.log('Error'+message);
 		service.addMessage('Error: '+message, 'danger');
 	}
-	
-	service.getMessages = function() { 
+
+	service.getMessages = function() {
 		return service.messages;
 	};
 
-	service.deleteMessage = function(index) { 
+	service.deleteMessage = function(index) {
 		service.messages.splice(index, 1);
 	}
 
-	service.clearMessages = function() { 
+	service.clearMessages = function() {
 		service.messages = [];
 	}
-	
+
 	$rootScope.$on( "$routeChangeStart", function(event, next, current) {
 		service.clearMessages();
 	});
 });
 
-app.config(function($httpProvider) { 
+app.config(function($httpProvider) {
 	$httpProvider.interceptors.push(function ($q, $messages, $injector) {
 		var AuthenticationService;
 
 		return {
 			'response': function(response) {
-				if (response.config && response.config.url == 'admin.php') { 
+				if (response.config && response.config.url == 'admin.php') {
 					if (typeof(response.data) == 'string' && response.data.match(/^#STATUS#/)) {
             response.data = JSON.parse(response.data.replace(/^#STATUS#.*?(#ENDSTATUS#)?{/, '{'));
           }
 					if (response.data.statusCode == 1) {
 						return response.data.data;
-					} else if (response.data.statusString) { 
-						if (response.data.statusCode == 401) { 
+					} else if (response.data.statusString) {
+						if (response.data.statusCode == 401) {
 							AuthenticationService = AuthenticationService || $injector.get('AuthenticationService');
 							AuthenticationService.logout();
-						}	
+						}
 						$messages.error(response.data.statusString);
 						return $q.reject(response);
-					} else { 
+					} else {
 						$messages.error('An unknown error occurred.<br/>Response was: <pre>'+response.data+'</pre>');
 						return $q.reject(response);
 					}
-				} else { 
+				} else {
 					return response;
 				}
 			},
-			'responseError': function(rejection) { 
+			'responseError': function(rejection) {
 				console.log(rejection);
-				if (rejection.status) { 
+				if (rejection.status) {
 					$messages.error('Unable to complete request ('+rejection.status+')');
-				} else { 
+				} else {
 					$messages.error('Unable to complete request - are you sure you\'re online?');
 				}
 				return $q.reject(rejection);
@@ -1140,7 +1148,7 @@ app.config(function($httpProvider) {
 });
 
 app.service('$download', function($timeout) {
-  this.downloadFile = function(filename, mimetype, data) { 
+  this.downloadFile = function(filename, mimetype, data) {
     var blob = new Blob([data], {type: mimetype});
   	var hiddenElement = document.createElement('a');
   	hiddenElement.href = URL.createObjectURL(blob);
@@ -1150,7 +1158,7 @@ app.service('$download', function($timeout) {
       $('body').append(hiddenElement);
       hiddenElement.click();
       $(hiddenElement).remove();
-      $('.processing-spinner').remove();      
+      $('.processing-spinner').remove();
     });
   }
 });

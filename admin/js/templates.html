@@ -306,8 +306,8 @@
 									<div class='media-body'>
 										<div class='pull-right text-right'>
 											<div class='btn-group'>
-												<button ng-click='location.path("/documents/"+doc.id)' class='btn btn-default btn-sm'><span class="glyphicon glyphicon-pencil"></span> Edit</button> 
-												<button ng-click='removeDoc($index)' tooltip='Remove record from collection' tooltip-append-to-body='true' class='btn btn-danger btn-sm'><span class="glyphicon glyphicon-remove"></span></button> 
+												<button ng-click='location.path("/documents/"+doc.id)' class='btn btn-default btn-sm'><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+												<button ng-click='removeDoc($index)' tooltip='Remove record from collection' tooltip-append-to-body='true' class='btn btn-danger btn-sm'><span class="glyphicon glyphicon-remove"></span></button>
 											</div>
 											<div>ID: {{doc.id}}</div>
 											<div ng-if='doc.CALL_NUMBER'>Call #: {{doc.CALL_NUMBER}}</div>
@@ -352,7 +352,7 @@
 			<div class="list-group scroll-body" ui-sortable ng-model='documents'>
 				<a href='javascript:void(0);' class='list-group-item' style='cursor:move; position:relative;' ng-repeat='doc in documents'>
 					<div class='media'>
-						<button ng-click='removeFeaturedDoc($index)' tooltip='Remove record from featured list' tooltip-append-to-body='true' class='btn btn-default btn-xs btn-danger' style='position:absolute; top:15px; right:15px;'><span class="glyphicon glyphicon-remove"></span></button> 
+						<button ng-click='removeFeaturedDoc($index)' tooltip='Remove record from featured list' tooltip-append-to-body='true' class='btn btn-default btn-xs btn-danger' style='position:absolute; top:15px; right:15px;'><span class="glyphicon glyphicon-remove"></span></button>
 						<span class='pull-left'>
 							<img class="media-object" style='width: 75px' ng-src='../{{doc.THUMBNAIL || "images/fileicons/nodigital.png"}}'/>
 						</span>
@@ -408,14 +408,20 @@
 									<input type='text' ng-change='fetchList(label)' class='form-control' placeholder='Filter list' ng-model='list.filter' autofocus/>
 								</div>
 								<div class='form-group col-xs-8 vertical-align' style='display: flex !important;'>
-										<div class='col-xs-6 text-right'>
-											<label class='control-label'>Add new item</label>
+									<div class='col-xs-6 text-right'>
+										<label class='control-label'>Add new item</label>
+									</div>
+									<div class='col-xs-6'>
+										<div class='input-group' ng-show='label === "call_number"'>
+											<input placeholder="Call Number" type="text" class="form-control" ng-model='list.new'>
 										</div>
-										<div class='input-group col-xs-6'>
-											<input type="text" class="form-control" ng-model='list.new'>
+										<div class='input-group col-xs-{{label === "call_number" ? 6 : 12}}'>
+											<input ng-show='label !== "call_number"' type="text" class="form-control" ng-model='list.new'>
+											<input placeholder="Description" ng-show='label === "call_number"' type="text" class="form-control" ng-model='list.desc'>
 											<span class="input-group-btn">
-												<button class="btn btn-primary" ng-click='editItem(label, "", "add", {item:list.new})'>Add</button>
+												<button class="btn btn-primary" ng-click='editItem(label, "", "add", {item:list.new, desc: list.desc})'>Add</button>
 											</span>
+										</div>
 									</div>
 								</div>
 							</form>
@@ -428,7 +434,7 @@
 						<ul class='list-group scroll-body'>
 							<li class='list-group-item' ng-init='edit=0; new_item = {item: item.item, desc: item.description};' ng-repeat='item in list.items'>
 								<div class='row'>
-									<div class='col-xs-4'>	
+									<div class='col-xs-4'>
 										<span ng-hide='edit'>{{item.item}}<span ng-if='label == "call_number"'> - {{item.description}}</span></span>
 										<form class='form-inline col-xs-12' ng-show='edit'>
 											<div class='alert alert-warning'>Note: Editing Call Number will not update existing records/collections</div>
@@ -452,7 +458,7 @@
 										{{item.collection_count}}
 									</div>
 									<div class='col-xs-4'>
-										<div class='pull-right btn-group'>	
+										<div class='pull-right btn-group'>
 											<button  class='btn btn-default btn-sm' ng-click='edit = !edit'>{{edit ? 'Cancel' : 'Edit'}}</button>
 											<button class='btn btn-danger btn-sm' ng-click='editItem(label, item.item, "delete")'>Delete</button>
 										</div>
@@ -505,7 +511,7 @@
 					<div class='radio form-inline'>
 						<label>
 							<input type='radio' value='time_amount' ng-model='$parent.time_limit' ng-change='fetchLog()'/>
-							Changes made in the last	
+							Changes made in the last
 						</label>
 						<select class='form-control input-sm' ng-model='$parent.time_amount' ng-options='n for n in [] | range:1:30'  ng-change='fetchLog()'>
 							<option>1</option>
@@ -586,7 +592,7 @@
 							</td>
 						</tr>
 					</tbody>
-				</table>	
+				</table>
 			</div>
 		</div>
 		<div ng-switch-when='publish'>
@@ -628,7 +634,7 @@
 									</td>
 								</tr>
 							</tbody>
-						</table>	
+						</table>
 					</div>
 				</li>
 			</div>
@@ -650,7 +656,7 @@
 			<p ng-show='complete == total && complete != 0' class='alert alert-success'>{{success}} thumbnails updated successfully. {{failed}} thumbnails failed.</p>
 			<form class="form-horizontal col-xs-6">
 				<div class='form-group'>
-					<label class='col-xs-6 control-label'>Choose a collection to update (leave blank for all)</label>	
+					<label class='col-xs-6 control-label'>Choose a collection to update (leave blank for all)</label>
 					<div class='col-xs-6'>
 						<div collection-chooser model='options.collection'></div>
 					</div>
@@ -662,8 +668,8 @@
 								<input type='checkbox' ng-true-value='1' ng-false-value='0' ng-model='options.force'/>
 								Force update of existing thumbnails
 							</label>
-						</div>	
-					</div>	
+						</div>
+					</div>
 				</div>
 
 				<button class='btn btn-default btn-large' ng-click='updateThumbnails()'>Update Thumbnails</button>
@@ -830,7 +836,7 @@
 			</div>
 			<div class='checkbox' ng-switch-when='checkbox'>
 				<input type='checkbox' ng-true-value='1' ng-false-value='0' ng-model='$parent.model'/>
-			</div>	
+			</div>
 			<div id='col' ng-switch-when='collectionChooser' ng-class='{"has-warning":$parent.model == 1000}'>
 				<div class='input-group col-xs-12'>
 					<span class='input-group-btn'>
@@ -906,7 +912,7 @@
 			<span class='label label-default'>
 			<span class='pull-left'>{{item}}</span>
 			<a ng-click='removeItem($index)'><span class='close glyphicon glyphicon-remove'></span></a>
-			</span>   
+			</span>
 		</span>
 		<input class='form-control' type='text' ng-model='selected' typeahead-on-select='addItem()' autocomplete="off" typeahead-editable='{{isEditable}}' typeahead="item.item for item in fetchList(type, $viewValue, 10)" placeholder="Add {{type + (isEditable == 'true' ? '' : ' from list')}}"/>
 	</form>

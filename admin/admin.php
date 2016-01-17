@@ -33,7 +33,7 @@ $action_access = array(
 	'editListItem'=>'Administrator',
 	'csvImport'=>'Administrator',
 	'filemakerImport'=>'Administrator',
-	'getThumbnailDocs'=>'all', 
+	'getThumbnailDocs'=>'all',
 	'updateThumbnail'=>'all',
 	'updateLookups'=>'all',
 	'uploadFile'=>'all',
@@ -59,14 +59,14 @@ checkLogin();
 include('../lib/dbaccess.php');
 header('Content-type: application/json');
 
-if ($action) { 
+if ($action) {
 	$data = array();
 	$query = null;
-	if (isset($action_access[$action])) { 
-		if($action_access[$action] != 'all' && $action_access[$action] != $_SESSION['user_type']) { 
+	if (isset($action_access[$action])) {
+		if($action_access[$action] != 'all' && $action_access[$action] != $_SESSION['user_type']) {
 			trigger_error('You do not have permissions to access method "'.$request['action'].'".', E_USER_ERROR);
 		}
-	} else { 
+	} else {
 		trigger_error('"'.$request['action'].'" is an invalid method.', E_USER_ERROR);
 	};
 
@@ -76,7 +76,7 @@ if ($action) {
 			$username = isset($data['user']) ? dbEscape($data['user']) : '';
 			$password = isset($data['password']) ? dbEscape($data['password']) : '';
 			$user = false;
-			if ($username && $password) { 
+			if ($username && $password) {
 				$login_query = "select USER_ID, USERNAME, USER_TYPE, PASSWORD, concat(firstname, ' ', lastname) as NAME from USERS where USERNAME = '$username' limit 1";
 				$userinfo = fetchRow($login_query);
 				if ($userinfo[3] == crypt($password, $userinfo[3])) {
@@ -84,13 +84,13 @@ if ($action) {
 					unset($user[3]);
 				}
 			}
-			if ($user) { 
+			if ($user) {
 				$_SESSION['user_id'] = $user[0];
 				$_SESSION['username'] = $user[1];
 				$_SESSION['user_type'] = $user[2];
 				$_SESSION['name'] = $user[4];
 				$data = $_SESSION;
-			} else { 
+			} else {
 				setResponse(401, 'Bad Login');
 			}
 			break;
@@ -123,12 +123,12 @@ if ($action) {
 			dbwrite("delete from DOCUMENTS where DOCID = '".dbEscape($request['id'])."'");
 			$data = 1;
 			break;
-		
+
 		case 'fetchConfig':
 			$query = "select value from CONFIG where setting = '".dbEscape($request['key'])."'";
 			$data = fetchValue($query);
 			break;
-		
+
 		case 'saveConfig':
 			$keys = fetchCol("select setting from CONFIG");
 			foreach($keys as $key) {
@@ -143,28 +143,28 @@ if ($action) {
 		case 'fetchDocument':
 			$data = fetchItem('document', $request['id']);
 			break;
-		
+
 		case 'saveDocument':
 			$data = saveItem('document', $request['id'], $request['data']);
 			break;
-		
+
 		case 'fetchCollection':
 			$data = fetchItem('collection', $request['id']);
 			break;
-		
+
 		case 'saveCollection':
 			$data = saveItem('collection', $request['id'], $request['data']);
 			break;
-	
+
 		case 'exportCollection':
 			$filename = 'All Collections';
 			$where = isset($request['collection_id']) ? " and c.collection_id = ".dbEscape($request['collection_id']). " " : "";
-			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors, 
-				publisher as 'Organization or Publisher', vol_number as 'Vol #-Issue', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description, 
+			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors,
+				publisher as 'Organization or Publisher', vol_number as 'Vol #-Issue', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description,
 				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
 				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where 1=1 $where group by docid");
 
-			if (isset($request['collection_id']) && isset($docs[0])) { 
+			if (isset($request['collection_id']) && isset($docs[0])) {
 				$filename = $docs[0]['Folder'];
 			}
 			$csv = arrayToCSV($docs);
@@ -175,8 +175,8 @@ if ($action) {
 			$searchdocs = fetchItems('document', $request);
 			$ids = arrayToInString(array_map(function($doc) { return $doc['id']; }, $searchdocs['docs']));
 
-			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors, 
-				publisher as 'Organization or Publisher', vol_number as 'Vol #-Issue', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description, 
+			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors,
+				publisher as 'Organization or Publisher', vol_number as 'Vol #-Issue', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description,
 				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
 				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where d.docid in ($ids) group by docid");
 
@@ -192,7 +192,7 @@ if ($action) {
 			$value = $value == " " ? "" : $value;
 			$limit = "";
 			$offset = 0;
-			if (isset($request['offset'])) { 
+			if (isset($request['offset'])) {
 				$offset = dbEscape($request['offset']);
 			}
 			if (isset($request['limit'])) {
@@ -204,12 +204,12 @@ if ($action) {
 				group by item order by if(a.item like('$value%') collate utf8_unicode_ci, 0, 1), ucase(a.item) $limit";
 
 			if (in_array($field, array('author', 'subject', 'producer', 'keyword'))) {
-				$query = "select a.item, sum(if(is_doc = 1, 1, 0)) as record_count, sum(if(is_doc = 0, 1, 0)) as collection_count 
+				$query = "select a.item, sum(if(is_doc = 1, 1, 0)) as record_count, sum(if(is_doc = 0, 1, 0)) as collection_count
 					from LIST_ITEMS a left join LIST_ITEMS_LOOKUP b using(item, type) $query_suffix";
 			} else if (in_array($field, array('file_extension', 'media_type', 'day', 'month', 'year'))) {
 				$query = "select $field as item, count(*) as record_count, 0 as collection_count from DOCUMENTS where $field like '%$value%' group by $field order by item";
 			} else {
-				$query = "select a.item, a.description, count(*) as record_count, 0 as collection_count 
+				$query = "select a.item, a.description, count(*) as record_count, 0 as collection_count
 					from LIST_ITEMS a left join DOCUMENTS b on a.item = b.$field $query_suffix";
 			}
 
@@ -239,7 +239,7 @@ if ($action) {
 			}
 
 			if ($listAction == 'add') {
-				$query = "insert ignore into LIST_ITEMS set item = '$new_item', type='$field'";
+				$query = "insert ignore into LIST_ITEMS set item = '$new_item', type='$field', description = '$new_desc'";
 			} elseif ($listAction == 'edit') {
 				dbwrite("delete from LIST_ITEMS where item='$item' and type='$field'");
 				dbwrite("delete from LIST_ITEMS where item='$new_item' and type='$field'");
@@ -277,12 +277,12 @@ if ($action) {
 		case 'csvImport':
 			$data = csvImport($request['data']);
 			break;
-		
+
 		case 'filemakerImport':
 			$data = filemakerImport($request['data']);
 			break;
 
-		case 'getThumbnailDocs': 
+		case 'getThumbnailDocs':
 			$where = $request['force'] ? "" : " and (thumbnail = '' or thumbnail is null) ";
 			if ($request['collection']) { $where .= " and collection_id = '".$request['collection']."'"; }
 			$query = "select docid, title from DOCUMENTS where url is not null and url != '' $where";// and docid=6123";
@@ -301,7 +301,7 @@ if ($action) {
 			}
 			$data = count($request['data']['items']);
 			break;
-		
+
 		case 'uploadFile':
 			$data = $request['data'];
 			$file_data = $data['data'];
@@ -316,7 +316,7 @@ if ($action) {
 			$result = saveItem($type, $id, array('THUMBNAIL'=>$thumbnail));
 			$data = $result['THUMBNAIL'];
 			break;
-		
+
 		case 'backupDatabase':
 			global $db;
 			require_once('lib/mysqldump.php');
@@ -326,9 +326,9 @@ if ($action) {
 			$sql_dump->start();
 			$data = $sql_dump->output;
 			break;
-		
+
 		case 'getDocIds':
-			$data = fetchRows("select DOCID as id, 'document' as type from DOCUMENTS union 
+			$data = fetchRows("select DOCID as id, 'document' as type from DOCUMENTS union
 				select COLLECTION_ID as id, 'collection' as type from COLLECTIONS");
 			//$data = fetchCol("select DOCID from DOCUMENTS where authors != '' or keywords != '' or subjects != '' or producers != ''");
 			break;
@@ -347,22 +347,22 @@ if ($action) {
 				)b
 				USING ( title, description, vol_number )
 				ORDER BY title, description, vol_number");
-			foreach($duplicates as $doc) { 
+			foreach($duplicates as $doc) {
 				$last = end($data);
 				$title = trim($doc['TITLE']);
 				$desc = trim($doc['DESCRIPTION']);
 				$vol = trim($doc['VOL_NUMBER']);
-				foreach( array('TITLE', 'DESCRIPTION', 'VOL_NUMBER', 'CREATOR', 'CONTRIBUTOR', 'DATE_AVAILABLE', 'DATE_MODIFIED', 'SOURCE', 'IDENTIFIER', 
-					'LANGUAGE', 'RELATION', 'COVERAGE', 'RIGHTS', 'AUDIENCE', 'DIGITIZATION_SPECIFICATION', 'PBCORE_CREATOR', 'PBCORE_COVERAGE', 
-					'PBCORE_RIGHTS_SUMMARY', 'PBCORE_EXTENSION', 'URL_TEXT', 'LENGTH') as $field) { 
+				foreach( array('TITLE', 'DESCRIPTION', 'VOL_NUMBER', 'CREATOR', 'CONTRIBUTOR', 'DATE_AVAILABLE', 'DATE_MODIFIED', 'SOURCE', 'IDENTIFIER',
+					'LANGUAGE', 'RELATION', 'COVERAGE', 'RIGHTS', 'AUDIENCE', 'DIGITIZATION_SPECIFICATION', 'PBCORE_CREATOR', 'PBCORE_COVERAGE',
+					'PBCORE_RIGHTS_SUMMARY', 'PBCORE_EXTENSION', 'URL_TEXT', 'LENGTH') as $field) {
 					unset($doc[$field]);
 				}
 
-				if (isset($last['docs']) && $last['TITLE'] == $title && $last['DESCRIPTION'] == $desc && $last['VOL_NUMBER'] == $vol) { 
+				if (isset($last['docs']) && $last['TITLE'] == $title && $last['DESCRIPTION'] == $desc && $last['VOL_NUMBER'] == $vol) {
 					$last['docs'][] = $doc;
 					$last['count']++;
 					$data[key($data)] = $last;
-				} else { 
+				} else {
 					$data[] = array('TITLE'=>$title, 'count'=>1, 'DESCRIPTION'=>$desc, 'VOL_NUMBER' => $vol, 'docs'=>array($doc));
 				}
 			}
@@ -380,10 +380,10 @@ if ($action) {
 			// $log = fetchRows("select *, unix_timestamp(timestamp) as time from audit_log where unix_timestamp(timestamp) > '$date' and action != 'push'"); // limit ".(($page-1)*$limit).",$limit");
 			$query = "
 				select * from (
-				select DOCID as id, TITLE as description, 'document' as type, CONTRIBUTOR as user, IF(DATE_MODIFIED = DATE_CREATED, 'create', 'update') as action, 
+				select DOCID as id, TITLE as description, 'document' as type, CONTRIBUTOR as user, IF(DATE_MODIFIED = DATE_CREATED, 'create', 'update') as action,
 					NEEDS_REVIEW, collection_id, unix_timestamp(DATE_MODIFIED) as time from DOCUMENTS where unix_timestamp(DATE_MODIFIED) > $date $needs_review
-				union 
-					select COLLECTION_ID as id, COLLECTION_NAME as description, 'collection' as type, CONTRIBUTOR as user, IF(DATE_MODIFIED = DATE_CREATED, 'create', 'update') as action, 
+				union
+					select COLLECTION_ID as id, COLLECTION_NAME as description, 'collection' as type, CONTRIBUTOR as user, IF(DATE_MODIFIED = DATE_CREATED, 'create', 'update') as action,
 						NEEDS_REVIEW, parent_id as collection_id, unix_timestamp(DATE_MODIFIED) as time from COLLECTIONS where unix_timestamp(DATE_MODIFIED) > $date $needs_review
 				) a order by time desc
 				"; // limit ".(($page-1)*$limit).",$limit");
@@ -474,7 +474,7 @@ if ($action) {
 			}
 			if ($id == 'new') {
 				$query = "insert into USERS set ".arrayToUpdateString($user);
-				$id = dbInsert($query);	
+				$id = dbInsert($query);
 			} else {
 				$query = "update USERS set ".arrayToUpdateString($user). " where user_id = $id";
 				dbwrite($query);
@@ -506,8 +506,8 @@ function fetchItems($type, $request) {
 	$idfield = 'DOCID';
 	$isDoc = 1;
 
-	if ($type == 'document') {		
-		if(! $request['nonDigitized']) { 
+	if ($type == 'document') {
+		if(! $request['nonDigitized']) {
 			$where[] = " URL is not null and URL != '' ";
 		}
 	} else {
@@ -515,18 +515,18 @@ function fetchItems($type, $request) {
 		$isDoc = 0;
 	}
 
-	if (isset($request['collection']) && $request['collection'] != '') { 
+	if (isset($request['collection']) && $request['collection'] != '') {
 		$cid = dbEscape($request['collection']);
 		$where[] = "I.".($isDoc? "COLLECTION_ID" : "PARENT_ID")." in (select COLLECTION_ID from COLLECTIONS where COLLECTION_ID = '$cid' or PARENT_ID = '$cid') ";
 	}
 
-	if(isset($request['IS_HIDDEN']) && $request['IS_HIDDEN']) { 
+	if(isset($request['IS_HIDDEN']) && $request['IS_HIDDEN']) {
 		$where[] = " I.IS_HIDDEN = 1 ";
 	}
-	if(isset($request['NEEDS_REVIEW']) && $request['NEEDS_REVIEW']) { 
+	if(isset($request['NEEDS_REVIEW']) && $request['NEEDS_REVIEW']) {
 		$where[] = " I.NEEDS_REVIEW = 1 ";
 	}
-	if (isset($request['filter']) && $request['filter'] != '') { 
+	if (isset($request['filter']) && $request['filter'] != '') {
 		$filter = dbEscape($request['filter']);
 		$filter = str_replace(" ", '%', $filter);
 		$like = "like _utf8 '%$filter%'";
@@ -598,34 +598,34 @@ function fetchItems($type, $request) {
 	$results = fetchRows($query);
 	if ($isDoc) {
 		$data['docs'] = $results;
-	} else { 
+	} else {
 		$data['collections'] = $results;
 	}
 	return $data;
 }
 
-function fetchItem($type, $id) { 
+function fetchItem($type, $id) {
 	$id = dbEscape($id);
 	$type = dbEscape($type);
 	if ($id == 'new') {return array(); }
 	$is_doc = $type == 'document' ? 1 : 0;
 	$query = "";
-	if (! $is_doc) { 
+	if (! $is_doc) {
 		$query = "select C.*, count(D.DOCID) as count from COLLECTIONS C left join DOCUMENTS D using (COLLECTION_ID) where COLLECTION_ID = '$id'";
-	} else { 
+	} else {
 		$query = "select D.* from DOCUMENTS D where DOCID = $id";
 	}
 	$data = fetchRow($query, 1);
 	$data['_keywords'] = fetchCol("select distinct item from LIST_ITEMS_LOOKUP where id = $id and type = 'keyword' and is_doc=$is_doc order by `order`");
 	$data['_subjects'] = fetchCol("select distinct item from LIST_ITEMS_LOOKUP where id = $id and type = 'subject' and is_doc=$is_doc order by `order`");
 
-	if ($type == 'collection') { 
+	if ($type == 'collection') {
 		$data['_featured_docs'] = array_values(dbLookupArray("select F.DOCID, F.DOC_ORDER, F.DESCRIPTION, D.TITLE, D.THUMBNAIL from FEATURED_DOCS F join DOCUMENTS D using(DOCID) where F.COLLECTION_ID = '$id' order by F.DOC_ORDER"));
 		$data['_subcollections'] = array_values(dbLookupArray("select COLLECTION_ID, PARENT_ID, COLLECTION_NAME, IS_HIDDEN from COLLECTIONS where PARENT_ID = '$id' and COLLECTION_ID != '$id' order by DISPLAY_ORDER, COLLECTION_NAME"));
 		$data['_removeDocs'] = array();
 		$data['_addDocs'] = array();
 	}
-	if ($type == 'document') { 
+	if ($type == 'document') {
 		$data['_authors'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='author' order by `order`");
 		$data['_producers'] = fetchCol("select item from LIST_ITEMS_LOOKUP where ID = $id and type='producer' order by `order`");
 		$data['_related'] = array_values(dbLookupArray("select ID,
@@ -642,7 +642,7 @@ function fetchItem($type, $id) {
 	return $data;
 }
 
-function saveItem($type, $id, $data, $noLog=false) { 
+function saveItem($type, $id, $data, $noLog=false) {
 	global $query;
 	$table = strtoupper($type)."S";
 	$idfield = $type == 'document' ? 'DOCID' : strtoupper($type)."_ID";
@@ -658,7 +658,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 	unset($data['_keywords']);
 	unset($data['_subjects']);
 
-	if ($type == 'collection') { 
+	if ($type == 'collection') {
 		$tags['_featured_docs'] = isset($data['_featured_docs']) ? $data['_featured_docs'] : null;
 		$tags['_subcollections'] = isset($data['_subcollections']) ? $data['_subcollections'] : null;
 		$removeDocs = isset($data['_removeDocs']) ? $data['_removeDocs'] : array();
@@ -669,7 +669,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 		unset($data['count']);
 		unset($data['_removeDocs']);
 		unset($data['_addDocs']);
-	} elseif ($type == 'document') { 
+	} elseif ($type == 'document') {
 		$tags['_authors'] = isset($data['_authors']) ? $data['_authors'] : null;
 		$tags['_producers']= isset($data['_producers']) ? $data['_producers'] : null;
 		$relatedDocs = isset($data['_related']) ? $data['_related'] : array();
@@ -726,7 +726,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 		$query = "update $table set ".arrayToUpdateString($data) ." where $idfield = '$id'";
 		dbInsert($query);
  	}
-	
+
 	if ($type == 'collection') {
 		if ($tags['_featured_docs'] !== null) {
 			updateFeatured($id, $tags['_featured_docs']);
@@ -745,7 +745,7 @@ function saveItem($type, $id, $data, $noLog=false) {
 	if ($type == 'document') {
 		if (isset($data['URL']) && $data['URL'] && isset($oldItem['URL']) && $data['URL'] != $oldItem['URL']) {
 			updateThumbnail($id);
-		} 
+		}
 		foreach (array('format', 'generation', 'program', 'quality') as $field) {
 			if (isset($data[strtoupper($field)]) && $data[strtoupper($field)] != "") {
 				dbwrite("insert ignore into LIST_ITEMS set item='".dbEscape($data[strtoupper($field)])."', type='$field'");
@@ -786,14 +786,14 @@ function saveRelated($relatedDocs) {
 					$relatedDoc[$field."_$other"] = $relatedDoc[$field."_$current"];
 				}
 			}
-			
+
 			if (! isset($relatedDoc['ID'])) {
 				$exists_query = "select id, TRACK_NUMBER_$other, TITLE_$other, DESCRIPTION_$other from RELATED_RECORDS where DOCID_$current = '".dbEscape($relatedDoc['DOCID_'.$current])."' and TRACK_NUMBER_"."$current = '".dbEscape($relatedDoc['TRACK_NUMBER_'.$current])."'";
 				$exists = fetchRow($exists_query, true);
-				if ($exists) { 
-					$relatedDoc['ID'] = $exists['id']; 
+				if ($exists) {
+					$relatedDoc['ID'] = $exists['id'];
 					if ($exists["TRACK_NUMBER_$other"] != 0) {
-						$relatedDoc["TRACK_NUMBER_$other"] = $exists["TRACK_NUMBER_$other"]; 
+						$relatedDoc["TRACK_NUMBER_$other"] = $exists["TRACK_NUMBER_$other"];
 					}
 				}
 			}
@@ -807,7 +807,7 @@ function saveRelated($relatedDocs) {
 			} else {
 				$query = "insert into RELATED_RECORDS set ".arrayToUpdateString($relatedDoc);
 			}
-			dbInsert($query);	
+			dbInsert($query);
 		}
 	}
 }
@@ -839,18 +839,18 @@ function updateTags($id, $type, $data) {
 	);
 	$is_doc = $type == 'document' ? 1 : 0;
 
-	foreach(array_keys($fields) as $field) { 
-		if ($is_doc == 0 && ($field == 'author' || $field == 'producer')) { 
+	foreach(array_keys($fields) as $field) {
+		if ($is_doc == 0 && ($field == 'author' || $field == 'producer')) {
 			continue;
 		}
 		$table = "LIST_ITEMS_LOOKUP";
 		$db_field = $fields[$field];
-		if (isset($data["_$field"."s"]) && $data["_$field"."s"] !== null) { 
+		if (isset($data["_$field"."s"]) && $data["_$field"."s"] !== null) {
 			$query = "delete from LIST_ITEMS_LOOKUP where id = $id and is_doc = $is_doc and type='$field'";
 			dbwrite($query);
 			$trimmed_list = array();
 			$x = 0;
-			foreach($data["_$field"."s"] as $item) { 
+			foreach($data["_$field"."s"] as $item) {
 				$trimmed = trim($item);
 				if (preg_match("/^ *$/", $trimmed)) { continue; }
 				dbwrite("insert into LIST_ITEMS_LOOKUP (id, item, type, `order`, is_doc) values($id, '".dbEscape($trimmed)."', '$field', $x, $is_doc) on duplicate key update `order` = $x");
@@ -863,14 +863,14 @@ function updateTags($id, $type, $data) {
 			} else {
 				dbwrite("update COLLECTIONS set $db_field = '".dbEscape(implode(", ", $trimmed_list))."' where collection_id = '$id'");
 			}
-		}	
+		}
 	}
 }
 
-function updateFeatured($id, $data) { 
+function updateFeatured($id, $data) {
 	dbwrite("delete from FEATURED_DOCS where COLLECTION_ID = '$id'");
 	$x=0;
-	foreach($data as $doc) { 
+	foreach($data as $doc) {
 		unset($doc['TITLE']);
 		unset($doc['THUMBNAIL']);
 		$doc['DOC_ORDER'] = $x;
@@ -879,21 +879,21 @@ function updateFeatured($id, $data) {
 	}
 }
 
-function updateSubcollections($id, $data) { 
+function updateSubcollections($id, $data) {
 	dbwrite("update COLLECTIONS set PARENT_ID = 1000, DISPLAY_ORDER = 1000 where PARENT_ID = '$id'");
 
 	$x = 0;
-	foreach($data as $col) { 
+	foreach($data as $col) {
 		dbwrite("update COLLECTIONS set PARENT_ID = '$id', DISPLAY_ORDER = $x where COLLECTION_ID = '$col[COLLECTION_ID]'");
 		$x++;
 	}
 }
 
-function csvImport($data) { 
-	$fields = array('docid', 'title', 'creator', 'subjects', 'description', 'publisher', 'contributor', 
-		'identifier', 'source', 'language', 'relation', 'coverage', 'rights', 'audience', 'format', 
-		'keywords', 'authors', 'vol_number', 'no_copies', 'file_name', 'doc_text', 'file_extension', 
-		'collection_id', 'url', 'url_text', 'producers', 'program', 'generation', 'quality', 'year', 
+function csvImport($data) {
+	$fields = array('docid', 'title', 'creator', 'subjects', 'description', 'publisher', 'contributor',
+		'identifier', 'source', 'language', 'relation', 'coverage', 'rights', 'audience', 'format',
+		'keywords', 'authors', 'vol_number', 'no_copies', 'file_name', 'doc_text', 'file_extension',
+		'collection_id', 'url', 'url_text', 'producers', 'program', 'generation', 'quality', 'year',
 		'location', 'needs_review', 'is_hidden', 'call_number', 'notes', 'thumbnail', 'length', 'month', 'day',
 		'collection');
 
@@ -970,7 +970,7 @@ function csvImport($data) {
 	$csv_one_line = base64_decode($data);
 	if ($csv_one_line === false) { trigger_error("Invalid data encoding", E_USER_ERROR); }
 	$bom = pack('H*','EFBBBF');
-	$csv_one_line = preg_replace("/^$bom/", '', $csv_one_line); 
+	$csv_one_line = preg_replace("/^$bom/", '', $csv_one_line);
 	$csv = parse_csv($csv_one_line);
 
 	$headers = array_shift($csv);
@@ -982,11 +982,11 @@ function csvImport($data) {
 			if (isset($aliases[$header])) { $header = $aliases[$header]; }
 			if (! in_array(strtolower($header), $fields)) { trigger_error("Unrecognized Column Name: $header. <br/>Accepted columns are '".implode(array_merge($fields, array_keys($aliases)), "', '")."'"); }
 		}
-		if ($header == 'collection') { 
-			if (isset($collection)) { 
+		if ($header == 'collection') {
+			if (isset($collection)) {
 				trigger_error("Two collection fields specified!");
 			} else {
-				$collection = $col_num; 
+				$collection = $col_num;
 			}
 		} else {
 			array_push($columns, $header);
@@ -996,13 +996,13 @@ function csvImport($data) {
 	$row_num = 1;
 	while ($row = array_shift($csv)) {
 		$col_id = null;
-		if (isset($collection)) { 
+		if (isset($collection)) {
 			$col_name = array_splice($row, $collection, 1);
 			$col_name = trim(strtolower($col_name[0]));
 			if ($col_name)  {
-				if (isset($collections[$col_name])) { 
+				if (isset($collections[$col_name])) {
 					$col_id = $collections[$col_name]['collection_id'];
-				} else { 
+				} else {
 					trigger_error("Unknown collection: '$col_name' in row $row_num - Do you need too create it?");
 				}
 			}
@@ -1023,7 +1023,7 @@ function csvImport($data) {
 			}
 		}
 		//$values = substr($values, 0, -2);
-		if (isset($col_id)) { 
+		if (isset($col_id)) {
 			$data['COLLECTION_ID'] = $col_id;
 		}
 		$id = isset($data['DOCID']) && $data['DOCID'] != '' ? $data['DOCID'] : 'new';
@@ -1039,11 +1039,11 @@ function csvImport($data) {
 	return array("status"=>"success", "count"=>$row_num-1);
 }
 
-function filemakerImport($data_encoded) { 
-	require_once("lib/FMXMLReader.php");	
+function filemakerImport($data_encoded) {
+	require_once("lib/FMXMLReader.php");
 	$collections_lookup = dbLookupArray('select call_number, collection_id from FILEMAKER_COLLECTIONS');
 	$data = base64_decode($data_encoded);
-	if ($data === false) { trigger_error("Invalid data encoding", E_USER_ERROR); } 
+	if ($data === false) { trigger_error("Invalid data encoding", E_USER_ERROR); }
 	$reader = FMXMLReader::read($data);
 	$count = 0;
 
@@ -1088,11 +1088,11 @@ function filemakerImport($data_encoded) {
 		}
 		$file['_related'] = array();
 
-		$cn_parts =explode(" ", $file['CALL_NUMBER']);; 
+		$cn_parts =explode(" ", $file['CALL_NUMBER']);;
 		$cn_prefix = strtoupper(array_shift($cn_parts));
-		if(isset($row['Sub_coll_number']) && $row['Sub_coll_number'][0]) { 
+		if(isset($row['Sub_coll_number']) && $row['Sub_coll_number'][0]) {
 			$file['COLLECTION_ID']  = dbEscape($row['Sub_coll_number'][0]);
-		} else if (isset($collections_lookup[$cn_prefix])) { 
+		} else if (isset($collections_lookup[$cn_prefix])) {
 			$file['COLLECTION_ID'] = $collections_lookup[$cn_prefix]['collection_id'];
 		}
 
@@ -1178,8 +1178,8 @@ function checkFileType($url) {
 
 	$url = strtolower($url);
 	if ($url != '') {
-		if (stristr($url, 'vimeo')) { 
-			$filetype['media_type'] = 'Video'; 
+		if (stristr($url, 'vimeo')) {
+			$filetype['media_type'] = 'Video';
 			$filetype['ext'] = 'vimeo';
 		} else {
 			$filetype['ext'] = strtolower(pathinfo($url, PATHINFO_EXTENSION));
@@ -1196,26 +1196,26 @@ function checkFileType($url) {
 function dateToSQL($date, $time) {
 	if (!$date) { return ""; }
   $times = array(0,0,0,0);
-  preg_match('/^(\d+)\/(\d+)\/(\d+)$/i', trim($date), $dates);  
+  preg_match('/^(\d+)\/(\d+)\/(\d+)$/i', trim($date), $dates);
   if ($time) {
     preg_match('/^(\d+):(\d+):?(\d*)( [AP]M)$/i', trim($time), $times);
-    if (isset($times[5]) && $times[5] == ' PM') { 
+    if (isset($times[5]) && $times[5] == ' PM') {
       $times[1] += 12;
     }
   }
   $dates[1] = sprintf("%02d", $dates[1]);
   $dates[2] = sprintf("%02d", $dates[2]);
-  
+
   foreach($times as &$padtime) {
     $padtime = sprintf("%02d", $padtime);
   }
-  
+
   $datetime = "$dates[3]-$dates[1]-$dates[2] $times[1]:$times[2]:$times[3]";
   return $datetime;
 }
 
 function output($data, $query, $status='ok') {
-	if (! $data) { 
+	if (! $data) {
 		returnError('No Data found');
 	}
 	$output = array(
@@ -1223,7 +1223,7 @@ function output($data, $query, $status='ok') {
 		'query'=>$query,
 		'data'=> $data
 	);
-	if ($status == 'ok') { 
+	if ($status == 'ok') {
 		$db->commit();
 	}
 	print json_encode($output, true);
@@ -1240,7 +1240,7 @@ function handleError($errno, $errstr, $errfile, $errline, $errcontext) {
 	if ($db) { $db->rollback(); }
 	$data = array();
 	if ($debug) { $errstr = "'$errstr' in file $errfile line $errline "; } //(".print_r($errcontext, 1).")"; }
-	
+
 	if (!(error_reporting() & $errno)) {return; }
 
 	file_put_contents("docs/admin_errors.log", date('Y-m-d H:i:s') ." - $errstr\n", FILE_APPEND | LOCK_EX);
@@ -1260,7 +1260,7 @@ function setResponse($statusCode, $statusString, $data="", $query="") {
 	exit;
 }
 /**
-*  outputCSV creates a line of CSV and outputs it to browser   
+*  outputCSV creates a line of CSV and outputs it to browser
 */
 function outputCSV($array) {
 	$fp = fopen('php://output', 'w'); // this file actual writes to php output
@@ -1278,14 +1278,14 @@ function str_putcsv($array) {
 }
 
 function arrayToCSV($array) {
-	$first = reset($array); 
+	$first = reset($array);
 	$headers = array_keys($first);
 
 	$csv = "\xEF\xBB\xBF"; // UTF-8 BOM
 	$csv .= str_putcsv($headers);
-	foreach($array as $row) { 
+	foreach($array as $row) {
 		//Not sure why this was happening, but it was broken
-		// if(!isset($doc['Collection']) || ! $doc['Collection']) { 
+		// if(!isset($doc['Collection']) || ! $doc['Collection']) {
 		// 	$doc['Collection'] = $doc['Folder'];
 		// 	$doc['Folder'] = "";
 		// }
@@ -1302,14 +1302,14 @@ function checkLogin() {
 	// $username = isset($_SESSION['username']) ? $_SESSION['username'] : null;
 	// $user_type = isset($_SESSION['user_type']) ? $_SESSION['user_type'] : null;
 	// $name = isset($_SESSION['name']) ? $_SESSION['name'] : null;
-	if ($action == 'login' || $action == 'logout') { 
+	if ($action == 'login' || $action == 'logout') {
 		$_SESSION['user_id'] = '';
 		$_SESSION['username'] = '';
 		$_SESSION['user_type'] = '';
 		$_SESSION['name'] = '';
-	} else if (! isset($_SESSION['username'])) { 
+	} else if (! isset($_SESSION['username'])) {
 		setResponse(401, 'Not Authorized');
-	} else if ($action == 'check_login') { 
+	} else if ($action == 'check_login') {
 		$userinfo = array(
 			'user_id'=>null,
 			'username'=>null,
@@ -1362,14 +1362,14 @@ function updateThumbnail($doc_id, $check=0) {
 	if ($doc['URL']) {
 		$url = $doc['URL'];
 		$filetype = checkFileType($url);
-		
-		if ($production) { 
+
+		if ($production) {
 			$url = urldecode(preg_replace("|^http:\/\/[^\.]*\.?freedomarchives.org\/|",  '/home/claude/public_html/', $url));
 		}
 		if (file_exists($url) || url_exists($url)) {
 			if ($filetype['media_type'] == 'Webpage') {
 				$image_file = "images/fileicons/webpage.png";
-				$status = 'Success';			
+				$status = 'Success';
 			} else if ($filetype['media_type'] == 'Audio') {
 				$image_file = "images/fileicons/audio.png";
 				$status = 'Success';
@@ -1381,42 +1381,42 @@ function updateThumbnail($doc_id, $check=0) {
 				} else if ($filetype['media_type'] == 'Video') {
 					$vimeo_id = preg_replace("/^.*?\/(\d+)$/", "$1", $url);
 					$json_url = "http://vimeo.com/api/v2/video/$vimeo_id.json";
-					if (url_exists($json_url)) { 
+					if (url_exists($json_url)) {
 						$icon = "../images/fileicons/video.png";
 						$json = json_decode(file_get_contents($json_url), 1);
 						$url = $json[0]['thumbnail_large'];
 					}
 				}
-				if (file_exists($url)) { 
+				if (file_exists($url)) {
 					$filename = $url;
-				} else if (url_exists($url)) { 
+				} else if (url_exists($url)) {
 					copy($url, $tmpfile);
 					$filename = $tmpfile;
 				}
-				if (file_exists($filename)) { 
+				if (file_exists($filename)) {
 					$image_file = createThumbnail($filename, $icon, $doc_id);
-					if ($image_file == 'timeout') { 
-						$status = 'Thumbnail creation timed out. Bad Document?';	
-					} else if (file_exists("$image_file")) { 
+					if ($image_file == 'timeout') {
+						$status = 'Thumbnail creation timed out. Bad Document?';
+					} else if (file_exists("$image_file")) {
 						$status = 'Success';
 					} else {
 						$status = "Failed: $filename";
 					}
 					if(file_exists($tmpfile)) { unlink($tmpfile); }
 				} else { $status = "bad url for doc #$doc_id: $url"; }
-			} else { 
+			} else {
 				$status = "Unknown file format '$filetype[ext]' for doc id $doc_id";
 			}
 		} else { $status = "bad url for doc #$doc_id: $url"; }
 		$image_file = preg_replace("|^../|", "", $image_file);
 		dbwrite("update DOCUMENTS set thumbnail= '$image_file' where docid = $doc_id");
-	} else { 
+	} else {
 		$status = 'Missing URL';
 	}
 	return array('status'=>$status, 'image'=>$image_file);
 }
 
-function createThumbnail($image, $icon, $output_name) { 
+function createThumbnail($image, $icon, $output_name) {
 	global $production;
 	$thumbnail_path="images/thumbnails/";
 
@@ -1426,7 +1426,7 @@ function createThumbnail($image, $icon, $output_name) {
 	$timeout = 10;
 	$convert_path = $production ? "/usr/local/bin/convert" : "convert";
 
-	if ($image && file_exists($image)) { 
+	if ($image && file_exists($image)) {
 		#$orig_image = $image;
 		#$image = str_replace("[0]", "", $image);
 		#if(! preg_match("/\....$/", $image)) {
@@ -1442,7 +1442,7 @@ function createThumbnail($image, $icon, $output_name) {
 		$small_file = "$thumbnail_path/$output_name.jpg";
 		if (file_exists("../$large_file")) { unlink("../$large_file"); }
 		if (file_exists("../$small_file")) { unlink("../$small_file"); }
-		
+
 		$image = escapeshellarg($image);
 		$icon_image = $icon ? "-background transparent $icon -gravity SouthEast -geometry 70x+15+15 -composite " : "";
 		$small_icon_image = $icon ? "-background transparent $icon -gravity SouthEast -geometry 23x+5+5 -composite " : "";
@@ -1453,7 +1453,7 @@ function createThumbnail($image, $icon, $output_name) {
 		print_r($output1);
 		exec($small_cmd, $output2);
 		print_r($output2);
-		if ($output1 || $output2) { 
+		if ($output1 || $output2) {
 			exit;
 		}*/
 
@@ -1463,8 +1463,8 @@ function createThumbnail($image, $icon, $output_name) {
 			return "timeout";
 		}
 
-		if(! file_exists("../$large_file") || ! file_exists("../$small_file")) { 
-			return; 
+		if(! file_exists("../$large_file") || ! file_exists("../$small_file")) {
+			return;
 		}
 
 		return "../$small_file";
@@ -1480,7 +1480,7 @@ function url_exists($url) {
 	return $retcode == 200;
 	/*
 	$headers = @get_headers($url,1);
-	if($headers) { 
+	if($headers) {
 		$content_type = array_pop($headers);
 		if(strpos($headers[0],'200')===false || strpos($content_type, 'html')) {
 			return false;
