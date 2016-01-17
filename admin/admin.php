@@ -159,13 +159,13 @@ if ($action) {
 		case 'exportCollection':
 			$filename = 'All Collections';
 			$where = isset($request['collection_id']) ? " and c.collection_id = ".dbEscape($request['collection_id']). " " : "";
-			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors,
+			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Collection, Title, Authors,
 				publisher as 'Organization or Publisher', vol_number as 'Vol #-Issue', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description,
-				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
+				url as 'URL', d.Subjects, d.keywords as Keywords, location as 'Location'
 				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where 1=1 $where group by docid");
 
 			if (isset($request['collection_id']) && isset($docs[0])) {
-				$filename = $docs[0]['Folder'];
+				$filename = $docs[0]['Collection'];
 			}
 			$csv = arrayToCSV($docs);
 			$data = array("filename"=>$filename, "file"=>$csv);
@@ -175,9 +175,9 @@ if ($action) {
 			$searchdocs = fetchItems('document', $request);
 			$ids = arrayToInString(array_map(function($doc) { return $doc['id']; }, $searchdocs['docs']));
 
-			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Folder, Title, Authors,
+			$docs = fetchRows("Select d.docid as 'Document Id', d.Call_Number, c.collection_name as Collection, Title, Authors,
 				publisher as 'Organization or Publisher', vol_number as 'Vol #-Issue', Day, Month, Year, no_copies as 'No. of Copies', Format, d.Description,
-				url as 'File Name', d.Subjects, d.keywords as Keywords, location as 'Place of Publication'
+				url as 'URL', d.Subjects, d.keywords as Keywords, location as 'Location'
 				from COLLECTIONS c left join DOCUMENTS d using(collection_id) where d.docid in ($ids) group by docid");
 
 			$filename = "Search Results";
@@ -1286,8 +1286,8 @@ function arrayToCSV($array) {
 	foreach($array as $row) {
 		//Not sure why this was happening, but it was broken
 		// if(!isset($doc['Collection']) || ! $doc['Collection']) {
-		// 	$doc['Collection'] = $doc['Folder'];
-		// 	$doc['Folder'] = "";
+		// 	$doc['Collection'] = $doc['Collection'];
+		// 	$doc['Collection'] = "";
 		// }
 		$csv .= str_putcsv($row);
 	}
